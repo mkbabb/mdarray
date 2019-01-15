@@ -1,7 +1,7 @@
 import numpy as np
 from functools import reduce
 
-from mdarray_helper import pair_wise_accumulate, pair_wise
+from mdarray_helper import pair_wise_accumulate, pair_wise, swap_item
 from mdarray_indexing import _iter_axis, make_iter_list, gslice, _slice_array, nan, make_gslice_list
 from mdarray_formatting import array_print
 
@@ -30,31 +30,40 @@ class mdarray(object):
 			self.shape = shape
 			self.size = reduce(lambda x, y: x*y, shape)
 
-		self.dim = len(self.shape)
+		self.mdim = len(self.shape)
 		self.strides = get_strides(self.shape)
 
 		self.data = data if data else [0]*self.size
 
-		self.type = type(self.data[0])
+		self.dtype = type(self.data[0])
 
 	def reshape(self, new_shape):
 		new_size = reduce(lambda x, y: x*y, new_shape)
+
 		if new_size != self.size:
 			raise ZeroDivisionError
 
 		self.shape = new_shape
-		self.strides = get_strides(new_shape)
-		self.dim = len(new_shape)
+
+		self.get_mdim()
+		self.get_strides()
+		self.size = new_size
+
+	def get_mdim(self):
+		self.mdim = len(self.shape)
+
+	def get_size(self):
+		self.size = reduce(lambda x, y: x*y, self.shape)
+
+	def get_strides(self):
+		self.strides = get_strides(self.shape)
 
 	def __str__(self):
 		return array_print(self, ', ', lambda x: ' {0} '.format(x))
 
 	def __getitem__(self, item):
 		a_inqry = mdarray_inquery(self)
-
-		new_shape,  _gslice_list = make_gslice_list(item, a_inqry)
-
-		print(new_shape)
+		new_shape, _gslice_list = make_gslice_list(item, a_inqry)
 
 		tmp = _slice_array(self, _gslice_list)
 		tmp = mdarray(shape=new_shape, data=tmp)
@@ -62,43 +71,32 @@ class mdarray(object):
 		return tmp
 
 
-class mdarray_inquery(object):
-	def __init__(self, a):
-		self.dim = a.dim
-		self.shape = a.shape
-		self.size = a.size
-		self.strides = a.strides
-
-	def __str__(self):
-		s = ''
-		for i, j in self.__dict__.items():
-			s += '{0}: {1}\n'.format(i, j)
-		return s
-
-
 def arange(size):
 	data = [i for i in range(size)]
 	return mdarray(size=size, data=data)
 
 
-shape = [4, 1, 3, 2]
+def swap_axis(a, axis1, axis2):
+	swap_item(a.strides)
+
+
+shape = [3, 2, 5]
 size = reduce(lambda x, y: x*y, shape)
 
 a = arange(size)
 
-
 a.reshape(shape)
 
+print(mdarray_inquery(a))
 print(a)
 
 t = [i for i in range(size)]
 t = np.asarray(t).reshape(shape)
 
-
 # print(t)
 
-ix = [[0, 1, 2], nan, nan, nan]
-print(a[ix])
+# ix = [[0, 1, 2], nan, 0, nan]
+# print(a[ix])
 
 # print('\n')
 

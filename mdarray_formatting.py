@@ -1,5 +1,6 @@
 from functools import reduce
 from mdarray_helper import pair_wise_accumulate
+from mdarray_indexing import nan
 
 
 def array_print(a, sep='', formatter=None):
@@ -24,7 +25,10 @@ def array_print(a, sep='', formatter=None):
 				ix1[dim - 1] = i
 				ix3 = pair_wise_accumulate(ix1, strides)
 
-				a_val = data[ix3]
+				try:
+					a_val = data[ix3]
+				except IndexError:
+					a_val = nan
 
 				val = formatter(a_val)
 				s += (val + sep) if i < axis - 1 else val
