@@ -4,8 +4,8 @@ import math
 
 from mdarray_helper import pair_wise_accumulate, pair_wise, swap_item, get_strides
 from mdarray_indexing import (
-	iter_axis, make_iter_list, gslice, _slice_array, make_array_indicies, mdarray_inquery,
-	make_nested, flatten,
+	iter_axis, make_iter_list, gslice, mdarray_inquery,
+	make_nested, flatten, remove_extraneous_dims
 	)
 from mdarray_formatting import array_print, pad_array_fmt
 from mdarray_types import inf, nan
@@ -20,14 +20,14 @@ class mdarray(object):
 			self.size = size
 		else:
 			self.shape = shape
-			self.get_size()
+			self._get_size()
 
 		self.mdim = len(self.shape)
 		self.strides = get_strides(self.shape)
 
 		self.data = data if data else [0]*self.size
-
 		self.dtype = type(self.data[0])
+		self.a_inqry = self._get_mdarray_inquery()
 
 	def reshape(self, new_shape):
 		new_size = reduce(lambda x, y: x*y, new_shape)
@@ -72,6 +72,9 @@ class mdarray(object):
 	def _get_strides(self):
 		self.strides = get_strides(self.shape)
 
+	def _get_mdarray_inquery(self):
+		return mdarray_inquery(self)
+
 	def __str__(self):
 		return array_print(self, ', ', lambda x: ' {0} '.format(x))
 
@@ -80,8 +83,13 @@ class mdarray(object):
 		print(tmp)
 
 	def __getitem__(self, item):
-		gslice_list = make_array_indicies(a, item)
-		print(gslice_list)
+		gslc = gslice(item, self.a_inqry)
+
+
+
+		if gslc.shape != [1]:
+			pass
+
 
 
 		# tmp = _slice_array(self, _gslice_list)
@@ -154,8 +162,24 @@ a.reshape(shape)
 print(a)
 
 
-lst = make_iter_list([nan, 0, [0, 1]])
-print(lst)
+a_inqry = mdarray_inquery(a)
+
+
+
+
+ix = [nan, nan, [0, 1]], gslice([0, 2, nan], a_inqry), gslice([nan, 1, nan], a_inqry)
+
+
+
+gslc = gslice(ix, a_inqry)
+print(gslc.shape)
+
+
+vv = iter_axis(a, gslc)
+print(vv)
+# print(gslc.slice_array)
+# print(gslc.slice_array)
+
 # ix1 = gslice([nan, 0, [0, 1, 2]], a).get_slice()
 #
 # print(ix1)
