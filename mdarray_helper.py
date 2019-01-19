@@ -1,10 +1,24 @@
 from functools import reduce
 
 
+def get_strides(shape):
+	N = len(shape)
+	init = 1
+	strides = [0]*N
+	strides[N - 1] = init
+
+	for i in range(N - 1):
+		init *= shape[N - (i + 1)]
+		strides[N - (i + 2)] = init
+
+	return strides
+
+
 def swap_item(a, ix1, ix2):
 	t = a[ix1]
 	a[ix1] = a[ix2]
 	a[ix2] = t
+	return a
 
 
 def pair_wise(a1, a2, func):

@@ -1,15 +1,16 @@
 from functools import reduce
 from mdarray_helper import pair_wise_accumulate
-from mdarray_indexing import nan
+from mdarray_types import inf, nan
+import math
 
 
 def array_print(a, sep='', formatter=None):
 	data = a.data
-	dim = a.dim
+	mdim = a.mdim
 	shape = a.shape
 	strides = a.strides
 
-	ix1 = [0]*dim
+	ix1 = [0]*mdim
 	ix2 = 0
 
 	if not formatter:
@@ -17,12 +18,12 @@ def array_print(a, sep='', formatter=None):
 
 	def recurse(ix1, ix2):
 		axis = shape[ix2]
-		remaining_axes = dim - ix2
+		remaining_axes = mdim - ix2
 
 		s = ''
 		if remaining_axes == 1:
 			for i in range(axis):
-				ix1[dim - 1] = i
+				ix1[mdim - 1] = i
 				ix3 = pair_wise_accumulate(ix1, strides)
 
 				try:
@@ -47,3 +48,11 @@ def array_print(a, sep='', formatter=None):
 		return s
 
 	return recurse(ix1, ix2)
+
+
+def pad_array_fmt(a):
+	max_len = len(str(max(a.data, key=lambda x: len(str(x)))))
+
+	fmmter = lambda x: '{0}{1}{2}'.format(' '*math.ceil((max_len - len(str(x)))/2), x,
+	                                      ' '*math.floor((max_len - len(str(x)))/2))
+	return fmmter
