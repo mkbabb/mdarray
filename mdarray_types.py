@@ -1,3 +1,44 @@
+class mdarray_inquery(object):
+	def __init__(self, *args, **kwargs):
+		a = None
+		self.mdim = 0
+		self.shape = [0]
+		self.size = 0
+		self.strides = [0]
+		self.dtype = None
+
+		if len(args) == 1:
+			a = args[0]
+		else:
+			try:
+				a = kwargs.pop("array")
+			except KeyError:
+				for i, j in kwargs.items():
+					setattr(self, i, j)
+		if a:
+			self.mdim = a.mdim
+			self.shape = a.shape
+			self.size = a.size
+			self.strides = a.strides
+			self.dtype = a.dtype
+
+	def __str__(self):
+		s = ''
+
+		max_len = 0
+		for i in self.__dict__.keys():
+			current_len = len(str(i)) + 1
+
+			if current_len > max_len:
+				max_len = current_len
+
+		for i, j in self.__dict__.items():
+			current_len = len(str(i))
+			space = ' '*(max_len - current_len)
+			s += '{0}:{1}{2}\n'.format(i, space, j)
+		return s
+
+
 class md_nan(object):
 	def __init__(self):
 		self.value = 'not a number!'
@@ -63,8 +104,8 @@ class md_infn(object):
 		return '-inf'
 
 
-infp = md_infp()
-infn = md_infn()
+_infp = md_infp()
+_infn = md_infn()
 
 
 class md_inf(md_infp):
@@ -88,9 +129,9 @@ class md_inf(md_infp):
 
 	def __mul__(self, other):
 		if other < 0:
-			return infn
+			return _infn
 		else:
-			return infp
+			return _infp
 
 	def __repr__(self):
 		return 'inf'

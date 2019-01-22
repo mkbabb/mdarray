@@ -1,32 +1,6 @@
 from functools import reduce
 from mdarray_helper import pair_wise_accumulate, get_strides
-from mdarray_types import inf, nan
-
-
-class mdarray_inquery(object):
-	def __init__(self, a):
-		self.mdim = a.mdim
-		self.shape = a.shape
-		self.size = a.size
-		self.strides = a.strides
-		self.dtype = a.dtype
-
-	def __str__(self):
-		s = ''
-
-		max_len = 0
-		for i in self.__dict__.keys():
-			current_len = len(str(i)) + 1
-
-			if current_len > max_len:
-				max_len = current_len
-
-		print(max_len)
-		for i, j in self.__dict__.items():
-			current_len = len(str(i))
-			space = ' '*(max_len - current_len)
-			s += '{0}:{1}{2}\n'.format(i, space, j)
-		return s
+from mdarray_types import inf, nan, mdarray_inquery
 
 
 class _gslice(object):
@@ -84,46 +58,38 @@ class _gslice(object):
 
 class gslice(object):
 	def __init__(self, slice_array, a_inqry):
-		self.shape = [1]
 		if isinstance(slice_array, gslice):
 			self.slice_array = slice_array.slice_array
+			self.shape = slice_array.shape
 		else:
-			slc_flat, slc_mdim, slc_shape = flatten(slice_array)
-			M = len(slc_shape)
+			tmp0 = []
+			tmp1 = []
+			new_shape = [0]*a_inqry.mdim
 
-			if slc_mdim == 1:
-				if M <= a_inqry.mdim:
-					self.slice_array = [_gslice(slice_array, a_inqry).get_slice()]
+			for n, i in enumerate(slice_array):
+				if i == inf:
+					slice_array[n] = [j for j in range(a_inqry.shape[n])]
+
+			for n, i in enumerate(slice_array):
+				if isinstance(i, gslice):
+					tmp0 += [i]
 				else:
-					raise TypeError
-			else:
-				tmp0 = []
-				tmp1 = []
-				new_shape = [0]*a_inqry.mdim
+					tmp1 += [i]
+					if len(slice_array) == a_inqry.mdim:
+						pass
 
-				for n, i in enumerate(slice_array):
-					if isinstance(i, gslice):
-						tmp0 += [i]
-					else:
-						if isinstance(i, list):
-							new_shape[n] = len(i)
-						elif i == nan:
-							new_shape[n] = a_inqry.shape[n]
-						tmp1 += [i]
+			new_shape = [i for i in new_shape if i != 0]
 
-				new_shape = [i for i in new_shape if i != 0]
+			self.shape = new_shape if len(new_shape) <= a_inqry.mdim else [1]
 
-				if len(new_shape) == a_inqry.mdim:
-					self.shape = new_shape
+			tmp1 = remove_extraneous_dims(tmp1)
+			self.slice_array = make_iter_list(tmp1)
 
-				tmp1 = remove_extraneous_dims(tmp1)
-				self.slice_array = make_iter_list(tmp1)
+			for n, i in enumerate(self.slice_array):
+				self.slice_array[n] = _gslice(i, a_inqry).get_slice()
 
-				for n, i in enumerate(self.slice_array):
-					self.slice_array[n] = _gslice(i, a_inqry).get_slice()
-
-				for i in tmp0:
-					self.slice_array += [i.slice_array[0]]
+			for i in tmp0:
+				self.slice_array += [i.slice_array[0]]
 
 	def __repr__(self):
 		if len(self.slice_array) == 1:
@@ -131,9 +97,9 @@ class gslice(object):
 		return str(self.slice_array)
 
 
-def iter_axis(a, gslice_array):
+def iter_axis(a, gslice_array, size, repeat=0, raxis=0):
 	data = a.data
-	a_out = [0]*1000
+	a_out = [0]*size
 
 	def recurse(g, ix1, ix2, j):
 		axis = g.shape[ix2]
@@ -150,8 +116,10 @@ def iter_axis(a, gslice_array):
 
 		else:
 			for i in range(axis):
+
 				ix1[ix2] = i
 				j = recurse(g, ix1, ix2 + 1, j)
+				print(a_out)
 		return j
 
 	j = 0
@@ -210,35 +178,37 @@ def make_iter_list(slice_array):
 	return recurse(slice_array, array_out)
 
 
-def flatten(a):
+def flatten(a, order=1):
+	global shape, dim_counter
 	shape = [len(a)]
+	dim_counter = 0
 
-	def recurse(a, dim_counter, shape):
-		N = len(a)
+	def recurse(a):
+		global shape, dim_counter
+		ndim = len(a)
 
 		tmp = []
-		dim_counter = 1
+		dim_counter = 0
 
-		for i in range(N):
+		for i in range(ndim):
 			a_i = a[i]
 
 			if isinstance(a_i, list):
-				tmp0, dim_counter, shape = recurse(a_i, dim_counter, shape)
+				tmp0 = recurse(a_i)
 				M = len(a_i)
 
-				if len(shape) == dim_counter:
-					shape += [M]
-				else:
-					shape[dim_counter] = M
+				if len(shape) <= dim_counter + 1:
+					shape.insert(1, M)
 
 				dim_counter += 1
-
-				tmp += tmp0
+				tmp += [tmp0] if dim_counter <= order else tmp0
 			else:
 				tmp += [a_i]
-		return tmp, dim_counter, shape
 
-	return recurse(a, 1, shape)
+		return tmp
+
+	flt = recurse(a)
+	return flt, dim_counter, shape
 
 
 def make_nested(a):

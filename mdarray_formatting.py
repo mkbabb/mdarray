@@ -41,10 +41,10 @@ def array_print(a, sep='', formatter=None):
 				val = recurse(ix1, ix2 + 1)
 
 				s += ' '*(ix2 + 1) + val if i > 0 else val
+				s += sep.strip() if i < axis - 1 else ''
 				s += new_line if i != axis - 1 else ''
 
 		s = '[{0}]'.format(s)
-
 		return s
 
 	return recurse(ix1, ix2)

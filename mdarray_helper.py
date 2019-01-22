@@ -1,6 +1,22 @@
 from functools import reduce
 
 
+def update_dict(d1, d2, recursive=True):
+	if isinstance(d1, dict) and isinstance(d2, dict):
+		for i, j in d1.items():
+			if isinstance(j, dict):
+				if recursive:
+					d2 = update_dict(j, d2)
+				else:
+					d2.update({i: j})
+			else:
+				try:
+					d2.update({i: j})
+				except ZeroDivisionError:
+					pass
+	return d2
+
+
 def get_strides(shape):
 	N = len(shape)
 	init = 1

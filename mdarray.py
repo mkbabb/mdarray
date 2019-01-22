@@ -5,29 +5,34 @@ import math
 from mdarray_helper import pair_wise_accumulate, pair_wise, swap_item, get_strides
 from mdarray_indexing import (
 	iter_axis, make_iter_list, gslice, mdarray_inquery,
-	make_nested, flatten, remove_extraneous_dims
+	make_nested, flatten, remove_extraneous_dims,
 	)
 from mdarray_formatting import array_print, pad_array_fmt
 from mdarray_types import inf, nan
+import random
 
 
 class mdarray(object):
-	def __init__(self, shape=None, size=None, data=None):
-		if not shape:
-			if not size:
-				raise ZeroDivisionError
-			self.shape = [size]
-			self.size = size
-		else:
-			self.shape = shape
+	def __init__(self, shape=None, **kwargs):
+
+		self.shape = shape if shape else [1]
+		self.size = 1
+		self.mdim = 1
+		self.strides = [1]
+		self.data = [0]
+		self.dtype = int
+
+		self.__dict__.update(kwargs)
+
+		if "size" not in kwargs:
 			self._get_size()
+		if "mdim" not in kwargs:
+			self._get_mdim()
+		if "strides" not in kwargs:
+			self._get_strides()
 
-		self.mdim = len(self.shape)
-		self.strides = get_strides(self.shape)
-
-		self.data = data if data else [0]*self.size
-		self.dtype = type(self.data[0])
 		self.a_inqry = self._get_mdarray_inquery()
+		self.formatter = None
 
 	def reshape(self, new_shape):
 		new_size = reduce(lambda x, y: x*y, new_shape)
@@ -40,6 +45,7 @@ class mdarray(object):
 		self._get_mdim()
 		self._get_strides()
 		self.size = new_size
+		return self
 
 	def T(self, axis1=0, axis2=0):
 		if axis1 == axis2 == 0:
@@ -50,6 +56,21 @@ class mdarray(object):
 		self.shape = swap_item(self.shape, axis1, axis2)
 
 		return self
+
+	def flatten(self, order=1):
+		new_mdim = self.mdim - order
+		new_shape = [0]*(self.mdim - order)
+
+		for i in range(new_mdim - 1):
+			new_shape[i] = self.shape[i]
+
+		init = 1
+		for i in range(order + 1):
+			init *= self.shape[self.mdim - (i + 1)]
+
+		new_shape[new_mdim - 1] = init
+
+		return self.reshape(new_shape)
 
 	def to_list(self):
 		return make_nested(self.data)
@@ -62,6 +83,10 @@ class mdarray(object):
 				pass
 		except TypeError:
 			raise TypeError
+		return self
+
+	def set_print_formatter(self, formatter):
+		self.formatter = formatter
 
 	def _get_mdim(self):
 		self.mdim = len(self.shape)
@@ -76,26 +101,18 @@ class mdarray(object):
 		return mdarray_inquery(self)
 
 	def __str__(self):
-		return array_print(self, ', ', lambda x: ' {0} '.format(x))
+		return array_print(self, ', ', self.formatter)
 
 	def __setitem__(self, key, value):
 		tmp = self[key]
 		print(tmp)
 
 	def __getitem__(self, item):
-		gslc = gslice(item, self.a_inqry)
-
-
-
-		if gslc.shape != [1]:
-			pass
-
-
-
-		# tmp = _slice_array(self, _gslice_list)
-		# tmp = mdarray(shape=new_shape, data=tmp)
-
-		return 0
+		if not isinstance(item, gslice):
+			item = gslice(item, self.a_inqry)
+		print(item)
+		data = iter_axis(a, item, 1000)
+		return data
 
 	def __iter__(self):
 		self.pos = 0
@@ -114,7 +131,6 @@ class mdarray(object):
 		return self.size
 
 
-
 def arange(size):
 	data = [i for i in range(size)]
 	return mdarray(size=size, data=data)
@@ -129,12 +145,13 @@ def tomdarray(a):
 		return a
 	else:
 		if isinstance(a, list):
-			a, _, shape = flatten(a)
+			a, _, shape = flatten(a, order=-1)
+			print(shape)
 			md = mdarray(shape=shape, data=a)
-			return md
 		elif isinstance(a, dict):
-			tmp = [[i, j] for i, j in a.items()]
-			return tomdarray(tmp)
+			md = [[i, j] for i, j in a.items()]
+
+		return tomdarray(md)
 
 
 # lst = [[[1, 2, 3],
@@ -144,106 +161,57 @@ def tomdarray(a):
 #        [[10, 11, 12],
 #         [13, 14, 15],
 #         [16, 17, 18]]]
-#
-# md = tomdarray(lst)
-# for i in md:
-# 	print(i)
-
-
 # flt = flatten(lst)
 
-shape = [2, 3, 3]
-size = reduce(lambda x, y: x*y, shape)
-
-a = arange(size)
-
-a.reshape(shape)
-
-print(a)
-
-
-a_inqry = mdarray_inquery(a)
-
-
-
-
-ix = [nan, nan, [0, 1]], gslice([0, 2, nan], a_inqry), gslice([nan, 1, nan], a_inqry)
-
-
-
-gslc = gslice(ix, a_inqry)
-print(gslc.shape)
-
-
-vv = iter_axis(a, gslc)
-print(vv)
-# print(gslc.slice_array)
-# print(gslc.slice_array)
-
-# ix1 = gslice([nan, 0, [0, 1, 2]], a).get_slice()
+# shape = [3, 3, 3]
+# size = reduce(lambda x, y: x*y, shape)
 #
-# print(ix1)
-
-# too = make_array_indicies(a, ix1)
-# print(too)
-
-
-
+# a = arange(size)
 #
+# a.reshape(shape)
 #
-# v = _slice_array(a, too)
-# print(v)
-
-
-
-# t = a[ix1]
-# print(t)
-
-
-#
-# t = make_nested(a)
-# print(t)
-#
-# flt, dimc, shp = flatten(t)
-# print(flt, dimc, shp)
-# s = array_print(a, ' , ', pad_array_fmt(a))
-# print(s)
-
-# print(mdarray_inquery(a))
 # print(a)
 #
-# t = [i for i in range(size)]
-# t = np.asarray(t).reshape(shape)
+# a_inqry = mdarray_inquery(a)
 
+# ix = [nan, nan, [0, 1]],
+# ix = [nan, nan, inf], gslice([0, 1, 2], a_inqry)
 
-# print(t)
-
-# ix = [[0, 1, 2], nan, 0, nan]
-# print(a[ix])
-
-# print('\n')
-
-# print(a[:, 0])
+# gslc = gslice(ix, a_inqry)
+# print(gslc)
+# print(gslc.shape)
 #
-# strides = get_strides(shape[::-1])[::-1]
-#
-# slc = [[0, 1], NAN, [0]]
-#
-# iter_groups = make_iter_groups(slc, [])
-# slcs = []
-# for i in iter_groups:
-# 	slcs += [gslice(i, strides, shape)]
-#
-# slicd_array = _slice_array(a.flatten(), slcs, [])
-# print(slicd_array)
+# v = a[gslc]
+# print(v)
 
-# print(slicd_array)
+#
 
-# strides = get_strides(slc.shape[::-1])[::-1]
-# shape = slc.shape
-# dim = slc.dim
+
+# shape = [3, 3, 3]
+# size = reduce(lambda x, y: x*y, shape)
+#
+# a = arange(size)
+#
+# a.reshape(shape)
+
+
+# ta = np.arange(120).reshape(5, 4, 3, 2)
+# print(ta)
+#
+# ix1 = [0, 1, 2]
+# ix2 = [0, 1, 2]
+# ix3 = [0, 0, 0]
+# ix4 = [0, 1, 2]
 #
 #
-# tt = ap(slicd_array, dim, shape, strides, [0]*dim, 0, sep='', formatter=lambda x: ' {0} '.format(x))
-# print('\n')
-# print(tt)
+#
+#
+# me = ta[ix1, ix2, ix3]
+# print(me)
+
+
+# shape = [3, 3, 3, 3]
+# size = reduce(lambda x, y: x*y, shape)
+#
+# md = arange(size).reshape(shape)
+# print(md.flatten(1))
