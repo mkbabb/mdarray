@@ -31,3 +31,20 @@ def iter_array(shape, strides):
 
 		else:
 			ix += strides[N - 1]
+
+
+#
+# def repeat(a, rpeat, axis):
+#     a_inqry = mdarray_inquery(a)
+#     mdim = a.mdim
+#     slc = [0]*mdim
+#     new_shape = list(a_inqry.shape)
+#     new_shape[axis] *= rpeat
+#
+#     for i in range(mdim):
+#         slc[i] = inf if i == axis else nan
+#     slc = [nan, inf]
+#
+#     slc = gslice(slc, a_inqry)
+#     md = tomdarray(iter_axis(a, slc, 12, rpeat)).reshape(new_shape)
+#     return md

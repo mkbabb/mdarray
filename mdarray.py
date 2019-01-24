@@ -1,157 +1,167 @@
-import numpy as np
-from functools import reduce
 import math
-
-from mdarray_helper import pair_wise_accumulate, pair_wise, swap_item, get_strides
-from mdarray_indexing import (
-	iter_axis, make_iter_list, gslice, mdarray_inquery,
-	make_nested, flatten, remove_extraneous_dims,
-	)
-from mdarray_formatting import array_print, pad_array_fmt
-from mdarray_types import inf, nan
 import random
+from functools import reduce
+
+import numpy as np
+
+from mdarray_formatting import (array_print, array_print_experimental,
+                                pad_array_fmt)
+from mdarray_helper import (get_strides, pair_wise, pair_wise_accumulate,
+                            swap_item)
+from mdarray_indexing import (flatten, gslice, iter_axis, make_iter_list,
+                              make_nested, mdarray_inquery,
+                              remove_extraneous_dims)
+from mdarray_types import inf, nan
 
 
 class mdarray(object):
-	def __init__(self, shape=None, **kwargs):
+    def __init__(self, shape=None, **kwargs):
 
-		self.shape = shape if shape else [1]
-		self.size = 1
-		self.mdim = 1
-		self.strides = [1]
-		self.data = [0]
-		self.dtype = int
+        self.shape = shape if shape else [1]
+        self.size = 1
+        self.mdim = 1
+        self.strides = [1]
+        self.data = [0]
+        self.dtype = int
 
-		self.__dict__.update(kwargs)
+        self.__dict__.update(kwargs)
 
-		if "size" not in kwargs:
-			self._get_size()
-		if "mdim" not in kwargs:
-			self._get_mdim()
-		if "strides" not in kwargs:
-			self._get_strides()
+        if "size" not in kwargs:
+            self._get_size()
+        if "mdim" not in kwargs:
+            self._get_mdim()
+        if "strides" not in kwargs:
+            self._get_strides()
 
-		self.a_inqry = self._get_mdarray_inquery()
-		self.formatter = None
+        self.a_inqry = self._get_mdarray_inquery()
+        self.formatter = None
 
-	def reshape(self, new_shape):
-		new_size = reduce(lambda x, y: x*y, new_shape)
+    def reshape(self, new_shape):
+        new_size = reduce(lambda x, y: x*y, new_shape)
 
-		if new_size != self.size:
-			raise ZeroDivisionError
+        if new_size != self.size:
+            raise ZeroDivisionError
 
-		self.shape = new_shape
+        self.shape = new_shape
 
-		self._get_mdim()
-		self._get_strides()
-		self.size = new_size
-		return self
+        self._get_mdim()
+        self._get_strides()
+        self.size = new_size
+        return self
 
-	def T(self, axis1=0, axis2=0):
-		if axis1 == axis2 == 0:
-			axis1 = 1
-			axis2 = 0
+    def T(self, axis1=-1, axis2=-2):
+        self.strides = swap_item(self.strides, axis1, axis2)
+        self.shape = swap_item(self.shape, axis1, axis2)
 
-		self.strides = swap_item(self.strides, axis1, axis2)
-		self.shape = swap_item(self.shape, axis1, axis2)
+        return self
 
-		return self
+    def flatten(self, order=1):
+        new_mdim = self.mdim - order
+        new_shape = [0]*(self.mdim - order)
 
-	def flatten(self, order=1):
-		new_mdim = self.mdim - order
-		new_shape = [0]*(self.mdim - order)
+        for i in range(new_mdim - 1):
+            new_shape[i] = self.shape[i]
 
-		for i in range(new_mdim - 1):
-			new_shape[i] = self.shape[i]
+        init = 1
+        for i in range(order + 1):
+            init *= self.shape[self.mdim - (i + 1)]
 
-		init = 1
-		for i in range(order + 1):
-			init *= self.shape[self.mdim - (i + 1)]
+        new_shape[new_mdim - 1] = init
 
-		new_shape[new_mdim - 1] = init
+        return self.reshape(new_shape)
 
-		return self.reshape(new_shape)
+    def to_list(self):
+        return make_nested(self)
 
-	def to_list(self):
-		return make_nested(self.data)
+    def astype(self, type):
+        try:
+            if type == complex:
+                pass
+            else:
+                pass
+        except TypeError:
+            raise TypeError
+        return self
 
-	def astype(self, type):
-		try:
-			if type == complex:
-				pass
-			else:
-				pass
-		except TypeError:
-			raise TypeError
-		return self
+    def set_print_formatter(self, formatter):
+        self.formatter = formatter
 
-	def set_print_formatter(self, formatter):
-		self.formatter = formatter
+    def _get_mdim(self):
+        self.mdim = len(self.shape)
 
-	def _get_mdim(self):
-		self.mdim = len(self.shape)
+    def _get_size(self):
+        self.size = reduce(lambda x, y: x*y, self.shape)
 
-	def _get_size(self):
-		self.size = reduce(lambda x, y: x*y, self.shape)
+    def _get_strides(self):
+        self.strides = get_strides(self.shape)
 
-	def _get_strides(self):
-		self.strides = get_strides(self.shape)
+    def _get_mdarray_inquery(self):
+        return mdarray_inquery(self)
 
-	def _get_mdarray_inquery(self):
-		return mdarray_inquery(self)
+    def __mul__(self, other):
+        if isinstance(other, mdarray):
+            for i in range(self.size):
+                self.data[i] *= other.data[i]
+        else:
+            for i in range(self.size):
+                self.data[i] *= other
+        return self
 
-	def __str__(self):
-		return array_print(self, ', ', self.formatter)
+    def __str__(self):
+        return array_print(self, ', ', self.formatter)
 
-	def __setitem__(self, key, value):
-		tmp = self[key]
-		print(tmp)
+    def __setitem__(self, key, value):
+        tmp = self[key]
+        print(tmp)
 
-	def __getitem__(self, item):
-		if not isinstance(item, gslice):
-			item = gslice(item, self.a_inqry)
-		print(item)
-		data = iter_axis(a, item, 1000)
-		return data
+    def __getitem__(self, item):
+        if not isinstance(item, gslice):
+            item = gslice(item, self.a_inqry)
+        print(item)
+        data = iter_axis(a, item, 1000)
+        return data
 
-	def __iter__(self):
-		self.pos = 0
-		return self
+    def __iter__(self):
+        self.pos = 0
+        return self
 
-	def __next__(self):
-		ppos = self.pos
-		self.pos += 1
+    def __next__(self):
+        ppos = self.pos
+        self.pos += 1
 
-		if self.pos == self.size:
-			raise StopIteration
-		else:
-			return self.data[ppos]
+        if self.pos == self.size:
+            raise StopIteration
+        else:
+            return self.data[ppos]
 
-	def __len__(self):
-		return self.size
+    def __len__(self):
+        return self.size
 
 
 def arange(size):
-	data = [i for i in range(size)]
-	return mdarray(size=size, data=data)
+    data = [i for i in range(size)]
+    return mdarray(size=size, data=data)
 
 
 def swap_axis(a, axis1, axis2):
-	swap_item(a.strides, axis1, axis2)
+    swap_item(a.strides, axis1, axis2)
 
 
 def tomdarray(a):
-	if isinstance(a, mdarray):
-		return a
-	else:
-		if isinstance(a, list):
-			a, _, shape = flatten(a, order=-1)
-			print(shape)
-			md = mdarray(shape=shape, data=a)
-		elif isinstance(a, dict):
-			md = [[i, j] for i, j in a.items()]
+    if isinstance(a, mdarray):
+        return a
+    else:
+        a = list(a)
+        
+        if isinstance(a, list):
+            a, _, shape = flatten(a, order=-1)
+            md = mdarray(shape=shape, data=a)
+        elif isinstance(a, dict):
+            md = [[i, j] for i, j in a.items()]
 
-		return tomdarray(md)
+        return tomdarray(md)
+
+
 
 
 # lst = [[[1, 2, 3],

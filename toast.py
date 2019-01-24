@@ -1,9 +1,12 @@
-from mdarray_helper import get_strides, update_dict
-from mdarray_indexing import gslice, iter_axis
-from mdarray import mdarray, arange, tomdarray
-from mdarray_types import nan, inf, mdarray_inquery
 from functools import reduce
+
 import numpy as np
+
+from mdarray import arange, mdarray, tomdarray
+from mdarray_formatting import pad_array_fmt
+from mdarray_helper import get_strides, pair_wise_accumulate, update_dict, swap_item
+from mdarray_indexing import gslice, iter_axis, make_nested
+from mdarray_types import inf, mdarray_inquery, nan
 
 
 def flatten(a, order=1):
@@ -38,11 +41,11 @@ def flatten(a, order=1):
 	return recurse(a, 1, shape)
 
 
-def expand_slice_array(slice_array, a_inqry):
-	mdim = a_inqry.mdim
+def expand_slice_array(slice_array, arr_inqry):
+	mdim = arr_inqry.mdim
 	ndim = len(slice_array)
 
-	pad_length = a_inqry.strides[ndim - 1] if mdim != ndim else 1
+	pad_length = arr_inqry.strides[ndim - 1] if mdim != ndim else 1
 	broadcast_length = len(slice_array[0])
 
 	out_array = [[0]*mdim]*(broadcast_length*pad_length)
@@ -64,22 +67,22 @@ def expand_slice_array(slice_array, a_inqry):
 	return out_array
 
 
-def expand_dims(slice_array, a_inqry):
+def expand_dims(slice_array, arr_inqry):
 	ndim = len(slice_array)
-	mdim = a_inqry.mdim
+	mdim = arr_inqry.mdim
 
 	broadcast_length = 0
 	lens = 0
 	for i in range(ndim):
-		a_i = slice_array[i]
+		arr_i = slice_array[i]
 		try:
-			ndim_i = len(a_i)
+			ndim_i = len(arr_i)
 		except TypeError:
-			if a_i == inf or a_i == Ellipsis:
-				slice_array[i] = [j for j in range(a_inqry.shape[i])]
-				ndim_i = a_inqry.shape[i]
+			if arr_i == inf or arr_i == Ellipsis:
+				slice_array[i] = [j for j in range(arr_inqry.shape[i])]
+				ndim_i = arr_inqry.shape[i]
 			else:
-				slice_array[i] = [a_i]
+				slice_array[i] = [arr_i]
 				ndim_i = 1
 
 		lens += ndim_i
@@ -133,20 +136,157 @@ def meshgrid(*seq):
 	return md
 
 
-def repeat(a, rpeat, axis):
-	a_inqry = mdarray_inquery(a)
-	mdim = a.mdim
-	slc = [0]*mdim
-	new_shape = list(a_inqry.shape)
-	new_shape[axis] *= rpeat
+def repeat(arr, rept, raxis):
+	data = arr.data
+	mdim = arr.mdim
+	shape = arr.shape
+	strides = arr.strides
 
+	new_shape = list(shape)
+	new_shape[raxis] *= rept
+
+	ix1 = [0]*mdim
+	ix2 = 0
+	arr_out = [0]*arr.size*rept
+
+	raxis_s = 1 if mdim - 1 != raxis else rept
+
+	def recurse(ix1, ix2, j):
+		axis = shape[ix2]
+		remaining_axes = mdim - ix2
+
+		if remaining_axes == 1:
+			for i in range(axis):
+				for k in range(raxis_s):
+					ix1[mdim - 1] = i
+					ix3 = pair_wise_accumulate(ix1, strides)
+
+					try:
+						a_val = data[ix3]
+					except:
+						a_val = nan
+
+					arr_out[j] = a_val
+					j += 1
+		else:
+			for i in range(axis):
+				ix1[ix2] = i
+				if ix2 == raxis:
+					for k in range(rept):
+						j = recurse(ix1, ix2 + 1, j)
+				else:
+					j = recurse(ix1, ix2 + 1, j)
+
+		return j
+
+	recurse(ix1, ix2, 0)
+	return tomdarray(arr_out).reshape(new_shape)
+
+
+def meshgrid_md(*seq):
+	seq = tuple(seq)
+	lens = list(map(len, seq))
+	mdim = len(seq)
+
+	size = 1
 	for i in range(mdim):
-		slc[i] = inf if i == axis else nan
-	slc = [nan, inf]
+		size *= lens[i]
 
-	slc = gslice(slc, a_inqry)
-	md = tomdarray(iter_axis(a, slc, 12, rpeat)).reshape(new_shape)
-	return md
+	arr_out = []
+	for n, i in enumerate(seq):
+		slc = [1]*mdim
+		slc[n] = lens[n]
+		arr_i = tomdarray(i).reshape(slc)
+		for m, j in enumerate(lens):
+			if m != n:
+				arr_i = repeat(arr_i, j, raxis=m)
+		arr_out.append(arr_i)
+
+	return tuple(arr_out)
+
+
+def concatenate(arr1, arr2, caxis):
+	global ix1_1, ix1_2, ix2_1, ix2_2
+	data1 = arr1.data
+	mdim1 = arr1.mdim
+	shape1 = arr1.shape
+	strides1 = arr1.strides
+
+	data2 = arr2.data
+	mdim2 = arr2.mdim
+	shape2 = arr2.shape
+	strides2 = arr2.strides
+
+	new_shape = list(shape1)
+	new_shape[caxis] += shape2[caxis]
+
+	if mdim1 != mdim2:
+		raise TypeError("yep!")
+
+	for i in range(mdim1):
+		if i != caxis:
+			if shape1[i] != shape2[i]:
+				raise TypeError("incompatible dims!")
+
+	ix1_1 = [0]*mdim1
+	ix2_1 = 0
+
+	ix1_2 = [0]*mdim2
+	ix2_2 = 0
+
+	arr_out = [0]*(arr1.size + arr2.size)
+
+	def recurse(ix1, ix2, j, warr):
+		global ix1_1, ix1_2, ix2_1, ix2_2
+		if warr == 0:
+			ix2_1 = ix2
+			ix1_1 = ix1
+		else:
+			ix2_2 = ix2
+			ix1_2 = ix1
+
+		axis_arr = shape1[ix2_1] if warr == 0 else shape2[ix2_2]
+		mdim_arr = mdim1 if warr == 0 else mdim2
+
+		ix1 = ix1_1 if warr == 0 else ix1_2
+		ix2 = ix2_1 if warr == 0 else ix2_2
+
+		strides_arr = strides1 if warr == 0 else strides2
+		data_arr = data1 if warr == 0 else data2
+
+		remaining_axes = mdim_arr - ix2
+
+		if remaining_axes == 1:
+			for i in range(axis_arr):
+				ix1[mdim_arr - 1] = i
+
+				ix3 = pair_wise_accumulate(ix1, strides_arr)
+
+				try:
+					a_val = data_arr[ix3]
+				except:
+					a_val = nan
+
+				arr_out[j] = a_val
+				j += 1
+
+		else:
+			for i in range(axis_arr):
+				ix1[ix2] = i
+				j = recurse(ix1, ix2 + 1, j, warr)
+
+				if ix2 == caxis - 1:
+					j = recurse(ix1, ix2 + 1, j, 1)
+
+		return j
+
+	if caxis == 0:
+		j = recurse(ix1_1, 0, 0, 0)
+		recurse(ix1_2, 0, j, 1)
+	else:
+		j = recurse(ix1_1, 0, 0, 0)
+
+	return tomdarray(arr_out).reshape(new_shape)
 
 
 # grid = np.meshgrid(range(0, 5), range(0, 5), range(0, 2))
@@ -157,38 +297,52 @@ def repeat(a, rpeat, axis):
 # print(grid2.shape)
 
 
-a = [[[1, 2, 3],
-	  [4, 5, 6]],
+shape = [10, 10, 2, 2]
+size = reduce(lambda x, y: x*y, shape)
 
-     [[1, 2, 3],
-	  [4, 5, 6]]]
-
-
-
-
-md = tomdarray(a)
-print(md)
-b = np.asarray(a)
-print(b.shape)
-b = b.repeat(2, axis=2)
-print(b)
-print(b.shape)
-print(b.flatten())
-
-
-
+md = arange(size).reshape(shape)
 a_inqry = mdarray_inquery(md)
-print(a_inqry)
 
-gslc = gslice([nan, nan, inf], a_inqry)
-
-
-v = iter_axis(md, gslc, 24, 2, 3)
-
-md = tomdarray(v).reshape([2, 2, 6])
-print(md)
-
+# b = np.asarray(md.to_list())
+# print(b.shape)
+# b = b.repeat(1, axis=3)
+# print(b.strides)
+# print(md.strides)
+#
+# print(b.shape)
 
 
+# print(b)
 
 
+# v = meshgrid_md(range(0, 9), range(0, 9), range(0, 2))
+# v = itertest(md, 1, 0)
+
+
+# v.formatter = pad_array_fmt(v)
+# v.T(1, 2)
+
+# print(v[0])
+
+# print(v[0])
+# print(v[1])
+# print(v[2])
+#
+# v2 = np.meshgrid(range(0, 9), range(0, 9), range(0, 2))
+# print(v2[0].shape)
+
+shape1 = [5, 5, 2]
+size1 = reduce(lambda x, y: x*y, shape1)
+
+arr1 = arange(size1).reshape(shape1)
+
+print(arr1)
+
+shape2 = [5, 5, 2]
+size2 = reduce(lambda x, y: x*y, shape2)
+
+arr2 = arange(size2).reshape(shape2)*999
+print(arr2)
+
+arr_out = concatenate(arr1, arr2, 2)
+print(arr_out)

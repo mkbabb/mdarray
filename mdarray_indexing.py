@@ -116,10 +116,8 @@ def iter_axis(a, gslice_array, size, repeat=0, raxis=0):
 
 		else:
 			for i in range(axis):
-
 				ix1[ix2] = i
 				j = recurse(g, ix1, ix2 + 1, j)
-				print(a_out)
 		return j
 
 	j = 0
