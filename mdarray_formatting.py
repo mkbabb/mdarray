@@ -4,11 +4,11 @@ from mdarray_types import inf, nan
 import math
 
 
-def array_print(a, sep='', formatter=None):
-	data = a.data
-	mdim = a.mdim
-	shape = a.shape
-	strides = a.strides
+def array_print(arr, sep='', formatter=None):
+	data = arr.data
+	mdim = arr.mdim
+	shape = arr.shape
+	strides = arr.strides
 
 	ix1 = [0]*mdim
 	ix2 = 0
@@ -50,11 +50,11 @@ def array_print(a, sep='', formatter=None):
 	return recurse(ix1, ix2)
 
 
-def array_print_experimental(a, sep='', formatter=None):
-	data = a.data
-	mdim = a.mdim
-	strides = a.strides
-	shape = a.shape
+def array_print_experimental(arr, sep='', formatter=None):
+	data = arr.data
+	mdim = arr.mdim
+	strides = arr.strides
+	shape = arr.shape
 
 	# if mdim > 2:
 	# 	strides = swap_item(strides, -2, -3)
@@ -110,8 +110,8 @@ def array_print_experimental(a, sep='', formatter=None):
 	return recurse(ix1, ix2)
 
 
-def pad_array_fmt(a):
-	max_len = len(str(max(a.data, key=lambda x: len(str(x)))))
+def pad_array_fmt(arr):
+	max_len = len(str(max(arr.data, key=lambda x: len(str(x)))))
 
 	fmmter = lambda x: '{0}{1}{2}'.format(' '*int(math.ceil((max_len - len(str(x)))/2)), x,
 	                                      ' '*int(math.floor((max_len - len(str(x)))/2)))

@@ -4,7 +4,7 @@ class IncompatibleDimensions(Exception):
 
 class mdarray_inquery(object):
 	def __init__(self, *args, **kwargs):
-		a = None
+		arr = None
 		self.mdim = 0
 		self.shape = [0]
 		self.size = 0
@@ -12,19 +12,19 @@ class mdarray_inquery(object):
 		self.dtype = None
 
 		if len(args) == 1:
-			a = args[0]
+			arr = args[0]
 		else:
 			try:
-				a = kwargs.pop("array")
+				arr = kwargs.pop("array")
 			except KeyError:
 				for i, j in kwargs.items():
 					setattr(self, i, j)
-		if a:
-			self.mdim = a.mdim
-			self.shape = a.shape
-			self.size = a.size
-			self.strides = a.strides
-			self.dtype = a.dtype
+		if arr:
+			self.mdim = arr.mdim
+			self.shape = arr.shape
+			self.size = arr.size
+			self.strides = arr.strides
+			self.dtype = arr.dtype
 
 	def __str__(self):
 		s = ''
@@ -45,7 +45,7 @@ class mdarray_inquery(object):
 
 class md_nan(object):
 	def __init__(self):
-		self.value = 'not a number!'
+		self.value = 'not arr number!'
 
 	def __eq__(self, other):
 		if isinstance(other, md_nan):

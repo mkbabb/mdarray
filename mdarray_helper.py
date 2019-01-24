@@ -30,11 +30,11 @@ def get_strides(shape):
 	return strides
 
 
-def swap_item(a, ix1, ix2):
-	t = a[ix1]
-	a[ix1] = a[ix2]
-	a[ix2] = t
-	return a
+def swap_item(arr, ix1, ix2):
+	t = arr[ix1]
+	arr[ix1] = arr[ix2]
+	arr[ix2] = t
+	return arr
 
 
 def pair_wise(a1, a2, func):

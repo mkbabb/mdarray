@@ -176,12 +176,12 @@ def expand_dims(slice_array, arr_inqry):
 
 
 '''
-Iteration over an array by a given gslice. Used for any type of indexing into an m-d array.
+Iteration over an array by arr given gslice. Used for any type of indexing into an m-d array.
 '''
 
 
-def iter_gslice(a, gslice_array, size):
-	data = a.data
+def iter_gslice(arr, gslice_array, size):
+	data = arr.data
 	a_out = [0]*size
 
 	def recurse(g, ix1, ix2, j):
@@ -216,27 +216,27 @@ def iter_gslice(a, gslice_array, size):
 '''
 Python list manipulations:
 
-	remove_extraneous dims: removes a given python list's dimensions that are empty, 
+	remove_extraneous dims: removes arr given python list's dimensions that are empty, 
 							recursively iterating inward until an axis is found to be non-empty.
 	
-	flatten: flattens a multi-dimensional python list by a given order.
+	flatten: flattens arr multi-dimensional python list by arr given order.
 	
-	make_nested: creates a multi-dimensional python list from a 1-d contiguous m-d array.
+	make_nested: creates arr multi-dimensional python list from arr 1-d contiguous m-d array.
 '''
 
 
-def remove_extraneous_dims(a):
-	def recurse(a):
-		if len(a) == 1:
+def remove_extraneous_dims(arr):
+	def recurse(arr):
+		if len(arr) == 1:
 			try:
-				a = recurse(a[0])
-				return a
+				arr = recurse(arr[0])
+				return arr
 			except IndexError:
-				return a
+				return arr
 		else:
-			return a
+			return arr
 
-	return recurse(a)
+	return recurse(arr)
 
 
 def make_iter_list(slice_array):
@@ -271,20 +271,20 @@ def make_iter_list(slice_array):
 	return recurse(slice_array, array_out)
 
 
-def flatten(a, order=1):
+def flatten(arr, order=1):
 	global shape, dim_counter
-	shape = [len(a)]
+	shape = [len(arr)]
 	dim_counter = 0
 
-	def recurse(a):
+	def recurse(arr):
 		global shape, dim_counter
-		ndim = len(a)
+		ndim = len(arr)
 
 		tmp = []
 		dim_counter = 0
 
 		for i in range(ndim):
-			a_i = a[i]
+			a_i = arr[i]
 
 			if isinstance(a_i, list):
 				tmp0 = recurse(a_i)
@@ -300,15 +300,15 @@ def flatten(a, order=1):
 
 		return tmp
 
-	flt = recurse(a)
+	flt = recurse(arr)
 	return flt, dim_counter, shape
 
 
-def make_nested(a):
-	data = a.data
-	mdim = a.mdim
-	shape = a.shape
-	strides = a.strides
+def make_nested(arr):
+	data = arr.data
+	mdim = arr.mdim
+	shape = arr.shape
+	strides = arr.strides
 
 	ix1 = [0]*mdim
 	ix2 = 0

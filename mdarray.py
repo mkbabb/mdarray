@@ -118,7 +118,7 @@ class mdarray(object):
         if not isinstance(item, gslice):
             item = gslice(item, self.a_inqry)
         print(item)
-        data = iter_gslice(a, item, 1000)
+        data = iter_gslice(arr, item, 1000)
         return data
 
     def __iter__(self):
@@ -143,21 +143,21 @@ def arange(size):
     return mdarray(size=size, data=data)
 
 
-def swap_axis(a, axis1, axis2):
-    swap_item(a.strides, axis1, axis2)
+def swap_axis(arr, axis1, axis2):
+    swap_item(arr.strides, axis1, axis2)
 
 
-def tomdarray(a):
-    if isinstance(a, mdarray):
-        return a
+def tomdarray(arr):
+    if isinstance(arr, mdarray):
+        return arr
     else:
-        a = list(a)
+        arr = list(arr)
         
-        if isinstance(a, list):
-            a, _, shape = flatten(a, order=-1)
-            md = mdarray(shape=shape, data=a)
-        elif isinstance(a, dict):
-            md = [[i, j] for i, j in a.items()]
+        if isinstance(arr, list):
+            arr, _, shape = flatten(arr, order=-1)
+            md = mdarray(shape=shape, data=arr)
+        elif isinstance(arr, dict):
+            md = [[i, j] for i, j in arr.items()]
 
         return tomdarray(md)
 
@@ -176,13 +176,13 @@ def tomdarray(a):
 # shape = [3, 3, 3]
 # size = reduce(lambda x, y: x*y, shape)
 #
-# a = arange(size)
+# arr = arange(size)
 #
-# a.reshape(shape)
+# arr.reshape(shape)
 #
-# print(a)
+# print(arr)
 #
-# a_inqry = mdarray_inquery(a)
+# a_inqry = mdarray_inquery(arr)
 
 # ix = [nan, nan, [0, 1]],
 # ix = [nan, nan, inf], gslice([0, 1, 2], a_inqry)
@@ -191,7 +191,7 @@ def tomdarray(a):
 # print(gslc)
 # print(gslc.shape)
 #
-# v = a[gslc]
+# v = arr[gslc]
 # print(v)
 
 #
@@ -200,9 +200,9 @@ def tomdarray(a):
 # shape = [3, 3, 3]
 # size = reduce(lambda x, y: x*y, shape)
 #
-# a = arange(size)
+# arr = arange(size)
 #
-# a.reshape(shape)
+# arr.reshape(shape)
 
 
 # ta = np.arange(120).reshape(5, 4, 3, 2)
