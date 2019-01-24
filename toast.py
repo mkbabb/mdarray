@@ -6,7 +6,7 @@ from mdarray import arange, mdarray, tomdarray
 from mdarray_formatting import pad_array_fmt
 from mdarray_helper import get_strides, pair_wise_accumulate, update_dict, swap_item
 from mdarray_indexing import gslice, iter_axis, make_nested
-from mdarray_types import inf, mdarray_inquery, nan
+from mdarray_types import inf, mdarray_inquery, nan, IncompatibleDimensions
 
 
 def flatten(a, order=1):
@@ -213,18 +213,22 @@ def concatenate(*seq, caxis):
 	mdim = arr1.mdim
 
 	new_shape = list(arr1.shape)
-	print(new_shape)
-	new_size = 0
+	new_size = arr1.size
 
 	ixs = [[0]*mdim]*ndim
-	for i in range(ndim):
+	for i in range(ndim - 1):
 		arr_i = arrs[i]
 
-		new_size += arr_i.size
-		if i > 0:
-			new_shape[caxis] += arr_i.shape[caxis]
+		if mdim != arr_i.mdim:
+			raise IncompatibleDimensions("The dimensions of array one does not equal the rest!")
 
-	print(new_size)
+		for j in range(mdim):
+			if j != caxis:
+				if new_shape[j] != arr_i.shape[j]:
+					raise IncompatibleDimensions("The shape of array one (disregarding caxis) does not equal the rest!")
+
+		new_size += arr_i.size
+		new_shape[caxis] += arr_i.shape[caxis]
 
 	arr_out = [0]*(new_size)
 
@@ -259,13 +263,16 @@ def concatenate(*seq, caxis):
 				j = recurse(warr, ix2 + 1, j)
 
 				if ix2 == caxis - 1:
-					for k in range(ndim-1):
-						j = recurse(k+1, ix2 + 1, j)
-
+					for k in range(ndim - 1):
+						j = recurse(k + 1, ix2 + 1, j)
 		return j
 
-
-	j = recurse(0, 0, 0)
+	if caxis == 0:
+		j = 0
+		for i in range(ndim):
+			j = recurse(i, 0, j)
+	else:
+		recurse(0, 0, 0)
 
 	return tomdarray(arr_out).reshape(new_shape)
 
@@ -325,5 +332,5 @@ size2 = reduce(lambda x, y: x*y, shape2)
 arr2 = arange(size2).reshape(shape2)*999
 print(arr2)
 
-arr_out = concatenate(arr1, arr2, arr2,arr2, arr1, caxis=2)
+arr_out = concatenate(arr1, arr2, arr2, arr2, arr1, caxis=2)
 print(arr_out)

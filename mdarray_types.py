@@ -1,3 +1,7 @@
+class IncompatibleDimensions(Exception):
+	pass
+
+
 class mdarray_inquery(object):
 	def __init__(self, *args, **kwargs):
 		a = None
