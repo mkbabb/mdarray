@@ -8,7 +8,7 @@ from mdarray_formatting import (array_print, array_print_experimental,
                                 pad_array_fmt)
 from mdarray_helper import (get_strides, pair_wise, pair_wise_accumulate,
                             swap_item)
-from mdarray_indexing import (flatten, gslice, iter_axis, make_iter_list,
+from mdarray_indexing import (flatten, gslice, iter_gslice, make_iter_list,
                               make_nested, mdarray_inquery,
                               remove_extraneous_dims)
 from mdarray_types import inf, nan
@@ -118,7 +118,7 @@ class mdarray(object):
         if not isinstance(item, gslice):
             item = gslice(item, self.a_inqry)
         print(item)
-        data = iter_axis(a, item, 1000)
+        data = iter_gslice(a, item, 1000)
         return data
 
     def __iter__(self):

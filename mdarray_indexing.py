@@ -2,6 +2,10 @@ from functools import reduce
 from mdarray_helper import pair_wise_accumulate, get_strides
 from mdarray_types import inf, nan, mdarray_inquery
 
+'''
+Generalised slicing of arrays
+'''
+
 
 class _gslice(object):
 	def __init__(self, slice_array, a_inqry):
@@ -97,7 +101,86 @@ class gslice(object):
 		return str(self.slice_array)
 
 
-def iter_axis(a, gslice_array, size, repeat=0, raxis=0):
+def expand_slice_array(slice_array, arr_inqry):
+	mdim = arr_inqry.mdim
+	ndim = len(slice_array)
+
+	pad_length = arr_inqry.strides[ndim - 1] if mdim != ndim else 1
+	broadcast_length = len(slice_array[0])
+
+	out_array = [[0]*mdim]*(broadcast_length*pad_length)
+
+	tmp0 = [0]*mdim
+	l = 0
+	for i in range(broadcast_length):
+		for j in range(ndim):
+			tmp0[j] = slice_array[j][i]
+
+		if pad_length == 1:
+			out_array[i] = list(tmp0)
+		else:
+			for k in range(pad_length):
+				tmp0[mdim - 1] = k
+				out_array[l] = list(tmp0)
+				l += 1
+
+	return out_array
+
+
+def expand_dims(slice_array, arr_inqry):
+	ndim = len(slice_array)
+	mdim = arr_inqry.mdim
+
+	broadcast_length = 0
+	lens = 0
+	for i in range(ndim):
+		arr_i = slice_array[i]
+		try:
+			ndim_i = len(arr_i)
+		except TypeError:
+			if arr_i == inf or arr_i == Ellipsis:
+				slice_array[i] = [j for j in range(arr_inqry.shape[i])]
+				ndim_i = arr_inqry.shape[i]
+			else:
+				slice_array[i] = [arr_i]
+				ndim_i = 1
+
+		lens += ndim_i
+		broadcast_length = ndim_i if ndim_i > broadcast_length else broadcast_length
+
+	broadcast_length = mdim if broadcast_length > mdim else broadcast_length
+
+	if lens//ndim == ndim:
+		return slice_array
+
+	tmp0 = [0]*broadcast_length
+	for i in range(ndim):
+		ndim_i = len(slice_array[i])
+
+		ndim_i = ndim_i if ndim_i < mdim else mdim
+		pad_length = broadcast_length - ndim_i
+
+		j = 0
+		while j < ndim_i:
+			tmp0[j] = slice_array[i][j]
+			j += 1
+
+		if pad_length > 0:
+			while j < ndim_i + pad_length:
+				tmp0[j] = slice_array[i][ndim_i - 1]
+				j += 1
+
+		slice_array[i] = list(tmp0)
+
+	return slice_array
+
+
+'''
+Iteration over an array by a given gslice. Used for any type of indexing into an m-d array.
+'''
+
+
+def iter_gslice(a, gslice_array, size):
 	data = a.data
 	a_out = [0]*size
 
@@ -128,6 +211,18 @@ def iter_axis(a, gslice_array, size, repeat=0, raxis=0):
 		j = recurse(i, ix1, ix2, j)
 
 	return a_out
+
+
+'''
+Python list manipulations:
+
+	remove_extraneous dims: removes a given python list's dimensions that are empty, 
+							recursively iterating inward until an axis is found to be non-empty.
+	
+	flatten: flattens a multi-dimensional python list by a given order.
+	
+	make_nested: creates a multi-dimensional python list from a 1-d contiguous m-d array.
+'''
 
 
 def remove_extraneous_dims(a):
@@ -236,7 +331,6 @@ def make_nested(a):
 			for i in range(axis):
 				ix1[ix2] = i
 				tmp += [recurse(ix1, ix2 + 1)]
-
 		return tmp
 
 	return recurse(ix1, ix2)

@@ -33,6 +33,40 @@ def iter_array(shape, strides):
 			ix += strides[N - 1]
 
 
+'''
+Depreciated meshgrid:
+Uses expand dims and slice array, which is far more costly than simply using repeat axis.
+'''
+
+# def meshgrid(*seq):
+# 	N = len(seq)
+# 	shape = [0]*(N)
+#
+# 	counter = 0
+# 	for i in range(N):
+# 		shape[i] = len(seq[i])
+# 		counter += 1
+#
+# 	ixs = [
+# 		[i for i in range(shape[0])],
+# 		]
+# 	md = mdarray(shape)
+# 	a_inqry = mdarray_inquery(md)
+#
+# 	grid = expand_slice_array(ixs, a_inqry)
+# 	shape += [counter]
+# 	md = tomdarray(grid).reshape(shape).T(0, counter)
+# 	return md
+
+
+'''
+Depreciated repeat:
+Uses expand dims and slice array and gslice,
+which is ludicrously inefficient in contrast to repeat's current implementation.
+
+Note: this function does NOT work properly.
+'''
+
 #
 # def repeat(a, rpeat, axis):
 #     a_inqry = mdarray_inquery(a)
