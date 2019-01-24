@@ -205,65 +205,48 @@ def meshgrid_md(*seq):
 	return tuple(arr_out)
 
 
-def concatenate(arr1, arr2, caxis):
-	global ix1_1, ix1_2, ix2_1, ix2_2
-	data1 = arr1.data
-	mdim1 = arr1.mdim
-	shape1 = arr1.shape
-	strides1 = arr1.strides
+def concatenate(*seq, caxis):
+	arrs = list(seq)
+	arr1 = arrs[0]
 
-	data2 = arr2.data
-	mdim2 = arr2.mdim
-	shape2 = arr2.shape
-	strides2 = arr2.strides
+	ndim = len(arrs)
+	mdim = arr1.mdim
 
-	new_shape = list(shape1)
-	new_shape[caxis] += shape2[caxis]
+	new_shape = list(arr1.shape)
+	print(new_shape)
+	new_size = 0
 
-	if mdim1 != mdim2:
-		raise TypeError("yep!")
+	ixs = [[0]*mdim]*ndim
+	for i in range(ndim):
+		arr_i = arrs[i]
 
-	for i in range(mdim1):
-		if i != caxis:
-			if shape1[i] != shape2[i]:
-				raise TypeError("incompatible dims!")
+		new_size += arr_i.size
+		if i > 0:
+			new_shape[caxis] += arr_i.shape[caxis]
 
-	ix1_1 = [0]*mdim1
-	ix2_1 = 0
+	print(new_size)
 
-	ix1_2 = [0]*mdim2
-	ix2_2 = 0
+	arr_out = [0]*(new_size)
 
-	arr_out = [0]*(arr1.size + arr2.size)
+	def recurse(warr, ix2, j):
+		ix1 = ixs[warr]
+		arr_i = arrs[warr]
 
-	def recurse(ix1, ix2, j, warr):
-		global ix1_1, ix1_2, ix2_1, ix2_2
-		if warr == 0:
-			ix2_1 = ix2
-			ix1_1 = ix1
-		else:
-			ix2_2 = ix2
-			ix1_2 = ix1
+		shape = arr_i.shape
+		strides = arr_i.strides
+		data = arr_i.data
+		axis = shape[ix2]
 
-		axis_arr = shape1[ix2_1] if warr == 0 else shape2[ix2_2]
-		mdim_arr = mdim1 if warr == 0 else mdim2
-
-		ix1 = ix1_1 if warr == 0 else ix1_2
-		ix2 = ix2_1 if warr == 0 else ix2_2
-
-		strides_arr = strides1 if warr == 0 else strides2
-		data_arr = data1 if warr == 0 else data2
-
-		remaining_axes = mdim_arr - ix2
+		remaining_axes = mdim - ix2
 
 		if remaining_axes == 1:
-			for i in range(axis_arr):
-				ix1[mdim_arr - 1] = i
+			for i in range(axis):
+				ix1[mdim - 1] = i
 
-				ix3 = pair_wise_accumulate(ix1, strides_arr)
+				ix3 = pair_wise_accumulate(ix1, strides)
 
 				try:
-					a_val = data_arr[ix3]
+					a_val = data[ix3]
 				except:
 					a_val = nan
 
@@ -271,20 +254,18 @@ def concatenate(arr1, arr2, caxis):
 				j += 1
 
 		else:
-			for i in range(axis_arr):
+			for i in range(axis):
 				ix1[ix2] = i
-				j = recurse(ix1, ix2 + 1, j, warr)
+				j = recurse(warr, ix2 + 1, j)
 
 				if ix2 == caxis - 1:
-					j = recurse(ix1, ix2 + 1, j, 1)
+					for k in range(ndim-1):
+						j = recurse(k+1, ix2 + 1, j)
 
 		return j
 
-	if caxis == 0:
-		j = recurse(ix1_1, 0, 0, 0)
-		recurse(ix1_2, 0, j, 1)
-	else:
-		j = recurse(ix1_1, 0, 0, 0)
+
+	j = recurse(0, 0, 0)
 
 	return tomdarray(arr_out).reshape(new_shape)
 
@@ -344,5 +325,5 @@ size2 = reduce(lambda x, y: x*y, shape2)
 arr2 = arange(size2).reshape(shape2)*999
 print(arr2)
 
-arr_out = concatenate(arr1, arr2, 2)
+arr_out = concatenate(arr1, arr2, arr2,arr2, arr1, caxis=2)
 print(arr_out)
