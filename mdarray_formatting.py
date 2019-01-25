@@ -5,10 +5,7 @@ import math
 
 
 def array_print(arr, sep='', formatter=None):
-	data = arr.data
 	mdim = arr.mdim
-	shape = arr.shape
-	strides = arr.strides
 
 	ix1 = [0]*mdim
 	ix2 = 0
@@ -17,17 +14,17 @@ def array_print(arr, sep='', formatter=None):
 		formatter = lambda x: '{0}'.format(x)
 
 	def recurse(ix1, ix2):
-		axis = shape[ix2]
+		axis = arr.shape[ix2]
 		remaining_axes = mdim - ix2
 
 		s = ''
 		if remaining_axes == 1:
 			for i in range(axis):
 				ix1[mdim - 1] = i
-				ix3 = pair_wise_accumulate(ix1, strides)
+				ix3 = pair_wise_accumulate(ix1, arr.strides)
 
 				try:
-					a_val = data[ix3]
+					a_val = arr.data[ix3]
 				except IndexError:
 					a_val = nan
 

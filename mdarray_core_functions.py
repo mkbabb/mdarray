@@ -2,11 +2,72 @@ from functools import reduce
 
 import numpy as np
 
-from mdarray import arange, mdarray, tomdarray
+from mdarray import arange, mdarray, tomdarray, zeros
 from mdarray_formatting import pad_array_fmt
 from mdarray_helper import get_strides, pair_wise_accumulate, update_dict, swap_item
 from mdarray_indexing import gslice, iter_gslice, make_nested
 from mdarray_types import inf, mdarray_inquery, nan, IncompatibleDimensions
+
+
+def accumulate(arr, func, faxis):
+	global j, k
+	mdim = arr.mdim
+	new_shape = list(arr.shape)
+	new_shape.pop(faxis)
+
+	faxis_T = faxis if faxis != mdim - 1 else faxis - 1
+	strides_j = swap_item(list(arr.strides)[1:], faxis_T, -1)
+	mdarr = zeros(shape=new_shape)
+
+	print(arr.strides, mdarr.strides)
+
+	tmp0 = [0]*mdarr.size
+
+	arr = arr.T(faxis, -1)
+	axis_counter = [0]*mdim
+
+	def recurse(ix):
+		global j, k
+		shape = arr.shape
+		strides = arr.strides
+		data = arr.data
+		axis = shape[ix]
+
+		remaining_axes = mdim - ix
+
+		if remaining_axes == 1:
+
+			for i in range(axis):
+				axis_counter[mdim - 1] = i
+
+				ix_i = pair_wise_accumulate(axis_counter, strides)
+
+				try:
+					arr_val = data[ix_i]
+				except:
+					arr_val = nan
+				tmp0[j] = arr_val
+
+				j += 1
+		else:
+			for i in range(axis):
+				axis_counter[ix] = i
+				recurse(ix + 1)
+
+				if ix == mdim-2:
+					st = list(axis_counter)
+					st[-1] = 0
+
+					ix_j = pair_wise_accumulate(st[:-1], [1, 6, 3])
+					print(axis_counter, ix_j, func(tmp0))
+					mdarr.data[ix_j] = func(tmp0)
+					k += 1
+					j = 0
+		return j
+
+	j = k = 0
+	recurse(0)
+	return mdarr
 
 
 def repeat(arr, rept, raxis):
@@ -55,7 +116,7 @@ def repeat(arr, rept, raxis):
 	return tomdarray(arr_out).reshape(new_shape)
 
 
-def meshgrid_md(*arrs):
+def meshgrid(*arrs):
 	arrs = tuple(arrs)
 	lens = list(map(len, arrs))
 	mdim = len(arrs)
@@ -148,19 +209,35 @@ def concatenate(*arrs, caxis):
 	return tomdarray(arr_out).reshape(new_shape)
 
 
+# shape1 = [5, 5, 2]
+# size1 = reduce(lambda x, y: x*y, shape1)
+#
+# arr1 = arange(size1).reshape(shape1)
+#
+# print(arr1)
+#
+# shape2 = [5, 5, 2]
+# size2 = reduce(lambda x, y: x*y, shape2)
+#
+# arr2 = arange(size2).reshape(shape2) - 222222
+# print(arr2)
+#
+# arr_out = concatenate(arr1, arr2, arr2, arr2, arr1, caxis=2)
+# print(arr_out)
 
-shape1 = [5, 5, 2]
+
+shape1 = [5, 4, 2, 3]
 size1 = reduce(lambda x, y: x*y, shape1)
 
 arr1 = arange(size1).reshape(shape1)
-
+np_arr = np.asarray(make_nested(arr1))
 print(arr1)
 
-shape2 = [5, 5, 2]
-size2 = reduce(lambda x, y: x*y, shape2)
+faxis = 0
 
-arr2 = arange(size2).reshape(shape2)*999
-print(arr2)
+v = accumulate(arr1, sum, faxis)
+print(v)
+print('\n')
 
-arr_out = concatenate(arr1, arr2, arr2, arr2, arr1, caxis=2)
-print(arr_out)
+print(np_arr.shape)
+print(np_arr.sum(faxis))
