@@ -1,27 +1,47 @@
+import math
+import re
 from functools import reduce
+
 from mdarray_helper import pair_wise_accumulate, swap_item
 from mdarray_types import inf, nan
-import math
+
+MAX_CHAR_LINE = 50
+SAVED_CHAR = 3
+
+
+
+def trim_string(s, sep):
+	sep_len = len(sep)
+
+	if len(s) >= MAX_CHAR_LINE:
+		s_re = list(re.finditer(sep, s))
+		N = len(s_re)
+
+		if N >= (2*SAVED_CHAR + 1):
+			start = s_re[SAVED_CHAR - 1].start()
+			stop = s_re[N - (SAVED_CHAR)].start()
+
+			s = "{0} ... {1}".format(s[:start], s[stop + sep_len:])
+
+	return s
 
 
 def array_print(arr, sep='', formatter=None):
 	mdim = arr.mdim
-
-	ix1 = [0]*mdim
-	ix2 = 0
+	axis_counter = [0]*mdim
 
 	if not formatter:
 		formatter = lambda x: '{0}'.format(x)
 
-	def recurse(ix1, ix2):
-		axis = arr.shape[ix2]
-		remaining_axes = mdim - ix2
+	def recurse(ix):
+		axis = arr.shape[ix]
+		remaining_axes = mdim - ix
 
 		s = ''
 		if remaining_axes == 1:
 			for i in range(axis):
-				ix1[mdim - 1] = i
-				ix3 = pair_wise_accumulate(ix1, arr.strides)
+				axis_counter[mdim - 1] = i
+				ix3 = pair_wise_accumulate(axis_counter, arr.strides)
 
 				try:
 					a_val = arr.data[ix3]
@@ -33,18 +53,22 @@ def array_print(arr, sep='', formatter=None):
 		else:
 			new_line = '\n'*(remaining_axes - 1)
 			for i in range(axis):
-				ix1[ix2] = i
+				axis_counter[ix] = i
 
-				val = recurse(ix1, ix2 + 1)
+				val = recurse(ix + 1)
 
-				s += ' '*(ix2 + 1) + val if i > 0 else val
+				s += ' '*(ix + 1) + val if i > 0 else val
 				s += sep.strip() if i < axis - 1 else ''
 				s += new_line if i != axis - 1 else ''
 
+		if ix == mdim - 1:
+			s = trim_string(s, sep)
+
 		s = '[{0}]'.format(s)
+
 		return s
 
-	return recurse(ix1, ix2)
+	return recurse(0)
 
 
 def array_print_experimental(arr, sep='', formatter=None):
