@@ -216,6 +216,18 @@ def zeros(shape=None, **kwargs):
     return mdarr
 
 
+def ones(shape=None, **kwargs):
+    mdarr = mdarray(shape=shape, **kwargs)
+    mdarr.data = [1]*mdarr.size
+    return mdarr
+
+
+def full(shape=None, fill_value=0, **kwargs):
+    mdarr = mdarray(shape=shape, **kwargs)
+    mdarr.data = [fill_value]*mdarr.size
+    return mdarr
+
+
 def arange(size):
     data = [i for i in range(size)]
     return mdarray(size=size, data=data)
