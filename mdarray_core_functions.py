@@ -4,13 +4,44 @@ import numpy as np
 
 from mdarray import arange, mdarray, tomdarray, zeros
 from mdarray_formatting import pad_array_fmt
-from mdarray_helper import get_strides, pair_wise_accumulate, update_dict, swap_item
+from mdarray_helper import (get_strides, pair_wise_accumulate, swap_item,
+                            update_dict)
 from mdarray_indexing import gslice, iter_gslice, make_nested
-from mdarray_types import inf, mdarray_inquery, nan, IncompatibleDimensions
+from mdarray_types import IncompatibleDimensions, inf, mdarray_inquery, nan
+
+
+def roll_array(arr, pos, iterations=1):
+    mdim = len(arr)
+
+    if pos == mdim - 1:
+        return arr
+
+    def recurse(ix):
+        swap_item(arr, pos, ix)
+        ix -= 1
+        if ix == pos:
+            return
+        else:
+            recurse(ix)
+
+    for i in range(iterations):
+        recurse(mdim - 1)
+
+    return arr
+
+
+def roll_axis(arr, axis, iterations=1):
+    roll_array(arr.shape, axis, iterations)
+    roll_array(arr.strides, axis, iterations)
 
 
 def accumulate(arr, func, faxis):
     global j, k
+
+    if faxis == inf:
+        arr_out = mdarray(shape=[1], data=[func(arr.data)])
+        return arr_out
+
     mdim = arr.mdim
 
     arr.T(faxis, -1)
@@ -18,7 +49,7 @@ def accumulate(arr, func, faxis):
     new_shape.pop(-1)
 
     arr_out = zeros(shape=new_shape)
-    iter_count = v.mdim - (faxis + 1)
+    iter_count = arr.mdim - (faxis + 1)
 
     for i in range(iter_count):
         start = (iter_count + 1) - (i + 1)
@@ -33,12 +64,12 @@ def accumulate(arr, func, faxis):
         shape = arr.shape
         strides = arr.strides
         data = arr.data
-        axis = shape[ix]
+        pos = shape[ix]
 
         remaining_axes = mdim - ix
 
         if remaining_axes == 1:
-            for i in range(axis):
+            for i in range(pos):
                 axis_counter[mdim - 1] = i
 
                 ix_i = pair_wise_accumulate(axis_counter, strides)
@@ -51,7 +82,7 @@ def accumulate(arr, func, faxis):
                 tmp0[j] = arr_val
                 j += 1
         else:
-            for i in range(axis):
+            for i in range(pos):
                 axis_counter[ix] = i
                 recurse(ix + 1)
 
@@ -82,11 +113,11 @@ def repeat(arr, rept, raxis):
     raxis_s = 1 if mdim - 1 != raxis else rept
 
     def recurse(axis_counter, ix, j):
-        axis = shape[ix]
+        pos = shape[ix]
         remaining_axes = mdim - ix
 
         if remaining_axes == 1:
-            for i in range(axis):
+            for i in range(pos):
                 for k in range(raxis_s):
                     axis_counter[mdim - 1] = i
                     ix3 = pair_wise_accumulate(axis_counter, strides)
@@ -99,7 +130,7 @@ def repeat(arr, rept, raxis):
                     arr_out[j] = a_val
                     j += 1
         else:
-            for i in range(axis):
+            for i in range(pos):
                 axis_counter[ix] = i
                 if ix == raxis:
                     for k in range(rept):
@@ -171,12 +202,12 @@ def concatenate(*arrs, caxis):
         shape = arr_i.shape
         strides = arr_i.strides
         data = arr_i.data
-        axis = shape[ix]
+        pos = shape[ix]
 
         remaining_axes = mdim - ix
 
         if remaining_axes == 1:
-            for i in range(axis):
+            for i in range(pos):
                 axis_counter[mdim - 1] = i
 
                 ix3 = pair_wise_accumulate(axis_counter, strides)
@@ -189,7 +220,7 @@ def concatenate(*arrs, caxis):
                 arr_out[j] = a_val
                 j += 1
         else:
-            for i in range(axis):
+            for i in range(pos):
                 axis_counter[ix] = i
                 j = recurse(warr, ix + 1, j)
 
@@ -225,17 +256,34 @@ def concatenate(*arrs, caxis):
 # print(arr_out)
 
 
-shape1 = [5, 4, 2, 3, 7]
+shape1 = [5, 4, 2]
 size1 = reduce(lambda x, y: x*y, shape1)
 
 arr1 = arange(size1).reshape(shape1)
 np_arr = np.asarray(make_nested(arr1))
+print(arr1.strides)
+
+faxis = 1
+# arr1.T(faxis, -1)
+print(arr1)
+roll_axis(arr1, faxis)
+print(arr1)
+print(arr1.shape)
+
+
+# roll_axis(arr1, 1)
+# print(arr1.strides, arr1.shape)
+# axes = [i for i in range(10)]
+
+# roll_axis(axes, 0, 2)
+# print(axes)
+
+
 # print(arr1)
 
-faxis = 0
-
-v = accumulate(arr1, sum, faxis)
-print(v.shape)
+# v = accumulate(arr1, sum, inf)
+# print(v)
+# print(v.shape)
 # v.reshape([3, 4, 2])
 # v.reshape([4, 2, 3])
 
@@ -256,10 +304,10 @@ print(v.shape)
 # v.T(-1, -2)
 
 
-print(v.shape)
-print(v)
-print('\n')
+# print(v.shape)
+# print(v)
+# print('\n')
 
-np_arr = np_arr.sum(faxis)
-print(np_arr.shape, [i//np_arr.strides[-1] for i in np_arr.strides])
-print(np_arr)
+# np_arr = np_arr.sum(faxis)
+# print(np_arr.shape, [i//np_arr.strides[-1] for i in np_arr.strides])
+# print(np_arr)
