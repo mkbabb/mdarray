@@ -2,7 +2,7 @@ from functools import reduce
 
 import numpy as np
 
-from mdarray import arange, mdarray, tomdarray, zeros, ones, full
+from mdarray import arange, full, mdarray, ones, tomdarray, tondarray, zeros
 from mdarray_formatting import pad_array_fmt
 from mdarray_helper import (get_strides, pair_wise_accumulate, swap_item,
                             update_dict)
@@ -97,8 +97,7 @@ def reduce_array(arr, faxis, func, mode="value"):
     new_shape.pop(-1)
 
     arr_out = zeros(shape=new_shape)
-
-    tmp0 = [0]*arr_out.size
+    tmp0 = [0]*arr.shape[-1]
     axis_counter = [0]*mdim
 
     def recurse(ix):
@@ -116,13 +115,10 @@ def reduce_array(arr, faxis, func, mode="value"):
 
                 ix_i = pair_wise_accumulate(axis_counter, strides)
 
-                if mode == "value":
-                    try:
-                        arr_val = data[ix_i]
-                    except:
-                        arr_val = nan
-                elif mode == "index":
-                    arr_val = ix_i
+                try:
+                    arr_val = data[ix_i]
+                except:
+                    arr_val = nan
 
                 tmp0[j] = arr_val
                 j += 1
@@ -135,7 +131,6 @@ def reduce_array(arr, faxis, func, mode="value"):
                     j = 0
                     arr_out.data[k] = func(tmp0)
                     k += 1
-        return j
 
     j = k = 0
     recurse(0)
@@ -143,7 +138,6 @@ def reduce_array(arr, faxis, func, mode="value"):
 
 
 def pad_array(arr, pad_width, pad_values):
-
     ndim = len(pad_width)
     pdim = len(pad_width[0])
 
@@ -350,24 +344,47 @@ def concatenate(*arrs, caxis):
 # arr_out = concatenate(arr1, arr2, arr2, arr2, arr1, caxis=2)
 # print(arr_out)
 
+def func(arr):
+    ndim = len(arr)
+    mx = 0
+    pos = 0
+    for i in range(ndim):
+        arr_i = arr[i]
+        if arr_i > mx:
+            mx = arr_i
+            pos = i
+    return pos
 
-shape1 = [5, 3, 2]
-size1 = reduce(lambda x, y: x*y, shape1)
 
-arr1 = arange(size1).reshape(shape1)*77
+# shape1 = [5, 3, 2]
+# size1 = reduce(lambda x, y: x*y, shape1)
 
-print(arr1)
-v = reduce_array(arr1, 2, sum, "value")
-print(v)
+# arr1 = arange(size1).reshape(shape1)
+# np_arr = tondarray(arr1)
+
+# print(arr1)
+# raxis = 0
+# v = reduce_array(arr1, raxis, func, "index")
+
+
+
+# ixs = tondarray(v)
+
+# ixs = np.argmax(np_arr, axis=raxis)
+# print(ixs)
+# i, j, k = np.unravel_index(ixs, np_arr.shape)
+
+
+# print(np_arr[ixs[0]])
 
 # faxis = 3
 
 # v = pad(arr1, [[2, 2], [2, 2]], 99)
 # print(v)
 
-pad1 = (1, 1)
-pad2 = (1, 1)
-pad3 = (1, 1)
+# pad1 = (1, 1)
+# pad2 = (1, 1)
+# pad3 = (1, 1)
 
 # v1 = full(shape=[1, 1, 3], fill_value=99)
 # v2 = full(shape=[1, 4, 1], fill_value=99)
