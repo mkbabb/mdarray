@@ -233,10 +233,6 @@ def arange(size):
     return mdarray(size=size, data=data)
 
 
-def swap_axis(arr, axis1, axis2):
-    swap_item(arr.strides, axis1, axis2)
-
-
 def tomdarray(arr):
     if isinstance(arr, mdarray):
         return arr
@@ -250,6 +246,11 @@ def tomdarray(arr):
             md = [[i, j] for i, j in arr.items()]
 
         return tomdarray(md)
+
+
+def tondarray(arr):
+    nd = np.asarray(arr.data).reshape(arr.shape)
+    return nd
 
 
 lst = [[[1, 2, 3],

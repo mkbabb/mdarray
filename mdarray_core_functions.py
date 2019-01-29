@@ -35,7 +35,7 @@ def roll_axis(arr, axis, iterations=1):
     roll_array(arr.strides, axis, iterations)
 
 
-def accumulate(arr, faxis, func):
+def iter_axis(arr, faxis, func):
     global j, k
 
     roll_axis(arr, faxis)
@@ -87,22 +87,22 @@ def accumulate(arr, faxis, func):
     return arr_out
 
 
-def pad(arr, pad_width, pad_value):
-    global j
-    j = 0
-    mdim = arr.mdim
-    ndim = len(pad_width)
-    new_shape = list(arr.shape)
+def reduce_array(arr, faxis, func, mode="value"):
+    global j, k
 
-    for i in range(ndim):
-        new_shape[i] += reduce(lambda x, y: x*y, pad_width[i])
+    roll_axis(arr, faxis)
+
+    mdim = arr.mdim
+    new_shape = list(arr.shape)
+    new_shape.pop(-1)
 
     arr_out = zeros(shape=new_shape)
+
+    tmp0 = [0]*arr_out.size
     axis_counter = [0]*mdim
 
     def recurse(ix):
-        global j
-
+        global j, k
         shape = arr.shape
         strides = arr.strides
         data = arr.data
@@ -112,27 +112,82 @@ def pad(arr, pad_width, pad_value):
 
         if remaining_axes == 1:
             for i in range(axis):
-
                 axis_counter[mdim - 1] = i
-                ix3 = pair_wise_accumulate(axis_counter, strides)
 
-                try:
-                    a_val = data[ix3]
-                except:
-                    a_val = pad_value
+                ix_i = pair_wise_accumulate(axis_counter, strides)
 
-                arr_out.data[j] = a_val
+                if mode == "value":
+                    try:
+                        arr_val = data[ix_i]
+                    except:
+                        arr_val = nan
+                elif mode == "index":
+                    arr_val = ix_i
+
+                tmp0[j] = arr_val
                 j += 1
         else:
             for i in range(axis):
                 axis_counter[ix] = i
                 recurse(ix + 1)
-                print(axis_counter)
 
+                if ix == mdim - 2:
+                    j = 0
+                    arr_out.data[k] = func(tmp0)
+                    k += 1
         return j
 
+    j = k = 0
     recurse(0)
     return arr_out
+
+
+def pad_array(arr, pad_width, pad_values):
+
+    ndim = len(pad_width)
+    pdim = len(pad_width[0])
+
+    if not isinstance(pad_values, list):
+        pad_values = [pad_values]*ndim
+
+    shape = arr.shape
+    new_shape = list(shape)
+
+    for i in range(ndim):
+        v = reduce(lambda x, y: x+y, pad_width[i])
+        new_shape[i] += v
+
+    arrs = [0]*(pdim + 1)
+    middle = len(arrs)//2
+    shape_i = list(shape)
+    a_i = arr
+
+    for i in range(1, ndim):
+        pad_i = pad_width[i]
+
+        for j in range(pdim):
+            shape_ij = list(shape_i)
+            shape_ij[i] = pad_i[j]
+
+            a_ij = full(shape=shape_ij, fill_value=pad_values[i])
+            arrs[j] = a_ij
+
+        arrs[pdim] = a_i
+        swap_item(arrs, middle, pdim)
+
+        a_i = concatenate(*arrs, caxis=i)
+        shape_i[i] = new_shape[i]
+
+    pad_i = pad_width[0]
+    for j in range(pdim):
+        shape_ij = list(shape_i)
+        shape_ij[0] = pad_i[j]
+        arrs[j] = full(shape=shape_ij, fill_value=pad_values[0])
+
+    arrs[pdim] = a_i
+    swap_item(arrs, middle, pdim)
+    a_i = concatenate(*arrs, caxis=0)
+    return a_i
 
 
 def repeat(arr, raxis, rept):
@@ -220,7 +275,6 @@ def concatenate(*arrs, caxis):
     axis_counters = [[0]*mdim]*ndim
     for i in range(ndim):
         arr_i = arrs[i]
-        print(arr_i.shape)
 
         if mdim != arr_i.mdim:
             raise IncompatibleDimensions(
@@ -297,65 +351,23 @@ def concatenate(*arrs, caxis):
 # print(arr_out)
 
 
-def padd(arr, pad_width, fill_values):
-    ndim = len(pad_width)
-    nndim = len(pad_width[0])
-
-    shape = arr.shape
-    new_shape = list(shape)
-
-    for i in range(ndim):
-        v = reduce(lambda x, y: x+y, pad_width[i])
-        new_shape[i] += v
-
-    v_is = [0]*(nndim)
-    middle = len(v_is)//2
-    shape_i = list(shape)
-    a_i = arr
-
-    for i in range(1, ndim):
-        pad_i = pad_width[i]
-
-        for j in range(nndim):
-            shape_ij = list(shape_i)
-            shape_ij[i] = pad_i[j]
-
-            a_ij = full(shape=shape_ij, fill_value=fill_values)
-            v_is[j] = a_ij
-
-        v_is.insert(middle, a_i)
-
-        a_i = concatenate(full(shape=[1, 1, 3], fill_value=fill_values), arr1, full(
-            shape=[1, 2, 3], fill_value=fill_values), caxis=i)
-        print(a_i)
-        shape_i[i] = new_shape[i]
-        v_is = [0]*nndim
-
-    for j in range(nndim):
-        shape_ij = shape_i
-        shape_ij[0] = pad_i[j]
-        v_is[j] = full(shape=shape_ij, fill_value=fill_values)
-
-    v_is.insert(middle, a_i)
-    a_i = concatenate(*v_is, caxis=0)
-    return a_i
-
-    # a_i = concatenate(v_is, caxis=i)
-
-
-shape1 = [1, 2, 3]
+shape1 = [5, 3, 2]
 size1 = reduce(lambda x, y: x*y, shape1)
 
-arr1 = arange(size1).reshape(shape1)
+arr1 = arange(size1).reshape(shape1)*77
+
+print(arr1)
+v = reduce_array(arr1, 2, sum, "value")
+print(v)
 
 # faxis = 3
 
 # v = pad(arr1, [[2, 2], [2, 2]], 99)
 # print(v)
 
-pad1 = (1, 2)
-pad2 = (1, 2)
-pad3 = (1, 2)
+pad1 = (1, 1)
+pad2 = (1, 1)
+pad3 = (1, 1)
 
 # v1 = full(shape=[1, 1, 3], fill_value=99)
 # v2 = full(shape=[1, 4, 1], fill_value=99)
@@ -364,22 +376,22 @@ pad3 = (1, 2)
 # v7 = concatenate(v1, arr1, v1, caxis=1)
 # v8 = concatenate(v2, v7, v2, caxis=2)
 # v9 = concatenate(v3, v8, v3, caxis=0)
-# pdd = padd(arr1, (pad1, pad2, pad3), 99)
+# pdd = pad_array(arr1, (pad1, pad2, pad3), 99)
 # print(pdd)
 
-b1 = full(shape=[1, 2, 3], fill_value=99)
-b2 = full(shape=[1, 1, 3], fill_value=99)
+# b1 = full(shape=[1, 2, 3], fill_value=99)
+# b2 = full(shape=[1, 1, 3], fill_value=99)
 
 
-aa = concatenate(b2, arr1, b1, caxis=1)
-print(aa)
+# aa = concatenate(b2, arr1, b1, caxis=1)
+# print(aa)
 # print(v9)
 
 
 # print(v3, v3.shape)
 # print(v9, v9.shape)
 
-
+# print('\n\n')
 # np_arr = np.asarray(arr1.data).reshape(shape1)
 # pd = np.pad(np_arr, (pad1, pad2, pad3), 'constant', constant_values=(99,))
 # print(pd)
@@ -393,6 +405,6 @@ print(aa)
 # v = repeat(arr1, raxis, 2)
 # print(v)
 
-# v = accumulate(arr1, faxis, sum)
+# v = reduce_array(arr1, faxis, sum)
 # print(v)
 # print(np_arr.sum(faxis))
