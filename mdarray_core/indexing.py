@@ -1,6 +1,11 @@
 from functools import reduce
-from mdarray_helper import pair_wise_accumulate, get_strides
-from mdarray_types import inf, nan, mdarray_inquery
+
+from mdarray_core.helper import pair_wise_accumulate
+from mdarray_core.types import inf, nan
+
+__all__ = ["expand_dims", "expand_slice_array",
+           "remove_extraneous_dims"]
+
 
 '''
 Generalised slicing of arrays
@@ -184,14 +189,15 @@ def iter_gslice(arr, gslice_array, size):
     data = arr.data
     a_out = [0]*size
 
-    def recurse(g, ix1, ix2, j):
-        axis = g.shape[ix2]
-        remaining_axes = g.mdim - ix2
+    def recurse(g, axis_counter, ix, j):
+        axis = g.shape[ix]
+        remaining_axes = g.mdim - ix
 
         if remaining_axes == 1:
             for i in range(axis):
-                ix1[g.mdim - 1] = i
-                ix3 = pair_wise_accumulate(ix1, g.strides) + g.arg_axis
+                axis_counter[g.mdim - 1] = i
+                ix3 = pair_wise_accumulate(
+                    axis_counter, g.strides) + g.arg_axis
 
                 a_val = data[ix3]
                 a_out[j] = a_val
@@ -199,16 +205,16 @@ def iter_gslice(arr, gslice_array, size):
 
         else:
             for i in range(axis):
-                ix1[ix2] = i
-                j = recurse(g, ix1, ix2 + 1, j)
+                axis_counter[ix] = i
+                j = recurse(g, axis_counter, ix + 1, j)
         return j
 
     j = 0
     for i in gslice_array.slice_array:
-        ix1 = [0]*i.mdim
-        ix2 = 0
+        axis_counter = [0]*i.mdim
+        ix = 0
 
-        j = recurse(i, ix1, ix2, j)
+        j = recurse(i, axis_counter, ix, j)
 
     return a_out
 
@@ -269,68 +275,3 @@ def make_iter_list(slice_array):
         return array_out
 
     return recurse(slice_array, array_out)
-
-
-def flatten(arr, order=1):
-    global shape, dim_counter
-    shape = [len(arr)]
-    dim_counter = 0
-
-    def recurse(arr):
-        global shape, dim_counter
-        ndim = len(arr)
-
-        tmp = []
-        dim_counter = 0
-
-        for i in range(ndim):
-            a_i = arr[i]
-
-            if isinstance(a_i, list):
-                tmp0 = recurse(a_i)
-                M = len(a_i)
-
-                if len(shape) <= dim_counter + 1:
-                    shape.insert(1, M)
-
-                dim_counter += 1
-                tmp += [tmp0] if dim_counter <= order else tmp0
-            else:
-                tmp += [a_i]
-
-        return tmp
-
-    flt = recurse(arr)
-    return flt, dim_counter, shape
-
-
-def make_nested(arr):
-    data = arr.data
-    mdim = arr.mdim
-    shape = arr.shape
-    strides = arr.strides
-
-    ix1 = [0]*mdim
-    ix2 = 0
-
-    def recurse(ix1, ix2):
-        global j
-        tmp = []
-
-        axis = shape[ix2]
-        remaining_axes = mdim - ix2
-
-        if remaining_axes == 1:
-            for i in range(axis):
-                ix1[mdim - 1] = i
-                ix3 = pair_wise_accumulate(ix1, strides)
-
-                a_val = data[ix3]
-                tmp += [a_val]
-        else:
-            for i in range(axis):
-                ix1[ix2] = i
-                tmp += [recurse(ix1, ix2 + 1)]
-        return tmp
-
-    return recurse(ix1, ix2)
