@@ -4,7 +4,7 @@ from mdarray_core.helper import pair_wise_accumulate
 from mdarray_core.types import inf, nan
 
 __all__ = ["expand_dims", "expand_slice_array",
-           "remove_extraneous_dims"]
+           "remove_extraneous_dims", "flatten_list", "make_nested_list"]
 
 
 '''
@@ -243,6 +243,77 @@ def remove_extraneous_dims(arr):
             return arr
 
     return recurse(arr)
+
+
+def flatten_list(arr, order=1):
+    global shape, dim_counter
+    shape = [len(arr)]
+    dim_counter = 0
+
+    def recurse(arr):
+        global shape, dim_counter
+        ndim = len(arr)
+
+        tmp = []
+        dim_counter = 0
+
+        for i in range(ndim):
+            a_i = arr[i]
+
+            if isinstance(a_i, list):
+                tmp0 = recurse(a_i)
+                M = len(a_i)
+
+                if len(shape) <= dim_counter + 1:
+                    shape.insert(0, M)
+
+                dim_counter += 1
+                tmp += [tmp0] if dim_counter <= order else tmp0
+            else:
+                tmp += [a_i]
+
+        return tmp
+
+    flt = recurse(arr)
+    return flt, dim_counter, shape
+
+
+def make_nested_list(arr):
+    mdim = arr.mdim
+    axis_counter = [0]*mdim
+
+    def recurse(ix):
+        shape = arr.shape
+        strides = arr.strides
+        data = arr.data
+        axis = shape[ix]
+
+        tmp = [0]*axis
+
+        remaining_axes = mdim - ix
+
+        if remaining_axes == mdim:
+            for i in range(axis):
+
+                axis_counter[0] = i
+                ix3 = pair_wise_accumulate(axis_counter, strides)
+
+                try:
+                    a_val = data[ix3]
+                except:
+                    a_val = nan
+
+                tmp[i] = a_val
+
+        else:
+            for i in range(axis):
+                axis_counter[ix] = i
+                tmp[i] = recurse(ix - 1)
+
+        return tmp
+
+    arr_out = recurse(mdim - 1)
+    return arr_out
 
 
 def make_iter_list(slice_array):

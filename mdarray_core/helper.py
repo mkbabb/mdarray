@@ -36,12 +36,11 @@ def swap_item(arr, ix1, ix2):
     t = arr[ix1]
     arr[ix1] = arr[ix2]
     arr[ix2] = t
-    return arr
 
 
 def roll_array(arr, axis, iterations=1):
     if axis == 0:
-        return arr
+        return
 
     def recurse(ix):
         swap_item(arr, axis, ix)
@@ -53,8 +52,6 @@ def roll_array(arr, axis, iterations=1):
 
     for i in range(iterations):
         recurse(0)
-
-    return arr
 
 
 def pair_wise(a1, a2, func):

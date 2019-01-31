@@ -148,18 +148,47 @@ To mdarray and ndarray tests:
 End to mdarray and ndarray tests.
 '''
 
-shape = [20, 2, 3]
+# shape = [20, 2, 3]
+
+# size = reduce(lambda x, y: x*y, shape)
+
+# arr = arange(size).reshape(shape)
+# arr.flatten = pad_array_fmt(arr)
+# np_arr = tondarray(arr)
+
+
+# myslice = [nan, ..., nan]
+
+# t0 = expand_dims(myslice, arr)
+# t1 = expand_slice_array(t0, arr)
+# print(t1)
+# print(arr)
+
+# shape = [3, 5]
+# size = reduce(lambda x, y: x*y, shape)
+# arr = arange(size).reshape(shape)
+# print(arr)
+
+
+# t = tile(arr, (2, 1, 2))
+# print(t)
+
+
+shape = [6, 1, 1, 1]
 
 size = reduce(lambda x, y: x*y, shape)
 
-arr = arange(size).reshape(shape)
-arr.flatten = pad_array_fmt(arr)
-np_arr = tondarray(arr)
-
-
-myslice = [nan, ..., nan]
-
-t0 = expand_dims(myslice, arr)
-t1 = expand_slice_array(t0, arr)
-print(t1)
+arr = ones(shape, order="F") + ones(list(shape), order="F")
 print(arr)
+# np_arr = np.zeros(shape)
+# np_strides = [i//min(np_arr.strides) for i in np_arr.strides]
+
+# # arr = arange(size).reshape(shape[::-1])
+# print(np_strides)
+# print(arr.strides)
+
+# ixs = ravel(1621, 162, 31, 77, 1400, 444, 3024, shape=arr.shape)
+# print(ixs)
+
+# rixs = unravel(*ixs, shape=arr.shape)
+# print(rixs)
