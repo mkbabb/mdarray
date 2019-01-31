@@ -198,18 +198,17 @@ End to mdarray and ndarray tests.
 # v = mask(arr, pred)
 # print(v)
 
-def repeat_nocopy(arr, raxes, repts):
+def unravel_repeated(arr, raxes, repts):
     global j
     mdim = arr.mdim
     ndim = len(raxes)
     axis_counter = [0]*mdim
+    arr_out = [0]*arr.size*reduce(lambda x, y: x*y, repts)
 
     def recurse(ix):
         global j
-
         shape = arr.shape
         strides = arr.strides
-        data = arr.data
         axis = shape[ix]
 
         remaining_axes = mdim - ix
@@ -217,13 +216,8 @@ def repeat_nocopy(arr, raxes, repts):
         if remaining_axes == mdim:
             for i in range(axis):
                 axis_counter[0] = i
-                ix3 = pair_wise_accumulate(axis_counter, strides)
-
-                try:
-                    a_val = data[ix3]
-                except:
-                    a_val = nan
-                print(a_val, j)
+                ix_i = pair_wise_accumulate(axis_counter, strides)
+                arr_out[j] = ix_i
                 j += 1
         else:
             for i in range(axis):
@@ -232,16 +226,16 @@ def repeat_nocopy(arr, raxes, repts):
                 for k in range(ndim):
                     raxis = raxes[k]
                     rept = repts[k]
-                    if ix == raxis or (raxis == 0 and ix != mdim - 1):
+                    if ix == raxis or (raxis == 0 and ix == 1):
                         for l in range(rept):
                             recurse(ix - 1)
                         repeated = True
                         break
-
                 if not repeated:
                     recurse(ix - 1)
     j = 0
     recurse(mdim - 1)
+    return arr_out
 
 
 def broadcast_copy(arr1, arr2):
@@ -291,7 +285,7 @@ def super_repeat(arr, raxes, repts):
     def recurse(ix):
         if ix == 0:
             # print(raxes[0], repts[0])
-            repeat_nocopy(arr, raxes[0], 6)
+            unravel_repeated(arr, raxes[0], 6)
         else:
             for i in range(repts[ix]):
                 print(ix)
@@ -300,9 +294,13 @@ def super_repeat(arr, raxes, repts):
 
 
 # super_repeat(xx, raxes, repts)
-print(y)
-# repeat_nocopy(xx, [0, 2], [2, 4])
-repeat_nocopy(y, [1, 2, 3], [2, 3, 4])
+# print(y)
+# unravel_repeated(xx, [0, 2], [2, 4])
+ix1 = unravel_repeated(y, [1, 2, 3], [2, 3, 4])
+ix2 = unravel_repeated(xx, [0], [2])
+print(len(ix1), len(ix2))
+print(ix1)
+print(ix2)
 
 
 # v = repeat(y, 3, 5)
@@ -315,7 +313,8 @@ repeat_nocopy(y, [1, 2, 3], [2, 3, 4])
 # print('\n')
 
 xx, y = broadcast_copy(xx, y)
-print(y)
+print(xx)
+# print(y)
 # v = xx + y
 # print(v)
 
@@ -323,6 +322,6 @@ print(y)
 
 # print(xx + y)
 
-# repeat_nocopy(xx, 0, 4)
+# unravel_repeated(xx, 0, 4)
 
 # xx, y = broadcast_copy(xx, y)
