@@ -157,10 +157,6 @@ End to mdarray and ndarray tests.
 # np_arr = tondarray(arr)
 
 
-# myslice = [nan, ..., nan]
-
-# t0 = expand_dims(myslice, arr)
-# t1 = expand_slice_array(t0, arr)
 # print(t1)
 # print(arr)
 
@@ -174,21 +170,159 @@ End to mdarray and ndarray tests.
 # print(t)
 
 
-shape = [6, 1, 1, 1]
+# shape = [6, 4]
 
+# size = reduce(lambda x, y: x*y, shape)
+
+# arr = arange(size).reshape(shape)
+# np_arr = md.tondarray(arr)
+
+# ixs = np.where(np_arr > 2)
+# t1 = expand_slice_array([*ixs], 2)
+# print(md.tomdarray(t1))
+
+# _arr = [[1, 2], [3, 4],
+#         [9, 8], [7, 6]]
+# arr = md.tomdarray(_arr)
+# print(arr)
+
+# slc = [[True, False], [True, True]]
+# slc = md.tomdarray(slc)
+# v = repeat(slc, 1, 2)
+# print(v)
+
+
+# def pred(x): return True if x > 2 else False
+
+
+# v = mask(arr, pred)
+# print(v)
+
+def repeat_nocopy(arr, raxes, repts):
+    global j
+    mdim = arr.mdim
+    ndim = len(raxes)
+    axis_counter = [0]*mdim
+
+    def recurse(ix):
+        global j
+
+        shape = arr.shape
+        strides = arr.strides
+        data = arr.data
+        axis = shape[ix]
+
+        remaining_axes = mdim - ix
+
+        if remaining_axes == mdim:
+            for i in range(axis):
+                axis_counter[0] = i
+                ix3 = pair_wise_accumulate(axis_counter, strides)
+
+                try:
+                    a_val = data[ix3]
+                except:
+                    a_val = nan
+                print(a_val, j)
+                j += 1
+        else:
+            for i in range(axis):
+                axis_counter[ix] = i
+                repeated = False
+                for k in range(ndim):
+                    raxis = raxes[k]
+                    rept = repts[k]
+                    if ix == raxis or (raxis == 0 and ix != mdim - 1):
+                        for l in range(rept):
+                            recurse(ix - 1)
+                        repeated = True
+                        break
+
+                if not repeated:
+                    recurse(ix - 1)
+    j = 0
+    recurse(mdim - 1)
+
+
+def broadcast_copy(arr1, arr2):
+    mdim1 = arr1.mdim
+    mdim2 = arr2.mdim
+    shape1 = arr1.shape
+    shape2 = arr2.shape
+
+    mdim = mdim1
+
+    if mdim1 > mdim2:
+        arr2.reshape(shape2 + [1]*(mdim1 - mdim2))
+    elif mdim1 < mdim2:
+        arr1.reshape(shape1 + [1]*(mdim2 - mdim1))
+        mdim = mdim2
+
+    shape1 = arr1.shape
+    shape2 = arr2.shape
+
+    for i in range(mdim):
+        axis1_i = shape1[i]
+        axis2_i = shape2[i]
+        if axis1_i == 1 and axis2_i > 1:
+            arr1 = repeat(arr1, i, axis2_i)
+        elif axis1_i > 1 and axis2_i == 1:
+            arr2 = repeat(arr2, i, axis1_i)
+        elif axis1_i != axis2_i:
+            raise IncompatibleDimensions
+        # print(arr1)
+
+        # print('\n\n\n')
+    return arr1, arr2
+
+
+# t0 = expand_dims(myslice, arr)
+shape = [1, 2, 3, 4]
 size = reduce(lambda x, y: x*y, shape)
+xx = arange(size).reshape(shape)
+y = arange(2).reshape([2, 1, 1, 1]) + 2
 
-arr = ones(shape, order="F") + ones(list(shape), order="F")
-print(arr)
-# np_arr = np.zeros(shape)
-# np_strides = [i//min(np_arr.strides) for i in np_arr.strides]
 
-# # arr = arange(size).reshape(shape[::-1])
-# print(np_strides)
-# print(arr.strides)
+raxes = [0, 1, 2]
+repts = [2, 3, 1]
 
-# ixs = ravel(1621, 162, 31, 77, 1400, 444, 3024, shape=arr.shape)
-# print(ixs)
 
-# rixs = unravel(*ixs, shape=arr.shape)
-# print(rixs)
+def super_repeat(arr, raxes, repts):
+    def recurse(ix):
+        if ix == 0:
+            # print(raxes[0], repts[0])
+            repeat_nocopy(arr, raxes[0], 6)
+        else:
+            for i in range(repts[ix]):
+                print(ix)
+                recurse(ix - 1)
+    recurse(len(raxes) - 1)
+
+
+# super_repeat(xx, raxes, repts)
+print(y)
+# repeat_nocopy(xx, [0, 2], [2, 4])
+repeat_nocopy(y, [1, 2, 3], [2, 3, 4])
+
+
+# v = repeat(y, 3, 5)
+# print(xx)
+# print(v.shape)
+
+# print(xx)
+# print('\n')
+# print(y)
+# print('\n')
+
+xx, y = broadcast_copy(xx, y)
+print(y)
+# v = xx + y
+# print(v)
+
+# print(v.shape)
+
+# print(xx + y)
+
+# repeat_nocopy(xx, 0, 4)
+
+# xx, y = broadcast_copy(xx, y)

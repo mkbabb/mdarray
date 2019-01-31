@@ -67,7 +67,7 @@ def log_range(start, stop, size, base=10):
 
 
 '''
-End array ranges
+End array ranges.
 '''
 
 '''

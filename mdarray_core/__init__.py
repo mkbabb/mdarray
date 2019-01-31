@@ -6,6 +6,7 @@ from mdarray_core.indexing import *
 from mdarray_core.math import *
 from mdarray_core.types import *
 from mdarray_core.exceptions import *
+from mdarray_core.logic import *
 
 
 # __all__ = ["roll_array", "roll_axis", "reduce_array",

@@ -20,7 +20,7 @@ __all__ = ["mdarray"]
 class mdarray(object):
     def __init__(self, shape=None, **kwargs):
 
-        self.shape = shape if shape else [1]
+        self.shape = shape
         self.size = 1
         self.mdim = 1
         self.strides = [1]
@@ -32,6 +32,10 @@ class mdarray(object):
 
         if "size" not in kwargs:
             self._get_size()
+
+        if self.shape == None:
+            self.shape = [self.size]
+
         if "mdim" not in kwargs:
             self._get_mdim()
         if "strides" not in kwargs:

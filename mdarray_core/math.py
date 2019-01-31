@@ -26,9 +26,6 @@ def apply_binary_function(arr1, arr2, func):
         else:
             for i in range(arr1.size):
                 arr1.data[i] = func(arr1.data[i], arr2.data[i])
-                print(arr1.data[i])
-    print(arr1.shape)
-    print(arr1.strides)
 
 
 def sin(x):

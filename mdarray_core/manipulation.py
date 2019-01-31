@@ -15,7 +15,7 @@ from mdarray_core.types import inf, nan
 
 
 '''
-Core reshaping routines:
+Reshaping routines:
 '''
 
 

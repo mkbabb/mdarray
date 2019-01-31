@@ -106,13 +106,15 @@ class gslice(object):
         return str(self.slice_array)
 
 
-def expand_slice_array(slice_array, arr):
-    mdim = arr.mdim
+def expand_slice_array(slice_array, mdim, strides=None):
     ndim = len(slice_array)
 
-    pad_length = arr.strides[ndim - 1] if mdim != ndim else 1
-    broadcast_length = len(slice_array[0])
+    if strides:
+        pad_length = strides[ndim - 1] if mdim != ndim else 1
+    else:
+        pad_length = 1
 
+    broadcast_length = len(slice_array[0])
     out_array = [[0]*mdim]*(broadcast_length*pad_length)
 
     tmp0 = [0]*mdim
