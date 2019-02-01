@@ -42,10 +42,10 @@ def print_array(arr, sep='', formatter=None):
         if remaining_axes == mdim:
             for i in range(axis):
                 axis_counter[0] = i
-                ix3 = pair_wise_accumulate(axis_counter, arr.strides)
+                ix_i = pair_wise_accumulate(axis_counter, arr.strides)
 
                 try:
-                    a_val = arr.data[ix3]
+                    a_val = arr.data[ix_i]
                 except IndexError:
                     a_val = nan
 

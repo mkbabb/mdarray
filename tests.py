@@ -148,80 +148,60 @@ To mdarray and ndarray tests:
 End to mdarray and ndarray tests.
 '''
 
-# shape = [20, 2, 3]
+'''
+Broadcasting tests:
+'''
 
-# size = reduce(lambda x, y: x*y, shape)
+# shape1 = [6, 4, 1, 2, 1, 2]
+# size1 = reduce(lambda x, y: x*y, shape1)
+# X = arange(size1).reshape(shape1)
 
-# arr = arange(size).reshape(shape)
-# arr.flatten = pad_array_fmt(arr)
-# np_arr = tondarray(arr)
-
-
-# print(t1)
-# print(arr)
-
-# shape = [3, 5]
-# size = reduce(lambda x, y: x*y, shape)
-# arr = arange(size).reshape(shape)
-# print(arr)
+# shape1 = [1, 4, 3, 2, 2, 1]
+# size1 = reduce(lambda x, y: x*y, shape1)
+# Y = arange(size1).reshape(shape1)
 
 
-# t = tile(arr, (2, 1, 2))
-# print(t)
+# np_X = md.tondarray(X)
+# np_Y = md.tondarray(Y)
 
 
-# shape = [6, 4]
-
-# size = reduce(lambda x, y: x*y, shape)
-
-# arr = arange(size).reshape(shape)
-# np_arr = md.tondarray(arr)
-
-# ixs = np.where(np_arr > 2)
-# t1 = expand_slice_array([*ixs], 2)
-# print(md.tomdarray(t1))
-
-# _arr = [[1, 2], [3, 4],
-#         [9, 8], [7, 6]]
-# arr = md.tomdarray(_arr)
-# print(arr)
-
-# slc = [[True, False], [True, True]]
-# slc = md.tomdarray(slc)
-# v = repeat(slc, 1, 2)
-# print(v)
+# def func(x, y): return x*y
 
 
-# def pred(x): return True if x > 2 else False
-
-
-# v = mask(arr, pred)
-# print(v)
-
-
-
-
-# t0 = expand_dims(myslice, arr)
-shape = [4, 3, 2]
-size = reduce(lambda x, y: x*y, shape)
-X = arange(size).reshape(shape)
-print(X)
-
-v = repeat(X, [2], [1])
-print(v)
-print(v.shape)
-
-# Y = ones(shape=[1])*3
-
-
-# def f(x, y): return (x + y)
-
-
-# v = broadcast(X, Y, f)
-# print(v)
+# v = broadcast(X, Y, func)
 # print(v.shape)
 
-# X = md.tondarray(X)
-# y = md.tondarray(Y)
-# v = (X + Y)
 # print(v)
+# print('---\n')
+
+
+# np_v = (np_X * np_Y)
+
+# print(np_v)
+# print(np_v.shape)
+
+'''
+End broadcasting tests.
+'''
+
+# shape1 = [3]
+# size1 = reduce(lambda x, y: x*y, shape1)
+# X = arange(size1).reshape(shape1)
+
+# p = broadcast_toshape(X, [3, 3])
+# print(p)
+
+
+
+
+
+a0 = zeros([1, 6, 1])
+a1 = zeros([5, 6, 7])
+a2 = zeros([1, 6, 1])
+a3 = zeros([5, 1, 7])
+a4 = zeros([5, 6, 1])
+
+new_shape, raxes, repts = generate_broadcast_shape2(a0, a1, a2, a3, a4)
+print(new_shape)
+print(raxes)
+print(repts)

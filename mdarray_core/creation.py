@@ -74,13 +74,22 @@ End array ranges.
 Tiling and grid routines:
 '''
 
+# Uses the same recursive function as broadcast,
+# but manipulates the data in a different way.
+
 
 def repeat(arr, raxes, repts):
     global j
+
+    if not isinstance(raxes, list):
+        raxes = [raxes]
+    if not isinstance(repts, list):
+        repts = [repts]
+
     shape = arr.shape
     strides = arr.strides
     mdim = arr.mdim
-    
+
     ndim = len(raxes)
     new_shape = list(arr.shape)
 
@@ -125,53 +134,6 @@ def repeat(arr, raxes, repts):
     j = 0
     recurse(mdim - 1)
     return arr_out
-
-# def repeat(arr, raxis, rept):
-#     global j
-#     mdim = arr.mdim
-
-#     new_shape = list(arr.shape)
-#     new_shape[raxis] *= rept
-
-#     arr_out = zeros(shape=new_shape)
-#     axis_counter = [0]*mdim
-
-#     raxis_s = 1 if 0 != raxis else rept
-
-#     def recurse(ix):
-#         global j
-
-#         shape = arr.shape
-#         strides = arr.strides
-#         data = arr.data
-#         axis = shape[ix]
-
-#         remaining_axes = mdim - ix
-
-#         if remaining_axes == mdim:
-#             for i in range(axis):
-#                 for k in range(raxis_s):
-#                     axis_counter[0] = i
-#                     ix3 = pair_wise_accumulate(axis_counter, strides)
-
-#                     try:
-#                         a_val = data[ix3]
-#                     except:
-#                         a_val = nan
-
-#                     arr_out.data[j] = a_val
-#                     j += 1
-#         else:
-#             for i in range(axis):
-#                 axis_counter[ix] = i
-#                 if ix == raxis:
-#                     for k in range(rept):
-#                         recurse(ix - 1)
-#                 else:
-#                     recurse(ix - 1)
-#     j = 0
-#     recurse(mdim - 1)
-#     return arr_out
 
 
 def meshgrid_internal(*arrs, dense=False):
@@ -255,45 +217,78 @@ def broadcast_internal(arr1, arr2, raxes, repts, arr_out, func, flag=False):
     recurse(mdim - 1)
 
 
-def broadcast(arr1, arr2, func):
-    mdim1 = arr1.mdim
-    mdim2 = arr2.mdim
-    shape1 = arr1.shape
-    shape2 = arr2.shape
+def generate_broadcast_shape(*arrs):
+    arrs = tuple(arrs)
+    ndim = len(arrs)
 
-    mdim = mdim1
+    shapes = [i.shape for i in arrs]
+    mdims = [i.mdim for i in arrs]
+    mdim = max(mdims)
 
-    if mdim1 > mdim2:
-        shape2 = shape2 + [1]*(mdim1 - mdim2)
-        arr2.reshape(shape2)
-    elif mdim1 < mdim2:
-        shape1 = shape1 + [1]*(mdim2 - mdim1)
-        arr1.reshape(shape1)
-        mdim = mdim2
+    if mdims[0] < mdim:
+        shapes[0].append([1]*(mdim - mdims[0]))
 
-    raxes1 = []
-    raxes2 = []
-    repts1 = []
-    repts2 = []
-    new_shape = list(shape1)
+    raxes = [[] for i in range(ndim)]
+    repts = [[] for i in range(ndim)]
+    new_shape = list(shapes[0])
 
     for i in range(mdim):
-        axis1_i = shape1[i]
-        axis2_i = shape2[i]
-        if axis1_i == 1 and axis2_i > 1:
-            repts1.append(axis2_i)
-            raxes1.append(i)
-            new_shape[i] = axis2_i
-        elif axis1_i > 1 and axis2_i == 1:
-            repts2.append(axis1_i)
-            raxes2.append(i)
-            new_shape[i] = axis1_i
-        elif axis1_i != axis2_i:
-            raise IncompatibleDimensions
+        axis_i = shapes[0][i]
 
+        for j in range(1, ndim):
+            if i == 0:
+                shape_j = shapes[j]
+                mdim_j = mdims[j]
+
+                if mdim_j < mdim:
+                    shapes[j].append([1]*(mdim - mdim_j))
+                arrs[j].reshape(shapes[j])
+
+            axis_j = shapes[j][i]
+
+            if axis_i == 1 and axis_j > 1:
+                axis_i = axis_j
+                raxes[0].append(i)
+                repts[0].append(axis_i)
+            elif axis_i > 1 and axis_j == 1:
+                raxes[j].append(i)
+                repts[j].append(axis_i)
+            elif axis_i != axis_j:
+                raise IncompatibleDimensions
+
+        new_shape[i] = axis_i
+
+    return new_shape, raxes, repts
+
+
+def broadcast(*arrs, func):
+    arrs = tuple(arrs)
+    ndim = len(arrs)
+
+    new_shape, raxes, repts = generate_broadcast_shape(*arrs)
     arr_out = zeros(shape=new_shape)
-    broadcast_internal(arr1, arr2, raxes1, repts1, arr_out, func, False)
-    broadcast_internal(arr2, arr1, raxes2, repts2, arr_out, func, True)
+
+    for i in range(0, ndim, 2):
+        arr1 = arrs[i]
+        arr2 = arrs[i + 1]
+
+        broadcast_internal(
+            arr1, arr2, raxes[i], repts[i], arr_out, func, False)
+        broadcast_internal(
+            arr2, arr1, raxes[i + 1], repts[i + 1], arr_out, func, True)
+
+    return arr_out
+
+
+def broadcast_toshape(arr, shape):
+    new_shape, shape1, shape2, raxes1, raxes2, repts1, repts2 = generate_broadcast_shape(
+        arr, shape)
+
+    arr.reshape(shape1)
+
+    def func(x, y): return y
+    arr_out = zeros(shape=new_shape)
+    broadcast_internal(arr, arr, raxes1, repts1, arr_out, func, True)
     return arr_out
 
 
@@ -330,7 +325,7 @@ def broadcast_copy(arr1, arr2):
         if axis1_i == 1 and axis2_i > 1:
             arr1 = repeat(arr1, i, axis2_i)
         elif axis1_i > 1 and axis2_i == 1:
-            arr_out = repeat(arr_out, i, axis1_i)
+            arr2 = repeat(arr2, i, axis1_i)
         elif axis1_i != axis2_i:
             raise IncompatibleDimensions
-    return arr1, arr_out
+    return arr1, arr2

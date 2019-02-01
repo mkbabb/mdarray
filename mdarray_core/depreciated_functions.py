@@ -82,3 +82,57 @@ Note: this function does NOT work properly.
 #     slc = gslice(slc, a_inqry)
 #     md = tomdarray(iter_axis(a, slc, 12, rpeat)).reshape(new_shape)
 #     return md
+
+
+'''
+Depreciated repeat (again):
+Uses similar logic to repeat's current implementation,
+but is not capable of multiple repeats along multiple axes.
+'''
+
+# def repeat(arr, raxis, rept):
+#     global j
+#     mdim = arr.mdim
+
+#     new_shape = list(arr.shape)
+#     new_shape[raxis] *= rept
+
+#     arr_out = zeros(shape=new_shape)
+#     axis_counter = [0]*mdim
+
+#     raxis_s = 1 if 0 != raxis else rept
+
+#     def recurse(ix):
+#         global j
+
+#         shape = arr.shape
+#         strides = arr.strides
+#         data = arr.data
+#         axis = shape[ix]
+
+#         remaining_axes = mdim - ix
+
+#         if remaining_axes == mdim:
+#             for i in range(axis):
+#                 for k in range(raxis_s):
+#                     axis_counter[0] = i
+#                     ix3 = pair_wise_accumulate(axis_counter, strides)
+
+#                     try:
+#                         a_val = data[ix3]
+#                     except:
+#                         a_val = nan
+
+#                     arr_out.data[j] = a_val
+#                     j += 1
+#         else:
+#             for i in range(axis):
+#                 axis_counter[ix] = i
+#                 if ix == raxis:
+#                     for k in range(rept):
+#                         recurse(ix - 1)
+#                 else:
+#                     recurse(ix - 1)
+#     j = 0
+#     recurse(mdim - 1)
+#     return arr_out

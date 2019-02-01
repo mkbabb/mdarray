@@ -354,16 +354,17 @@ Recursive iteration template for which nearly all mdarray manipulations are base
 def mdarray_iter(arr):
     global j
     mdim = arr.mdim
+    shape = arr.shape
+    strides = arr.strides
+    data = arr.data
+
     axis_counter = [0]*mdim
     arr_out = zeros(arr.shape)
 
     def recurse(ix):
         global j
-        shape = arr.shape
-        strides = arr.strides
-        data = arr.data
-        axis = shape[ix]
 
+        axis = shape[ix]
         remaining_axes = mdim - ix
 
         if remaining_axes == mdim:
