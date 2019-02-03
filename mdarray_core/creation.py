@@ -261,21 +261,14 @@ def generate_broadcast_shape(*arrs):
     return new_shape, raxes, repts
 
 
-def broadcast(*arrs, func):
-    arrs = tuple(arrs)
-    ndim = len(arrs)
-
-    new_shape, raxes, repts = generate_broadcast_shape(*arrs)
+def broadcast(arr1, arr2, func):
+    new_shape, raxes, repts = generate_broadcast_shape(arr1, arr2)
     arr_out = zeros(shape=new_shape)
 
-    for i in range(0, ndim, 2):
-        arr1 = arrs[i]
-        arr2 = arrs[i + 1]
-
-        broadcast_internal(
-            arr1, arr2, raxes[i], repts[i], arr_out, func, False)
-        broadcast_internal(
-            arr2, arr1, raxes[i + 1], repts[i + 1], arr_out, func, True)
+    broadcast_internal(
+        arr1, arr2, raxes[0], repts[0], arr_out, func, False)
+    broadcast_internal(
+        arr2, arr1, raxes[1], repts[1], arr_out, func, True)
 
     return arr_out
 

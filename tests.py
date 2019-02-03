@@ -192,16 +192,68 @@ End broadcasting tests.
 # print(p)
 
 
+def broadcast_internal2(*arrs, new_shape, raxes, repts, func):
+    arrs = tuple(arrs)
+    ndim = len(arrs)
+
+    mdim = arrs[0].mdim
+    ndim = len(raxes)
+    arr_out = zeros(shape=new_shape)
+    axis_counters = [[0]*mdim for i in range(ndim)]
+
+    def recurse(warr, ix):
+        axis_counter = axis_counters[warr]
+        shape = arrs[warr].shape
+        strides = arrs[warr].strides
+        axis = shape[ix]
+        remaining_axes = mdim - ix
+
+        if remaining_axes == mdim:
+            for i in range(axis):
+                axis_counter[0] = i
+                ix_i = pair_wise_accumulate(
+                    axis_counter, strides)
+                yield ix_i
+        else:
+            for i in range(axis):
+                axis_counter[ix] = i
+                for k in range(len(raxes[warr])):
+                    raxis = raxes[warr][k]
+                    rept = repts[warr][k]
+                    if ix == raxis or (raxis == 0 and ix == 1):
+                        for l in range(rept):
+                            yield from recurse(warr, ix - 1)
+                        break
+                else:
+                    yield from recurse(warr, ix - 1)
+
+    casts = [recurse(i, mdim-1) for i in range(ndim)]
+    fargs = [0]*ndim
+    for i in range(arr_out.size):
+        for j in range(ndim):
+            ix_j = next(casts[j])
+            arrs_j = arrs[j].data[ix_j]
+            fargs[j] = arrs_j
+        arr_out.data[i] = func(*fargs)
+    return arr_out
 
 
+a0 = arange(42).reshape([1, 6, 7])
+a1 = ones([5, 6, 7])
+a2 = ones([1, 6, 1])*12
+# a3 = zeros([5, 1, 7])
+# a4 = zeros([5, 6, 1])
 
-a0 = zeros([1, 6, 1])
-a1 = zeros([5, 6, 7])
-a2 = zeros([1, 6, 1])
-a3 = zeros([5, 1, 7])
-a4 = zeros([5, 6, 1])
-
-new_shape, raxes, repts = generate_broadcast_shape2(a0, a1, a2, a3, a4)
+new_shape, raxes, repts = generate_broadcast_shape(a0, a1, a2)
 print(new_shape)
 print(raxes)
 print(repts)
+
+
+def f(x, y, z): return x + y + z/2
+
+
+arr_out = broadcast_internal2(
+    a0, a1, a2, new_shape=new_shape, raxes=raxes, repts=repts, func=f)
+# arr_out = broadcast(a0, a1, f)
+print(arr_out)

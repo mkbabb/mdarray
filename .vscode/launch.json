@@ -12,6 +12,7 @@
             "program": "${file}",
             "console": "none",
             "env": {"PYTHONPATH":"${workspaceRoot}"},
+            "xdebugSettings": { "max_data": -1 }
         },
         {
             "name": "Python: Attach",
