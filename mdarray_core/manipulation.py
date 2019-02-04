@@ -366,6 +366,7 @@ def mdarray_iter(arr):
 
         axis = shape[ix]
         remaining_axes = mdim - ix
+        print(remaining_axes, ix)
 
         if remaining_axes == mdim:
             for i in range(axis):

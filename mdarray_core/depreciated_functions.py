@@ -1,36 +1,62 @@
 def get_strides(shape):
-    strides = []
-    tmp = 1
-    for i in shape:
-        strides += [tmp]
-        tmp *= i
+    mdim = len(shape)
+    init = 1
+    strides = [0]*mdim
+    strides[0] = init
+
+    for i in range(mdim - 1):
+        init *= shape[i]
+        strides[i+1] = init
 
     return strides
 
 
 def iter_array(shape, strides):
-    N = len(shape)
-    counters = [0]*N
+    mdim = len(shape)
+    raxes = [0, 1, 2]
+    repts = [0, 0, 2]
+
+    ndim = len(raxes)
+    counters = [0]*mdim
+    rcounters = [0]*ndim
 
     add = 0
     ix = 0
+    j = 0
 
-    while (counters[0] < shape[0]):
-        counters[N - 1] += 1
+    while (counters[mdim - 1] < shape[mdim - 1]):
+        print(counters)
+        j += 1
 
-        if (counters[N - 1] == shape[N - 1]):
+        counters[0] += 1
+
+        if (counters[0] == shape[0]):
+            print(counters)
             add = 0
 
-            for n in range(N - 1, -1, -1):
-                if counters[n] == shape[n] and n != 0:
-                    counters[n - 1] += 1
-                    counters[n] = 0
+            for n in range(mdim):
+                if counters[n] == shape[n]:
+                    if raxes[n] == n:
+                        if rcounters[n] == repts[n]:
+                            rcounters[n] = 0
+                            if n != ndim - 1:
+                                counters[n + 1] += 1
+                            counters[n] = 0
+                        else:
+                            counters[n] = 0
+                            rcounters[n] += 1
 
                 add += counters[n]*strides[n]
             ix = add
 
         else:
-            ix += strides[N - 1]
+            ix += strides[0]
+
+
+# shape = [1, 2, 3]
+# strides = get_strides(shape)
+
+# iter_array(shape, strides)
 
 
 '''
@@ -39,11 +65,11 @@ Uses expand dims and slice array, which is far more costly than simply using rep
 '''
 
 # def meshgrid(*seq):
-# 	N = len(seq)
-# 	shape = [0]*(N)
+# 	mdim = len(seq)
+# 	shape = [0]*(mdim)
 #
 # 	counter = 0
-# 	for i in range(N):
+# 	for i in range(mdim):
 # 		shape[i] = len(seq[i])
 # 		counter += 1
 #

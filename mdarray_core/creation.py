@@ -192,6 +192,7 @@ def broadcast_internal(arr1, arr2, raxes, repts, arr_out, func, flag=False):
             for i in range(axis):
                 axis_counter[0] = i
                 ix_i = pair_wise_accumulate(axis_counter, strides)
+                print(axis_counter)
 
                 if not flag:
                     arr_out.data[j] = ix_i

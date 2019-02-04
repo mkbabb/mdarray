@@ -2,18 +2,8 @@ from functools import reduce
 
 from mdarray_core import *
 from mdarray import *
-
-
-def func(arr):
-    ndim = len(arr)
-    mx = 0
-    axis = 0
-    for i in range(ndim):
-        arr_i = arr[i]
-        if arr_i > mx:
-            mx = arr_i
-            axis = i
-    return axis
+import threading
+import queue
 
 
 '''
@@ -193,6 +183,7 @@ End broadcasting tests.
 
 
 def broadcast_internal2(*arrs, new_shape, raxes, repts, func):
+    global j
     arrs = tuple(arrs)
     ndim = len(arrs)
 
@@ -201,59 +192,90 @@ def broadcast_internal2(*arrs, new_shape, raxes, repts, func):
     arr_out = zeros(shape=new_shape)
     axis_counters = [[0]*mdim for i in range(ndim)]
 
-    def recurse(warr, ix):
-        axis_counter = axis_counters[warr]
+    def recurse(warr, ix, flag=False):
+        global j
         shape = arrs[warr].shape
         strides = arrs[warr].strides
-        axis = shape[ix]
+        axis = arrs[warr].shape[ix]
         remaining_axes = mdim - ix
 
         if remaining_axes == mdim:
             for i in range(axis):
-                axis_counter[0] = i
+                axis_counters[warr][0] = i
                 ix_i = pair_wise_accumulate(
-                    axis_counter, strides)
-                yield ix_i
+                    axis_counters[warr], strides)
+
+                if flag:
+                    arr_out.data[j] = func(
+                        arr_out.data[j], arrs[warr].data[ix_i])
+                else:
+                    arr_out.data[j] = arrs[warr].data[ix_i]
+
+                j += 1
+
         else:
             for i in range(axis):
-                axis_counter[ix] = i
+                axis_counters[warr][ix] = i
+
                 for k in range(len(raxes[warr])):
                     raxis = raxes[warr][k]
                     rept = repts[warr][k]
                     if ix == raxis or (raxis == 0 and ix == 1):
                         for l in range(rept):
-                            yield from recurse(warr, ix - 1)
+                            recurse(warr, ix - 1, flag)
                         break
                 else:
-                    yield from recurse(warr, ix - 1)
+                    recurse(warr, ix - 1, flag)
 
-    casts = [recurse(i, mdim-1) for i in range(ndim)]
-    fargs = [0]*ndim
-    for i in range(arr_out.size):
-        for j in range(ndim):
-            ix_j = next(casts[j])
-            arrs_j = arrs[j].data[ix_j]
-            fargs[j] = arrs_j
-        arr_out.data[i] = func(*fargs)
+    j = 0
+    recurse(0, mdim - 1, True)
+    for i in range(ndim - 1):
+        j = 0
+        recurse(i+1, mdim - 1, True)
+
     return arr_out
 
+    # l_counter = [0]*ndim
+    # l_i = 1
+    # for n in range(ndim):
+    #     l_i *= arrs[n].shape[ix]
 
-a0 = arange(42).reshape([1, 6, 7])
-a1 = ones([5, 6, 7])
-a2 = ones([1, 6, 1])*12
+    # for o in range(l_i):
+    #     for p in range(ndim):
+    #         if l_counter[p] < arrs[p].shape[ix]:
+    #             pass
+
+    # casts = [recurse(i, mdim-1) for i in range(ndim)]
+    # fargs = [0]*ndim
+    # for i in range(arr_out.size):
+    #     for j in range(ndim):
+    #         ix_j = next(casts[j])
+    #         arrs_j = arrs[j].data[ix_j]
+    #         fargs[j] = arrs_j
+    #     arr_out.data[i] = func(*fargs)
+    return
+
+
+a0 = arange(24).reshape([2, 3, 4])
+a1 = ones([2, 3, 1])*12
+a2 = ones([1, 3, 1])*12
 # a3 = zeros([5, 1, 7])
 # a4 = zeros([5, 6, 1])
 
+
 new_shape, raxes, repts = generate_broadcast_shape(a0, a1, a2)
+
 print(new_shape)
 print(raxes)
 print(repts)
 
 
-def f(x, y, z): return x + y + z/2
+def f(x, y): return x + y
 
 
 arr_out = broadcast_internal2(
     a0, a1, a2, new_shape=new_shape, raxes=raxes, repts=repts, func=f)
-# arr_out = broadcast(a0, a1, f)
 print(arr_out)
+
+# arr_out = broadcast(a0, a1, f)
+# print(arr_out)
