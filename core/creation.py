@@ -205,6 +205,7 @@ def broadcast_bnry_internal(*arrs, new_shape, raxes, repts, func):
     axis_counters = [[0]*mdim for i in range(ndim)]
 
     def recurse(warr, ix, flag=False):
+        print(mdim, ix)
         global j
         arr = arrs[warr]
         shape = arr.shape
@@ -233,6 +234,8 @@ def broadcast_bnry_internal(*arrs, new_shape, raxes, repts, func):
                 for k in range(len(raxes[warr])):
                     raxis = raxes[warr][k]
                     rept = repts[warr][k]
+                    print(raxis, rept, ix)
+
                     if ix == raxis or (raxis == 0 and ix == 1):
                         for l in range(rept):
                             recurse(warr, ix - 1, flag)
@@ -244,6 +247,7 @@ def broadcast_bnry_internal(*arrs, new_shape, raxes, repts, func):
     recurse(0, mdim - 1, False)
     for i in range(ndim - 1):
         j = 0
+        print(arr_out)
         recurse(i+1, mdim - 1, True)
 
     '''
@@ -330,6 +334,7 @@ def generate_broadcast_shape(*arrs):
 
     if mdims[0] < mdim:
         shapes[0] += [1]*(mdim - mdims[0])
+    arrs[0].reshape(shapes[0])
 
     raxes = [[] for i in range(ndim)]
     repts = [[] for i in range(ndim)]
@@ -367,6 +372,7 @@ def generate_broadcast_shape(*arrs):
 def broadcast_bnry(*arrs, func):
     new_shape, raxes, repts = generate_broadcast_shape(*arrs)
     print(new_shape, raxes, repts)
+    print([i.shape for i in arrs])
     arr_out = broadcast_bnry_internal(
         *arrs, new_shape=new_shape, raxes=raxes, repts=repts, func=func)
     return arr_out

@@ -13,7 +13,9 @@ __all__ = ["reductor", "inner_product",
 
 
 '''
-Generalised reduction of a 1-d array
+Generalised reduction of a 1-d array.
+The reductor class can either apply a reduction or an accumulation
+across a 1-d array. Functions of an airty >= 2 are accepted for both routines.
 '''
 
 

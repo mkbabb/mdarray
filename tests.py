@@ -219,13 +219,16 @@ Reduction tests:
 # arr = md.tondarray(arr)
 # print(np.diag(arr))
 
-arr = arange(24).reshape([4, 3, 2])
-np_arr = md.tondarray(arr)
-print(arr)
+# arr = arange(24).reshape([4, 3, 2])
+# np_arr = tondarray(arr)
+# print(arr)
 
-v = reduce_array(arr, 1, reductor.add().accumulate)
-print(v)
+# v = reduce_array(arr, 2, reductor.add().accumulate)
+# print(v)
 # print(np_arr.sum(-1))
+
+
+print(10*eye(4))
 
 
 
