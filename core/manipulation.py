@@ -3,16 +3,17 @@ from functools import reduce
 import numpy as np
 
 import mdarray as md
-from mdarray_core.creation import full, zeros
-from mdarray_core.exceptions import IncompatibleDimensions
-from mdarray_core.helper import (get_strides, pair_wise_accumulate, roll_array,
-                                 swap_item)
-from mdarray_core.indexing import flatten_list, make_nested_list
-from mdarray_core.types import inf, nan
+from core.creation import full, zeros
+from core.exceptions import IncompatibleDimensions
+from core.helper import (get_strides, pair_wise_accumulate, roll_array,
+                         swap_item)
+from core.types import inf, nan
 
-# __all__ = ["mdarray_iter", "concatenate", "hstack", "vstack", "dstack", "roll_axis", "pad_array",
-#            "repeat", "meshgrid", "reduce_array"]
 
+__all__ = ["reshape", "transpose", "swap_axis", "roll_axis",
+           "flatten", "ravel", "unravel", "astype",
+           "concatenate", "hstack", "vstack", "dstack",
+           "tile", "pad_array", "mdarray_iter"]
 
 '''
 Reshaping routines:
@@ -129,6 +130,38 @@ def unravel(*mdim_ixs, shape):
     return ixs
 
 
+def astype(arr, dtype):
+    shape = list(arr.shape)
+    mdim = arr.mdim
+    size = arr.size
+
+    if dtype != arr.dtype:
+        if dtype == complex and mdim > 1:
+            if shape[0] % 2 == 0:
+                shape[0] //= 2
+                arr_out = zeros(shape=shape, dtype=complex)
+                j = 0
+                for i in range(0, size, 2):
+                    arr_out.data[j] = arr.data[i] + 1j*arr.data[i + 1]
+                    j += 1
+                arr = arr_out
+            else:
+                raise IncompatibleDimensions
+        elif arr.dtype == complex:
+            shape[0] *= 2
+            arr_out = zeros(shape=shape, dtype=dtype)
+            j = 0
+            for i in range(0, arr_out.size, 2):
+                arr_out.data[i] = arr.data[j].real
+                arr_out.data[i + 1] = arr.data[j].imag
+                j += 1
+            arr = arr_out
+        else:
+            for i in range(size):
+                arr.data[i] = dtype(arr.data[i])
+    return arr
+
+
 '''
 End reshaping and retyping routines.
 '''
@@ -241,7 +274,11 @@ def tile(arr, tiles):
     return arr_i
 
 
-# Implicitly a concatenation routine: uses pdim pad arrays concatenated with the main "arr" array.
+'''
+Implicitly a concatenation routine:
+Uses pdim pad arrays concatenated with the main "arr" array.
+'''
+
 
 def pad_array(arr, pad_width, pad_values):
     ndim = len(pad_width)
@@ -287,66 +324,6 @@ End concatenation and splitting routines.
 
 
 '''
-Generalised reduction routines:
-'''
-
-
-def reduce_array(arr, faxis, func, mode="value"):
-    global j, k
-
-    roll_axis(arr, faxis)
-
-    mdim = arr.mdim
-    new_shape = list(arr.shape)
-    new_shape.pop(0)
-
-    arr_out = zeros(shape=new_shape)
-    tmp0 = [0]*arr.shape[0]
-    axis_counter = [0]*mdim
-
-    def recurse(ix):
-        global j, k
-        shape = arr.shape
-        strides = arr.strides
-        data = arr.data
-        axis = shape[ix]
-
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
-            for i in range(axis):
-                axis_counter[0] = i
-
-                ix_i = pair_wise_accumulate(axis_counter, strides)
-
-                try:
-                    arr_val = data[ix_i]
-                except:
-                    arr_val = nan
-
-                tmp0[j] = arr_val
-                j += 1
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i
-                recurse(ix - 1)
-
-                if ix == 1:
-                    j = 0
-                    arr_out.data[k] = func(tmp0)
-                    k += 1
-
-    j = k = 0
-    recurse(mdim - 1)
-    return arr_out
-
-
-'''
-End generalised reduction routines.
-'''
-
-
-'''
 Recursive iteration template for which nearly all mdarray manipulations are based off of.
 '''
 
@@ -366,7 +343,6 @@ def mdarray_iter(arr):
 
         axis = shape[ix]
         remaining_axes = mdim - ix
-        print(remaining_axes, ix)
 
         if remaining_axes == mdim:
             for i in range(axis):

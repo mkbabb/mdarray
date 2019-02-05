@@ -2,7 +2,8 @@ import math
 import operator
 
 import mdarray as md
-from mdarray_core.exceptions import IncompatibleDimensions
+from core.creation import broadcast_bnry
+from core.exceptions import IncompatibleDimensions
 
 __all__ = ["apply_unary_function", "apply_binary_function"]
 
@@ -14,18 +15,9 @@ def apply_unary_function(arr1, func):
 
 
 def apply_binary_function(arr1, arr2, func):
-    if isinstance(arr1, md.mdarray) and not isinstance(arr2, md.mdarray):
-        for i in range(arr1.size):
-            arr1.data[i] = func(arr1.data[i], arr2)
-    elif not isinstance(arr1, md.mdarray) and isinstance(arr2, md.mdarray):
-        for i in range(arr2.size):
-            arr2.data[i] = func(arr1, arr2.data[i])
-    elif isinstance(arr1, md.mdarray) and isinstance(arr2, md.mdarray):
-        if arr1.size != arr2.size:
-            raise IncompatibleDimensions
-        else:
-            for i in range(arr1.size):
-                arr1.data[i] = func(arr1.data[i], arr2.data[i])
+    arr1 = md.tomdarray(arr1)
+    arr2 = md.tomdarray(arr2)
+    return broadcast_bnry(arr1, arr2, func=func)
 
 
 def sin(x):

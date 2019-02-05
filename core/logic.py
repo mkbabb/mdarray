@@ -3,13 +3,13 @@ from functools import reduce
 import numpy as np
 
 import mdarray as md
-from mdarray_core.creation import full, zeros
-from mdarray_core.exceptions import IncompatibleDimensions
-from mdarray_core.helper import (get_strides, pair_wise_accumulate, roll_array,
+from core.creation import full, zeros
+from core.exceptions import IncompatibleDimensions
+from core.helper import (get_strides, pair_wise_accumulate, roll_array,
                                  swap_item)
-from mdarray_core.indexing import flatten_list, make_nested_list
-from mdarray_core.manipulation import roll_axis
-from mdarray_core.types import inf, nan
+from core.indexing import flatten_list, make_nested_list
+from core.manipulation import roll_axis
+from core.types import inf, nan
 
 __all__ = ["mask"]
 

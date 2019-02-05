@@ -1,7 +1,7 @@
 from functools import reduce
 
-from mdarray_core.helper import pair_wise_accumulate
-from mdarray_core.types import inf, nan
+from core.helper import pair_wise_accumulate
+from core.types import inf, nan
 
 __all__ = ["expand_dims", "expand_slice_array",
            "remove_extraneous_dims", "flatten_list", "make_nested_list"]

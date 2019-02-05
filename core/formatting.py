@@ -2,8 +2,8 @@ import math
 import re
 from functools import reduce
 
-from mdarray_core.helper import pair_wise_accumulate
-from mdarray_core.types import inf, nan
+from core.helper import pair_wise_accumulate
+from core.types import inf, nan
 
 __all__ = ["print_array", "pad_array_fmt"]
 
@@ -44,10 +44,7 @@ def print_array(arr, sep='', formatter=None):
                 axis_counter[0] = i
                 ix_i = pair_wise_accumulate(axis_counter, arr.strides)
 
-                try:
-                    a_val = arr.data[ix_i]
-                except IndexError:
-                    a_val = nan
+                a_val = arr.data[ix_i]
 
                 val = formatter(a_val)
                 s += (val + sep) if i < axis - 1 else val
@@ -66,7 +63,7 @@ def print_array(arr, sep='', formatter=None):
             s = trim_string(s, sep)
 
         s = '[{0}]'.format(s)
-
+        
         return s
 
     return recurse(mdim - 1)

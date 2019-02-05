@@ -162,3 +162,41 @@ but is not capable of multiple repeats along multiple axes.
 #     j = 0
 #     recurse(mdim - 1)
 #     return arr_out
+
+'''
+Much more straightforward implmentation of generalised broadcasting,
+but is orders of magnitude more memory-expensive.
+Don't use!
+'''
+
+
+# def broadcast_copy(arr1, arr2):
+#     mdim1 = arr1.mdim
+#     mdim2 = arr2.mdim
+#     shape1 = arr1.shape
+#     shape2 = arr2.shape
+
+#     mdim = mdim1
+
+#     if mdim1 > mdim2:
+#         arr2.reshape(shape2 + [1]*(mdim1 - mdim2))
+#     elif mdim1 < mdim2:
+#         arr1.reshape(shape1 + [1]*(mdim2 - mdim1))
+#         mdim = mdim2
+
+#     shape1 = arr1.shape
+#     shape2 = arr2.shape
+
+#     repts1 = [0]*mdim
+#     repts2 = [0]*mdim
+
+#     for i in range(mdim):
+#         axis1_i = shape1[i]
+#         axis2_i = shape2[i]
+#         if axis1_i == 1 and axis2_i > 1:
+#             arr1 = repeat(arr1, i, axis2_i)
+#         elif axis1_i > 1 and axis2_i == 1:
+#             arr2 = repeat(arr2, i, axis1_i)
+#         elif axis1_i != axis2_i:
+#             raise IncompatibleDimensions
+#     return arr1, arr2

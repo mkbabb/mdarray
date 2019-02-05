@@ -1,6 +1,7 @@
 from functools import reduce
 
-__all__ = ["get_strides", "swap_item", "roll_array"]
+__all__ = ["update_dict", "get_strides", "swap_item", "roll_array",
+           "pair_wise", "pair_wise_accumulate"]
 
 
 def update_dict(d1, d2, recursive=True):
@@ -39,8 +40,11 @@ def swap_item(arr, ix1, ix2):
 
 
 def roll_array(arr, axis, iterations=1):
+    ndim = len(arr)
     if axis == 0:
         return
+    elif axis < 0:
+        axis += ndim
 
     def recurse(ix):
         swap_item(arr, axis, ix)

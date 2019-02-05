@@ -1,6 +1,6 @@
 from functools import reduce
 
-from mdarray_core import *
+from core import *
 from mdarray import *
 import threading
 import queue
@@ -170,112 +170,67 @@ Broadcasting tests:
 # print(np_v)
 # print(np_v.shape)
 
+
+# More tests
+
+# a0 = arange(24).reshape([2, 3, 4, 1])
+# a1 = ones([2, 3, 1])*12
+# a2 = ones([1, 3, 1])*12
+# a3 = zeros([2, 3, 4])
+# a4 = linear_range(0, 10, 20).reshape([1, 1, 4, 5])
+
+
+# a0, a4 = broadcast_arrays(a0, a4)
+# print(a0)
+
+# arr1 = arange(100).reshape([2, 25, 2])
+# arr2 = ones([1, 25, 1])*1.0
+
+# arr1 = md.tondarray(arr1)
+# arr2 = md.tondarray(arr2)
+# print(arr1*arr2)
+
+# print(arr1*arr2)
+
 '''
 End broadcasting tests.
 '''
 
-# shape1 = [3]
-# size1 = reduce(lambda x, y: x*y, shape1)
-# X = arange(size1).reshape(shape1)
+'''
+Reduction tests:
+'''
 
-# p = broadcast_toshape(X, [3, 3])
-# print(p)
+# shape = [5, 3, 2]
+# size = reduce(lambda x, y: x*y, shape)
+# arr = arange(size).reshape(shape)
+# np_arr = md.tondarray(arr)
 
-
-def broadcast_internal2(*arrs, new_shape, raxes, repts, func):
-    global j
-    arrs = tuple(arrs)
-    ndim = len(arrs)
-
-    mdim = arrs[0].mdim
-    ndim = len(raxes)
-    arr_out = zeros(shape=new_shape)
-    axis_counters = [[0]*mdim for i in range(ndim)]
-
-    def recurse(warr, ix, flag=False):
-        global j
-        shape = arrs[warr].shape
-        strides = arrs[warr].strides
-        axis = arrs[warr].shape[ix]
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
-            for i in range(axis):
-                axis_counters[warr][0] = i
-                ix_i = pair_wise_accumulate(
-                    axis_counters[warr], strides)
-
-                if flag:
-                    arr_out.data[j] = func(
-                        arr_out.data[j], arrs[warr].data[ix_i])
-                else:
-                    arr_out.data[j] = arrs[warr].data[ix_i]
-
-                j += 1
-
-        else:
-            for i in range(axis):
-                axis_counters[warr][ix] = i
-
-                for k in range(len(raxes[warr])):
-                    raxis = raxes[warr][k]
-                    rept = repts[warr][k]
-                    if ix == raxis or (raxis == 0 and ix == 1):
-                        for l in range(rept):
-                            recurse(warr, ix - 1, flag)
-                        break
-                else:
-                    recurse(warr, ix - 1, flag)
-
-    j = 0
-    recurse(0, mdim - 1, True)
-    for i in range(ndim - 1):
-        j = 0
-        recurse(i+1, mdim - 1, True)
-
-    return arr_out
-
-    # l_counter = [0]*ndim
-    # l_i = 1
-    # for n in range(ndim):
-    #     l_i *= arrs[n].shape[ix]
-
-    # for o in range(l_i):
-    #     for p in range(ndim):
-    #         if l_counter[p] < arrs[p].shape[ix]:
-    #             pass
-
-    # casts = [recurse(i, mdim-1) for i in range(ndim)]
-    # fargs = [0]*ndim
-    # for i in range(arr_out.size):
-    #     for j in range(ndim):
-    #         ix_j = next(casts[j])
-    #         arrs_j = arrs[j].data[ix_j]
-    #         fargs[j] = arrs_j
-    #     arr_out.data[i] = func(*fargs)
-    return
+# arr = md.tomdarray([[1,2,3], [4,5,6], [7,8,9]])
 
 
-a0 = arange(24).reshape([2, 3, 4])
-a1 = ones([2, 3, 1])*12
-a2 = ones([1, 3, 1])*12
-# a3 = zeros([5, 1, 7])
-# a4 = zeros([5, 6, 1])
+
+# func = lambda x: arange(9).reshape([3, 3])
+# rarr = reduce_array(arr, 0, func)
+# print(np_arr.sum(-1))
+# print(rarr)
+# diag = diagonal([0, 1, 2, 3])
+# print(diag)
+
+# arr = md.tondarray(arr)
+# print(np.diag(arr))
+
+arr = arange(24).reshape([4, 3, 2])
+np_arr = md.tondarray(arr)
+print(arr)
+
+v = reduce_array(arr, 1, reductor.add().accumulate)
+print(v)
+# print(np_arr.sum(-1))
 
 
-new_shape, raxes, repts = generate_broadcast_shape(a0, a1, a2)
-
-print(new_shape)
-print(raxes)
-print(repts)
 
 
-def f(x, y): return x + y
 
-
-arr_out = broadcast_internal2(
-    a0, a1, a2, new_shape=new_shape, raxes=raxes, repts=repts, func=f)
-print(arr_out)
-
-# arr_out = broadcast(a0, a1, f)
-# print(arr_out)
+'''
+End reduction tests:
+'''
