@@ -4,7 +4,7 @@ from inspect import signature
 import numpy as np
 
 import mdarray as md
-from core.creation import zeros
+from core.creation import zeros, make_mdim
 from core.helper import pair_wise, pair_wise_accumulate
 from core.manipulation import roll_axis
 
@@ -29,21 +29,21 @@ class reductor(object):
 
     def reduce(self, arr):
         size = len(arr)
-        t = (size//self.stride) % self.nargs
+        t = (size // self.stride) % self.nargs
 
         if (t != 0) & (t != self.nargs - 1):
             raise ValueError
 
         i = self.ix
         out = arr[0]
-        args = [0]*(self.nargs)
+        args = [0] * (self.nargs)
         self.stride *= (self.nargs - 1)
 
         while i < size - 1:
             args[0] = out
 
             for j in range(1, self.nargs):
-                args[j] = arr[i+j]
+                args[j] = arr[i + j]
 
             out = self.op(*args)
             i += self.stride
@@ -51,13 +51,13 @@ class reductor(object):
 
     def accumulate(self, arr):
         size = len(arr)
-        t = (size//self.stride) % self.nargs
+        t = (size // self.stride) % self.nargs
 
         if (t != 0) & (t != self.nargs - 1):
             raise ValueError
 
         i = self.ix
-        args = [0]*(self.nargs)
+        args = [0] * (self.nargs)
         self.stride *= (self.nargs - 1)
 
         while i < size - 1:
@@ -104,6 +104,8 @@ Generalised reduction routines:
 def reduce_array(arr, faxis, func):
     global j, k, arr_out, new_shape
 
+    make_mdim(arr, arr.mdim + 1)
+
     if isinstance(faxis, list):
         ndim = len(faxis)
         for i in range(ndim):
@@ -118,8 +120,8 @@ def reduce_array(arr, faxis, func):
     data = arr.data
 
     new_shape = list(shape)
-    tmp0 = [0]*arr.shape[0]
-    axis_counter = [0]*mdim
+    tmp0 = [0] * arr.shape[0]
+    axis_counter = [0] * mdim
 
     def recurse(ix):
         global j, k, arr_out, new_shape

@@ -68,7 +68,7 @@ class mdarray(object):
         self.mdim = len(self.shape)
 
     def _get_size(self):
-        self.size = reduce(lambda x, y: x*y, self.shape)
+        self.size = reduce(lambda x, y: x * y, self.shape)
 
     def _get_strides(self):
         self.strides = core.get_strides(self.shape)
@@ -139,11 +139,17 @@ class mdarray(object):
     def __rfloordiv__(self, other):
         return core.apply_binary_function(other, self, operator.floordiv)
 
-    def __pow__(self, power, modulo=None):
+    def __pow__(self, power):
         return core.apply_binary_function(self, power, operator.pow)
 
-    def __rpow__(self, power, modulo=None):
+    def __rpow__(self, power):
         return core.apply_binary_function(power, self, operator.pow)
+
+    def __sqrt__(self):
+        return core.apply_unary_function(self, math.sqrt)
+
+    def __nroot__(self, root):
+        return self.__pow__(1 / root)
 
     def __sin__(self):
         core.apply_unary_function(self, math.sin)

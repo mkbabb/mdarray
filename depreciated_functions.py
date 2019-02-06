@@ -142,14 +142,14 @@ but is not capable of multiple repeats along multiple axes.
 #             for i in range(axis):
 #                 for k in range(raxis_s):
 #                     axis_counter[0] = i
-#                     ix3 = pair_wise_accumulate(axis_counter, strides)
+#                     ix_i = pair_wise_accumulate(axis_counter, strides)
 
 #                     try:
-#                         a_val = data[ix3]
+#                         arr_val = data[ix_i]
 #                     except:
-#                         a_val = nan
+#                         arr_val = nan
 
-#                     arr_out.data[j] = a_val
+#                     arr_out.data[j] = arr_val
 #                     j += 1
 #         else:
 #             for i in range(axis):

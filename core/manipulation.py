@@ -22,7 +22,7 @@ Reshaping routines:
 
 def reshape(arr, new_shape):
     mdim = len(new_shape)
-    new_size = reduce(lambda x, y: x*y, new_shape)
+    new_size = reduce(lambda x, y: x * y, new_shape)
 
     if new_size != arr.size:
         raise IncompatibleDimensions
@@ -33,6 +33,13 @@ def reshape(arr, new_shape):
 
 
 def transpose(arr, axis1=0, axis2=1):
+    mdim = arr.mdim
+
+    maxis = max(abs(axis1), abs(axis2))
+    if maxis > mdim - 1:
+        paxis = maxis - (mdim - 1)
+        reshape(arr, arr.shape + [1] * paxis)
+
     swap_item(arr.strides, axis1, axis2)
     swap_item(arr.shape, axis1, axis2)
 
@@ -48,7 +55,7 @@ def roll_axis(arr, axis, iterations=1):
 
 def flatten(arr, order=1):
     new_mdim = arr.mdim - order
-    new_shape = [0]*(arr.mdim - order)
+    new_shape = [0] * (arr.mdim - order)
 
     for i in range(new_mdim - 1):
         new_shape[i] = arr.shape[i]
@@ -69,11 +76,11 @@ def ravel_internal(ix, mdim_ix_i, strides, size, mdim):
         k = 1
 
         while True:
-            stride_k = stride*k
+            stride_k = stride * k
             if stride_k >= ix:
                 if stride != 1:
                     k -= 1
-                stride_k = stride*k
+                stride_k = stride * k
                 break
             else:
                 k += 1
@@ -91,19 +98,19 @@ def ravel(*ixs, shape):
         mdim = shape.mdim
     else:
         strides = get_strides(shape)
-        size = reduce(lambda x, y: x*y, shape)
+        size = reduce(lambda x, y: x * y, shape)
         mdim = len(shape)
 
     ixs = tuple(ixs)
     ndim = len(ixs)
-    mdim_ixs = [[0]*mdim]*ndim
+    mdim_ixs = [[0] * mdim] * ndim
 
     for i in range(ndim):
         ix = ixs[i]
         if ix > size:
             raise IncompatibleDimensions(
                 "The raveled index is too large to unravel using the provided shape!")
-        mdim_ix_i = [0]*mdim
+        mdim_ix_i = [0] * mdim
         mdim_ixs[i] = ravel_internal(ix, mdim_ix_i, strides, size, mdim)
 
     return mdim_ixs
@@ -116,12 +123,12 @@ def unravel(*mdim_ixs, shape):
         mdim = shape.mdim
     else:
         strides = get_strides(shape)
-        size = reduce(lambda x, y: x*y, shape)
+        size = reduce(lambda x, y: x * y, shape)
         mdim = len(shape)
 
     mdim_ixs = tuple(mdim_ixs)
     ndim = len(mdim_ixs)
-    ixs = [0]*ndim
+    ixs = [0] * ndim
 
     for i in range(ndim):
         mdim_ix_i = mdim_ixs[i]
@@ -142,7 +149,7 @@ def astype(arr, dtype):
                 arr_out = zeros(shape=shape, dtype=complex)
                 j = 0
                 for i in range(0, size, 2):
-                    arr_out.data[j] = arr.data[i] + 1j*arr.data[i + 1]
+                    arr_out.data[j] = arr.data[i] + 1j * arr.data[i + 1]
                     j += 1
                 arr = arr_out
             else:
@@ -182,7 +189,7 @@ def concatenate(*arrs, caxis):
     new_shape = list(arr1.shape)
     new_shape[caxis] = 0
 
-    axis_counters = [[0]*mdim]*ndim
+    axis_counters = [[0] * mdim] * ndim
     for i in range(ndim):
         arr_i = arrs[i]
 
@@ -215,14 +222,14 @@ def concatenate(*arrs, caxis):
             for i in range(axis):
                 axis_counter[0] = i
 
-                ix3 = pair_wise_accumulate(axis_counter, strides)
+                ix_i = pair_wise_accumulate(axis_counter, strides)
 
                 try:
-                    a_val = data[ix3]
+                    arr_val = data[ix_i]
                 except:
-                    a_val = nan
+                    arr_val = nan
 
-                arr_out.data[j] = a_val
+                arr_out.data[j] = arr_val
                 j += 1
         else:
             for i in range(axis):
@@ -259,13 +266,13 @@ def tile(arr, tiles):
     mdim = arr.mdim
     ndim = len(tiles)
     if ndim > mdim:
-        new_shape = arr.shape + [1]*(ndim - mdim)
+        new_shape = arr.shape + [1] * (ndim - mdim)
         arr = arr.reshape(new_shape)
 
     arr_i = arr
     for i in range(ndim):
         tile_i = tiles[i]
-        arrs = [0]*tile_i
+        arrs = [0] * tile_i
 
         for j in range(tile_i):
             arrs[j] = arr_i
@@ -285,19 +292,19 @@ def pad_array(arr, pad_width, pad_values):
     pdim = len(pad_width[0])
 
     if not isinstance(pad_values, list):
-        pad_values = [pad_values]*ndim
+        pad_values = [pad_values] * ndim
 
     shape = arr.shape
     new_shape = list(shape)
 
     for i in range(ndim):
-        v = reduce(lambda x, y: x+y, pad_width[i])
+        v = reduce(lambda x, y: x + y, pad_width[i])
         new_shape[i] += v
 
-    arrs = [0]*(pdim + 1)
-    middle = len(arrs)//2
+    arrs = [0] * (pdim + 1)
+    middle = len(arrs) // 2
     shape_i = list(shape)
-    a_i = arr
+    arr_i = arr
 
     for i in range(ndim):
         pad_i = pad_width[i]
@@ -306,16 +313,16 @@ def pad_array(arr, pad_width, pad_values):
             shape_ij = list(shape_i)
             shape_ij[i] = pad_i[j]
 
-            a_ij = full(shape=shape_ij, fill_value=pad_values[i])
-            arrs[j] = a_ij
+            arr_ij = full(shape=shape_ij, fill_value=pad_values[i])
+            arrs[j] = arr_ij
 
-        arrs[pdim] = a_i
+        arrs[pdim] = arr_i
         swap_item(arrs, middle, pdim)
 
-        a_i = concatenate(*arrs, caxis=i)
+        arr_i = concatenate(*arrs, caxis=i)
         shape_i[i] = new_shape[i]
 
-    return a_i
+    return arr_i
 
 
 '''
@@ -335,7 +342,7 @@ def mdarray_iter(arr):
     strides = arr.strides
     data = arr.data
 
-    axis_counter = [0]*mdim
+    axis_counter = [0] * mdim
     arr_out = zeros(arr.shape)
 
     def recurse(ix):
@@ -348,8 +355,8 @@ def mdarray_iter(arr):
             for i in range(axis):
                 axis_counter[0] = i
                 ix_i = pair_wise_accumulate(axis_counter, strides)
-                a_val = data[ix_i]
-                arr_out.data[j] = a_val
+                arr_val = data[ix_i]
+                arr_out.data[j] = arr_val
 
         else:
             for i in range(axis):

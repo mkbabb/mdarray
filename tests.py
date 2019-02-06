@@ -2,8 +2,7 @@ from functools import reduce
 
 from core import *
 from mdarray import *
-import threading
-import queue
+import numpy as np
 
 
 '''
@@ -208,7 +207,6 @@ Reduction tests:
 # arr = md.tomdarray([[1,2,3], [4,5,6], [7,8,9]])
 
 
-
 # func = lambda x: arange(9).reshape([3, 3])
 # rarr = reduce_array(arr, 0, func)
 # print(np_arr.sum(-1))
@@ -228,10 +226,81 @@ Reduction tests:
 # print(np_arr.sum(-1))
 
 
-print(10*eye(4))
+# arr = tomdarray([10]).reshape([1, 1])
+# arr = repeat(arr, [0, 1], [4, 4])
+# print(arr)
+
+# print(10*eye(5))
+
+# mshape = [5, 4, 3, 2, 2, 5]
+
+# arr1 = arange([5, 1, 3, 2, 2, 1])
+# np_arr1 = tondarray(arr1)
+# arr2 = ones([1, 4, 3, 2, 1, 5])
+# arr3 = ones([5, 4, 1, 1, 2, 5])
+# arr4 = ones([5, 4, 3, 2, 1, 1])
+
+# new_shape, repts = generate_broadcast_shape(arr1, arr2, arr3, arr4)
+
+# func = lambda x, y: x+y
+# v = broadcast_bnry(arr1, arr2, arr3, arr4, func=func)
+# print(v)
+# print(np.broadcast_to(np_arr1, mshape[::-1]))
+
+mat = [[0, 1, 2],
+       [3, 4, 5],
+       [5, 6, 7]]
+
+v = [[0, 1, 2],
+     [3, 4, 5],
+     [5, 6, 7]]
+
+# v = [[1],
+#      [2],
+#      [3]]
 
 
+mat = tomdarray(mat)
+v = tomdarray(v)
 
+
+def dot(arr1, arr2):
+    shape1 = arr1.shape
+    shape2 = arr2.shape
+    if shape1[1] != shape2[1]:
+        raise IncompatibleDimensions
+    arr_out = reduce_array(arr1 * (arr2.T()), 0, sum)
+    print(arr_out.mdim)
+    return arr_out.T()
+
+
+def norm(arr, metric=2):
+    arr_out = reduce_array(arr**metric, 0, sum)
+    return arr_out**(1 / metric)
+
+
+v1 = tomdarray([1, 2, 5, 7])
+v2 = tomdarray([99, 88, 77, 6])
+v3 = v2 - v1
+
+a = arctan2(v2, v1)
+print(a)
+
+
+# print(mat.shape)
+# print(v.shape)
+
+
+# print(dot(mat, v))
+
+
+# r = repeat(arr, [0], [2])
+# print(r)
+
+
+# np_arr = np.repeat(np_arr, 2, -1)
+# print(np_arr)
+# np_arr = np.repeat(np_arr, 2, 0)
 
 
 '''

@@ -5,7 +5,7 @@ import mdarray as md
 from core.creation import broadcast_bnry
 from core.exceptions import IncompatibleDimensions
 
-__all__ = ["apply_unary_function", "apply_binary_function"]
+
 
 
 def apply_unary_function(arr1, func):
@@ -18,6 +18,20 @@ def apply_binary_function(arr1, arr2, func):
     arr1 = md.tomdarray(arr1)
     arr2 = md.tomdarray(arr2)
     return broadcast_bnry(arr1, arr2, func=func)
+
+
+def sqrt(x):
+    try:
+        return x.__sqrt__()
+    except AttributeError:
+        return math.sqrt(x)
+
+
+def nroot(x, root):
+    try:
+        return x.__nroot__(root)
+    except AttributeError:
+        return math.pow(x, root)
 
 
 def sin(x):

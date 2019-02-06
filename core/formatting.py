@@ -18,7 +18,7 @@ def trim_string(s, sep):
         s_re = list(re.finditer(sep, s))
         N = len(s_re)
 
-        if N >= (2*SAVED_CHAR + 1):
+        if N >= (2 * SAVED_CHAR + 1):
             start = s_re[SAVED_CHAR - 1].start()
             stop = s_re[N - (SAVED_CHAR)].start()
 
@@ -29,10 +29,10 @@ def trim_string(s, sep):
 
 def print_array(arr, sep='', formatter=None):
     mdim = arr.mdim
-    axis_counter = [0]*mdim
+    axis_counter = [0] * mdim
 
     if not formatter:
-        def formatter(x): return '{0}'.format(x)
+        formatter = lambda x: '{0}'.format(x)
 
     def recurse(ix):
         axis = arr.shape[ix]
@@ -44,18 +44,18 @@ def print_array(arr, sep='', formatter=None):
                 axis_counter[0] = i
                 ix_i = pair_wise_accumulate(axis_counter, arr.strides)
 
-                a_val = arr.data[ix_i]
+                arr_val = arr.data[ix_i]
 
-                val = formatter(a_val)
+                val = formatter(arr_val)
                 s += (val + sep) if i < axis - 1 else val
         else:
-            new_line = '\n'*(ix)
+            new_line = '\n' * (ix)
             for i in range(axis):
                 axis_counter[ix] = i
 
                 val = recurse(ix - 1)
 
-                s += ' '*(remaining_axes) + val if i > 0 else val
+                s += ' ' * (remaining_axes) + val if i > 0 else val
                 s += sep.strip() if i < axis - 1 else ''
                 s += new_line if i != axis - 1 else ''
 
@@ -63,7 +63,7 @@ def print_array(arr, sep='', formatter=None):
             s = trim_string(s, sep)
 
         s = '[{0}]'.format(s)
-        
+
         return s
 
     return recurse(mdim - 1)
@@ -72,6 +72,6 @@ def print_array(arr, sep='', formatter=None):
 def pad_array_fmt(arr):
     max_len = len(str(max(arr.data, key=lambda x: len(str(x)))))
 
-    def fmmter(x): return '{0}{1}{2}'.format(' '*int(math.ceil((max_len - len(str(x)))/2)), x,
-                                             ' '*int(math.floor((max_len - len(str(x)))/2)))
+    fmmter = lambda x: '{0}{1}{2}'.format(' ' * int(math.ceil((max_len - len(str(x))) / 2)), x,
+                                          ' ' * int(math.floor((max_len - len(str(x))) / 2)))
     return fmmter

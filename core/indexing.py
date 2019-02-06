@@ -198,11 +198,11 @@ def iter_gslice(arr, gslice_array, size):
         if remaining_axes == 1:
             for i in range(axis):
                 axis_counter[g.mdim - 1] = i
-                ix3 = pair_wise_accumulate(
+                ix_i = pair_wise_accumulate(
                     axis_counter, g.strides) + g.arg_axis
 
-                a_val = data[ix3]
-                a_out[j] = a_val
+                arr_val = data[ix_i]
+                a_out[j] = arr_val
                 j += 1
 
         else:
@@ -298,14 +298,14 @@ def make_nested_list(arr):
             for i in range(axis):
 
                 axis_counter[0] = i
-                ix3 = pair_wise_accumulate(axis_counter, strides)
+                ix_i = pair_wise_accumulate(axis_counter, strides)
 
                 try:
-                    a_val = data[ix3]
+                    arr_val = data[ix_i]
                 except:
-                    a_val = nan
+                    arr_val = nan
 
-                tmp[i] = a_val
+                tmp[i] = arr_val
 
         else:
             for i in range(axis):
