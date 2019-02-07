@@ -10,7 +10,7 @@ __all__ = ["zeros", "ones", "full",
            "arange", "linear_range", "log_range",
            "repeat", "meshgrid", "dense_meshgrid", "sort_raxes", "make_mdim",
            "diagonal", "eye",
-           "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays", "broadcast_arrays_internal"]
+           "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays"]
 
 '''
 M-d arrays filled with pre-defined values:
@@ -172,12 +172,13 @@ def meshgrid_internal(*arrs, dense=False):
     for i in range(mdim):
         slc = [1] * mdim
         slc[i] = sizes[i]
+
         arr_i = md.tomdarray(arrs[i]).reshape(slc)
 
         if not dense:
             for j in range(mdim):
                 if j != i:
-                    arr_i = repeat(arr_i, j, sizes[j])
+                    arr_i = repeat(arr_i, [j], [sizes[j]])
         arr_out.append(arr_i)
 
     return tuple(arr_out)
@@ -298,55 +299,6 @@ def broadcast_bnry_internal(*arrs, new_shape, repts, func):
     return arr_out
 
 
-def broadcast_arrays_internal(*arrs, new_shape, repts):
-    global j
-    arrs = tuple(arrs)
-    ndim = len(arrs)
-
-    mdim = arrs[0].mdim
-    arrs_out = [zeros(shape=new_shape) for i in range(ndim)]
-
-    axis_counters = [[0] * mdim for i in range(ndim)]
-
-    def recurse(warr, ix):
-        global j
-        arr = arrs[warr]
-        shape = arr.shape
-        strides = arr.strides
-        axis = shape[ix]
-        repts_j = repts[warr]
-
-        arr_out = arrs_out[warr]
-
-        axis_counter = axis_counters[warr]
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
-            for k in range(repts_j[0]):
-                for i in range(axis):
-                    axis_counter[0] = i
-                    ix_i = pair_wise_accumulate(
-                        axis_counter, strides)
-
-                    arr_out.data[j] = arr.data[ix_i]
-                    j += 1
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i
-
-                for k in range(1, mdim):
-                    rept = repts_j[k]
-                    if ix == k:
-                        for l in range(rept):
-                            recurse(warr, ix - 1)
-
-    for i in range(ndim):
-        j = 0
-        recurse(i, mdim - 1)
-
-    return arrs_out
-
-
 def generate_broadcast_shape(*arrs):
     arrs = tuple(arrs)
     ndim = len(arrs)
@@ -355,33 +307,29 @@ def generate_broadcast_shape(*arrs):
     mdims = [i.mdim for i in arrs]
     mdim = max(mdims)
 
-    if mdims[0] < mdim:
-        shapes[0] += [1] * (mdim - mdims[0])
-    arrs[0].reshape(shapes[0])
+    for i in range(ndim):
+        if mdims[i] < mdim:
+            shapes[i] += [1] * (mdim - mdims[0])
+        arrs[i].reshape(shapes[i])
 
     repts = [[1] * mdim for i in range(ndim)]
     new_shape = list(shapes[0])
 
     for i in range(mdim):
         axis_i = shapes[0][i]
-
-        for j in range(1, ndim):
-            if i == 0:
-                mdim_j = mdims[j]
-
-                if mdim_j < mdim:
-                    shapes[j] += [1] * (mdim - mdim_j)
-                arrs[j].reshape(shapes[j])
-
+        j = 1
+        while j < ndim:
             axis_j = shapes[j][i]
 
             if axis_i == 1 and axis_j > 1:
                 axis_i = axis_j
                 repts[0][i] = axis_i
+                j = 0
             elif axis_i > 1 and axis_j == 1:
                 repts[j][i] = axis_i
             elif axis_i != axis_j:
                 raise IncompatibleDimensions
+            j += 1
 
         new_shape[i] = axis_i
 
@@ -396,13 +344,16 @@ def broadcast_bnry(*arrs, func):
 
 
 def broadcast_arrays(*arrs, shape=None):
+    arrs = list(arrs)
+    ndim = len(arrs)
     if shape:
         arr_shape = md.mdarray(shape=shape)
         new_shape, repts = generate_broadcast_shape(*arrs, arr_shape)
-        arr_out = broadcast_arrays_internal(
-            *arrs, arr_shape, new_shape=new_shape, repts=repts)
     else:
         new_shape, repts = generate_broadcast_shape(*arrs)
-        arr_out = broadcast_arrays_internal(
-            *arrs, new_shape=new_shape, repts=repts)
-    return arr_out
+
+    raxes = [i for i in range(len(new_shape))]
+    for i in range(ndim):
+        arrs[i] = repeat(arrs[i], raxes, repts[i])
+
+    return arrs

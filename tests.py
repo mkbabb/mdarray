@@ -251,56 +251,78 @@ mat = [[0, 1, 2],
        [3, 4, 5],
        [5, 6, 7]]
 
-v = [[0, 1, 2],
-     [3, 4, 5],
-     [5, 6, 7]]
 
-# v = [[1],
-#      [2],
-#      [3]]
+v = [[1],
+     [2],
+     [3]]
 
 
 mat = tomdarray(mat)
 v = tomdarray(v)
 
 
-def dot(arr1, arr2):
-    shape1 = arr1.shape
-    shape2 = arr2.shape
-    if shape1[1] != shape2[1]:
-        raise IncompatibleDimensions
-    arr_out = reduce_array(arr1 * (arr2.T()), 0, sum)
-    print(arr_out.mdim)
-    return arr_out.T()
+arr = arange([3, 3, 3])
+nparr = tondarray(arr)
 
 
-def norm(arr, metric=2):
-    arr_out = reduce_array(arr**metric, 0, sum)
-    return arr_out**(1 / metric)
+def ix_(*dense_ixs):
+    global j
+    dense_ixs = tuple(dense_ixs)
+    ndim = len(dense_ixs)
+    mdim = dense_ixs[0].mdim
+    shape = dense_ixs[0].shape
+    strides = dense_ixs[0].strides
+
+    arr_out = zeros([mdim, reductor.mul().reduce(shape)])
+
+    axis_counter = [0] * mdim
+
+    def recurse(ix):
+        global j
+
+        axis = shape[ix]
+        remaining_axes = mdim - ix
+
+        if remaining_axes == mdim:
+            for i in range(axis):
+                axis_counter[0] = i
+                ix_i = pair_wise_accumulate(axis_counter, strides)
+                for k in range(ndim):
+                    arr_val = dense_ixs[k].data[ix_i]
+                    arr_out.data[j] = arr_val
+                    j += 1
+        else:
+            for i in range(axis):
+                axis_counter[ix] = i
+                recurse(ix - 1)
+    j = 0
+    recurse(mdim - 1)
+    return arr_out
 
 
-v1 = tomdarray([1, 2, 5, 7])
-v2 = tomdarray([99, 88, 77, 6])
-v3 = v2 - v1
-
-a = arctan2(v2, v1)
-print(a)
+print(arange([2, 3]))
 
 
-# print(mat.shape)
-# print(v.shape)
+ixs = [0, 1, 2], [0, 99, 2], [0, 3, 4]
+ixs = dense_meshgrid(*ixs)
+for i in ixs:
+    print(i)
+ixs = broadcast_arrays(*ixs)
 
 
-# print(dot(mat, v))
+arr_out = ix_(*ixs)
+print(arr_out)
+# print(np.ix_([0, 1, 2], [0, 1, 0]))
 
 
-# r = repeat(arr, [0], [2])
-# print(r)
+# print(arr.strides)
+# ix = [ix1]
+# ix = expand_dims(ix, arr)
+# # print(ix)
+# slc = expand_slice_array2(ix, 3, arr.strides)
+# print(slc)
 
-
-# np_arr = np.repeat(np_arr, 2, -1)
-# print(np_arr)
-# np_arr = np.repeat(np_arr, 2, 0)
+# print(nparr[ix1, ix2])
 
 
 '''

@@ -28,7 +28,7 @@ class _gslice(object):
         mdim = len(self.slice_array)
 
         if mdim < self.mdim:
-            self.slice_array += [nan]*(self.mdim - mdim)
+            self.slice_array += [nan] * (self.mdim - mdim)
         elif mdim > self.mdim:
             self.slice_array = self.slice_array[:self.mdim]
 
@@ -39,7 +39,7 @@ class _gslice(object):
 
         for n, i in enumerate(self.slice_array):
             if i != nan:
-                tmp = i*self.strides[n]
+                tmp = i * self.strides[n]
                 self.arg_axis += tmp
                 self.slice_array[n] = tmp
                 self.mdim -= 1
@@ -66,39 +66,35 @@ class _gslice(object):
 
 
 class gslice(object):
-    def __init__(self, slice_array, a_inqry):
-        if isinstance(slice_array, gslice):
-            self.slice_array = slice_array.slice_array
-            self.shape = slice_array.shape
-        else:
-            tmp0 = []
-            tmp1 = []
-            new_shape = [0]*a_inqry.mdim
+    def __init__(self, slice_array, arr):
+        tmp0 = []
+        tmp1 = []
+        new_shape = [0] * arr.mdim
 
-            for n, i in enumerate(slice_array):
-                if i == inf:
-                    slice_array[n] = [j for j in range(a_inqry.shape[n])]
+        for n, i in enumerate(slice_array):
+            if i == inf:
+                slice_array[n] = [j for j in range(arr.shape[n])]
 
-            for n, i in enumerate(slice_array):
-                if isinstance(i, gslice):
-                    tmp0 += [i]
-                else:
-                    tmp1 += [i]
-                    if len(slice_array) == a_inqry.mdim:
-                        pass
+        for n, i in enumerate(slice_array):
+            if isinstance(i, gslice):
+                tmp0 += [i]
+            else:
+                tmp1 += [i]
+                if len(slice_array) == arr.mdim:
+                    pass
 
-            new_shape = [i for i in new_shape if i != 0]
+        new_shape = [i for i in new_shape if i != 0]
 
-            self.shape = new_shape if len(new_shape) <= a_inqry.mdim else [1]
+        self.shape = new_shape if len(new_shape) <= a_inqry.mdim else [1]
 
-            tmp1 = remove_extraneous_dims(tmp1)
-            self.slice_array = make_iter_list(tmp1)
+        tmp1 = remove_extraneous_dims(tmp1)
+        self.slice_array = make_iter_list(tmp1)
 
-            for n, i in enumerate(self.slice_array):
-                self.slice_array[n] = _gslice(i, a_inqry).get_slice()
+        for n, i in enumerate(self.slice_array):
+            self.slice_array[n] = _gslice(i, a_inqry).get_slice()
 
-            for i in tmp0:
-                self.slice_array += [i.slice_array[0]]
+        for i in tmp0:
+            self.slice_array += [i.slice_array[0]]
 
     def __repr__(self):
         if len(self.slice_array) == 1:
@@ -110,14 +106,16 @@ def expand_slice_array(slice_array, mdim, strides=None):
     ndim = len(slice_array)
 
     if strides:
-        pad_length = strides[ndim - 1] if mdim != ndim else 1
+        pad_length = strides[ndim - 1] if mdim != 0 else 1
     else:
         pad_length = 1
 
     broadcast_length = len(slice_array[0])
-    out_array = [[0]*mdim]*(broadcast_length*pad_length)
+    out_array = [[0] * mdim] * (broadcast_length * pad_length)
 
-    tmp0 = [0]*mdim
+    print(broadcast_length, pad_length)
+
+    tmp0 = [0] * mdim
     l = 0
     for i in range(broadcast_length):
         for j in range(ndim):
@@ -157,10 +155,10 @@ def expand_dims(slice_array, arr):
 
     broadcast_length = mdim if broadcast_length > mdim else broadcast_length
 
-    if lens//ndim == ndim:
+    if lens // ndim == ndim:
         return slice_array
 
-    tmp0 = [0]*broadcast_length
+    tmp0 = [0] * broadcast_length
     for i in range(ndim):
         ndim_i = len(slice_array[i])
 
@@ -189,7 +187,7 @@ Iteration over an array by a given gslice. Used for any type of indexing into an
 
 def iter_gslice(arr, gslice_array, size):
     data = arr.data
-    a_out = [0]*size
+    a_out = [0] * size
 
     def recurse(g, axis_counter, ix, j):
         axis = g.shape[ix]
@@ -213,7 +211,7 @@ def iter_gslice(arr, gslice_array, size):
 
     j = 0
     for i in gslice_array.slice_array:
-        axis_counter = [0]*i.mdim
+        axis_counter = [0] * i.mdim
         ix = 0
 
         j = recurse(i, axis_counter, ix, j)
@@ -282,7 +280,7 @@ def flatten_list(arr, order=1):
 
 def make_nested_list(arr):
     mdim = arr.mdim
-    axis_counter = [0]*mdim
+    axis_counter = [0] * mdim
 
     def recurse(ix):
         shape = arr.shape
@@ -290,7 +288,7 @@ def make_nested_list(arr):
         data = arr.data
         axis = shape[ix]
 
-        tmp = [0]*axis
+        tmp = [0] * axis
 
         remaining_axes = mdim - ix
 

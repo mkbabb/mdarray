@@ -91,7 +91,7 @@ def ravel_internal(ix, mdim_ix_i, strides, size, mdim):
     return mdim_ix_i
 
 
-def ravel(*ixs, shape):
+def ravel(ixs, shape):
     if isinstance(shape, md.mdarray):
         strides = shape.strides
         size = shape.size
@@ -116,7 +116,7 @@ def ravel(*ixs, shape):
     return mdim_ixs
 
 
-def unravel(*mdim_ixs, shape):
+def unravel(mdim_ixs, shape):
     if isinstance(shape, md.mdarray):
         strides = shape.strides
         size = shape.size

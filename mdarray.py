@@ -213,7 +213,7 @@ def tomdarray(arr):
         elif isinstance(arr, dict):
             arr_out = [[i, j] for i, j in arr.items()]
         else:
-            arr_out = mdarray(shape=[1], data=[arr])
+            arr_out = list(arr)
 
         return tomdarray(arr_out)
 
