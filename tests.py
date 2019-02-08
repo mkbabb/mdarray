@@ -259,6 +259,33 @@ v = [[1],
 
 mat = tomdarray(mat)
 v = tomdarray(v)
+# v = repeat(v, [0], [3])
+# print(v)
+
+
+def dot(arr1, arr2):
+    shape1 = arr1.shape
+    shape2 = arr2.shape
+    
+    if shape1[1] != shape2[1]:
+        raise core.IncompatibleDimensions
+
+    else:
+        arr_out = zeros([arr2.shape[0], arr1.shape[0]])
+        for i in range(arr2.shape[0]):
+            ix = i, inf
+            arr_val = reduce_array(arr1 * (arr2[ix].T()), 0, sum)
+            arr_out[i, inf] = arr_val
+    return arr_out
+
+
+dtd = dot(mat, v)
+print(dtd)
+
+
+
+# for i in range(mat.shape[0]):
+#     print(mat[i, inf])
 
 
 # arr = arange([4, 3]) + 1000
@@ -280,10 +307,10 @@ rows = tomdarray([[0, 2],
 
 cols = tomdarray([[0, 0],
                   [3, 3]])
+arr[rows, cols]
 
-
-arr[rows, cols] = 999
-print(arr)
+# arr[rows, cols] = 999
+# print(arr)
 
 
 '''

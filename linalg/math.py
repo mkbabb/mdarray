@@ -7,6 +7,9 @@ def dot(arr1, arr2):
     shape2 = arr2.shape
     if shape1[1] != shape2[1]:
         raise core.IncompatibleDimensions
+
+
+    
     arr_out = core.reduce_array(arr1 * (arr2.T()), 0, sum)
     return arr_out.T()
 

@@ -215,8 +215,9 @@ def slice_array_set(slc, arr1, arr2):
         slc = broadcast_arrays(*slc)
         new_shape = slc[0].shape
 
-    arr_shape = zeros(shape=new_shape)
-    arr2 = broadcast_arrays(arr2, arr_shape)[0]
+    if arr2.shape != arr2.shape:
+        arr_shape = md.mdarray(shape=new_shape)
+        arr2 = broadcast_arrays(arr2, arr_shape)[0]
 
     unravel_dense_set(*slc, arr1=arr1, arr2=arr2)
     return arr1
