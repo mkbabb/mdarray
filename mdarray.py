@@ -8,7 +8,7 @@ import numpy as np
 import core
 
 
-__all__ = ["mdarray", "tomdarray", "tondarray"]
+__all__ = ["mdarray"]
 
 
 class mdarray(object):
@@ -82,16 +82,11 @@ class mdarray(object):
     def __str__(self):
         return self.__repr__()
 
-    # def __setitem__(self, key, value):
-    #     tmp = self[key]
-    #     print(tmp)
+    def __setitem__(self, slc, arr2):
+        return core.slice_array_set(slc, self, arr2)
 
-    # def __getitem__(self, item):
-    #     if not isinstance(item, gslice):
-    #         item = gslice(item, self.a_inqry)
-    #     print(item)
-    #     data = iter_gslice(arr, item, 1000)
-    #     return data
+    def __getitem__(self, slc):
+        return core.slice_array_get(slc, self)
 
     def __iter__(self):
         self.pos = 0
@@ -201,23 +196,3 @@ class mdarray(object):
     def __arctanh__(self):
         core.apply_unary_function(self, math.atanh)
         return self
-
-
-def tomdarray(arr):
-    if isinstance(arr, mdarray):
-        return arr
-    else:
-        if isinstance(arr, list) or isinstance(arr, tuple):
-            arr, mdim, shape = core.flatten_list(arr, order=-1)
-            arr_out = mdarray(shape=shape, data=arr)
-        elif isinstance(arr, dict):
-            arr_out = [[i, j] for i, j in arr.items()]
-        else:
-            arr_out = list(arr)
-
-        return tomdarray(arr_out)
-
-
-def tondarray(arr):
-    nd = np.asarray(arr.data).reshape(arr.shape[::-1])
-    return nd

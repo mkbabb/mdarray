@@ -6,8 +6,7 @@ import mdarray as md
 from core.creation import full, zeros
 from core.exceptions import IncompatibleDimensions
 from core.helper import (get_strides, pair_wise_accumulate, roll_array,
-                                 swap_item)
-from core.indexing import flatten_list, make_nested_list
+                         swap_item)
 from core.manipulation import roll_axis
 from core.types import inf, nan
 
@@ -16,10 +15,10 @@ __all__ = ["mask"]
 
 def mask(arr, predicate):
     mdim = arr.mdim
-    axis_counter = [0]*mdim
+    axis_counter = [0] * mdim
 
     if not predicate:
-        def predicate(x): return True
+        predicate = lambda x: True
 
     def recurse(ix):
         shape = arr.shape
@@ -48,4 +47,3 @@ def mask(arr, predicate):
 
     recurse(mdim - 1)
     return arr
-

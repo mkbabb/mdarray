@@ -1,7 +1,7 @@
 from functools import reduce
 
 __all__ = ["update_dict", "get_strides", "swap_item", "roll_array",
-           "pair_wise", "pair_wise_accumulate"]
+           "pair_wise", "pair_wise_accumulate", "remove_extraneous_dims", "flatten_list"]
 
 
 def update_dict(d1, d2, recursive=True):
@@ -23,12 +23,12 @@ def update_dict(d1, d2, recursive=True):
 def get_strides(shape):
     N = len(shape)
     init = 1
-    strides = [0]*N
+    strides = [0] * N
     strides[0] = init
 
     for i in range(N - 1):
         init *= shape[i]
-        strides[i+1] = init
+        strides[i + 1] = init
 
     return strides
 
@@ -59,7 +59,7 @@ def roll_array(arr, axis, iterations=1):
 
 
 def pair_wise(a1, a2, func):
-    tmp = [0]*len(a1)
+    tmp = [0] * len(a1)
     for n, i in enumerate(a1):
         t = func(i, a2[n])
         tmp[n] = t
@@ -67,4 +67,51 @@ def pair_wise(a1, a2, func):
 
 
 def pair_wise_accumulate(a1, a2):
-    return reduce(lambda x, y: x + y, pair_wise(a1, a2, lambda x, y: x*y))
+    return reduce(lambda x, y: x + y, pair_wise(a1, a2, lambda x, y: x * y))
+
+
+def remove_extraneous_dims(arr):
+    def recurse(arr):
+        if len(arr) == 1:
+            try:
+                arr = recurse(arr[0])
+                return arr
+            except IndexError:
+                return arr
+        else:
+            return arr
+
+    return recurse(arr)
+
+
+def flatten_list(arr, order=1):
+    global shape, dim_counter
+    shape = [len(arr)]
+    dim_counter = 0
+
+    def recurse(arr):
+        global shape, dim_counter
+        ndim = len(arr)
+
+        tmp = []
+        dim_counter = 0
+
+        for i in range(ndim):
+            a_i = arr[i]
+
+            if isinstance(a_i, list):
+                tmp0 = recurse(a_i)
+                M = len(a_i)
+
+                if len(shape) <= dim_counter + 1:
+                    shape.insert(0, M)
+
+                dim_counter += 1
+                tmp += [tmp0] if dim_counter <= order else tmp0
+            else:
+                tmp += [a_i]
+
+        return tmp
+
+    flt = recurse(arr)
+    return flt, dim_counter, shape

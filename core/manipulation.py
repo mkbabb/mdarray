@@ -9,11 +9,12 @@ from core.helper import (get_strides, pair_wise_accumulate, roll_array,
                          swap_item)
 from core.types import inf, nan
 
-
-__all__ = ["reshape", "transpose", "swap_axis", "roll_axis",
-           "flatten", "ravel", "unravel", "astype",
+__all__ = ["make_nested_list",
+           "reshape", "transpose", "swap_axis", "roll_axis",
+           "flatten", "astype",
            "concatenate", "hstack", "vstack", "dstack",
            "tile", "pad_array", "mdarray_iter"]
+
 
 '''
 Reshaping routines:
@@ -69,72 +70,35 @@ def flatten(arr, order=1):
     reshape(arr, new_shape)
 
 
-def ravel_internal(ix, mdim_ix_i, strides, size, mdim):
-    j = 0
-    while j < mdim:
-        stride = strides[mdim - (j + 1)]
-        k = 1
+def make_nested_list(arr):
+    mdim = arr.mdim
+    shape = arr.shape
+    strides = arr.strides
+    data = arr.data
+    axis_counter = [0] * mdim
 
-        while True:
-            stride_k = stride * k
-            if stride_k >= ix:
-                if stride != 1:
-                    k -= 1
-                stride_k = stride * k
-                break
-            else:
-                k += 1
+    def recurse(ix):
+        axis = shape[ix]
+        tmp = [0] * axis
 
-        ix -= stride_k
-        mdim_ix_i[mdim - (j + 1)] = k
-        j += 1
-    return mdim_ix_i
+        remaining_axes = mdim - ix
 
+        if remaining_axes == mdim:
+            for i in range(axis):
+                axis_counter[0] = i
+                ix_i = pair_wise_accumulate(axis_counter, strides)
 
-def ravel(ixs, shape):
-    if isinstance(shape, md.mdarray):
-        strides = shape.strides
-        size = shape.size
-        mdim = shape.mdim
-    else:
-        strides = get_strides(shape)
-        size = reduce(lambda x, y: x * y, shape)
-        mdim = len(shape)
+                arr_val = data[ix_i]
 
-    ixs = tuple(ixs)
-    ndim = len(ixs)
-    mdim_ixs = [[0] * mdim] * ndim
+                tmp[i] = arr_val
+        else:
+            for i in range(axis):
+                axis_counter[ix] = i
+                tmp[i] = recurse(ix - 1)
+        return tmp
 
-    for i in range(ndim):
-        ix = ixs[i]
-        if ix > size:
-            raise IncompatibleDimensions(
-                "The raveled index is too large to unravel using the provided shape!")
-        mdim_ix_i = [0] * mdim
-        mdim_ixs[i] = ravel_internal(ix, mdim_ix_i, strides, size, mdim)
-
-    return mdim_ixs
-
-
-def unravel(mdim_ixs, shape):
-    if isinstance(shape, md.mdarray):
-        strides = shape.strides
-        size = shape.size
-        mdim = shape.mdim
-    else:
-        strides = get_strides(shape)
-        size = reduce(lambda x, y: x * y, shape)
-        mdim = len(shape)
-
-    mdim_ixs = tuple(mdim_ixs)
-    ndim = len(mdim_ixs)
-    ixs = [0] * ndim
-
-    for i in range(ndim):
-        mdim_ix_i = mdim_ixs[i]
-        ixs[i] = pair_wise_accumulate(strides, mdim_ix_i)
-
-    return ixs
+    arr_out = recurse(mdim - 1)
+    return arr_out
 
 
 def astype(arr, dtype):

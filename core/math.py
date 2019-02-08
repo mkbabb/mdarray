@@ -4,6 +4,7 @@ import operator
 import mdarray as md
 from core.creation import broadcast_bnry
 from core.exceptions import IncompatibleDimensions
+from core.creation import tomdarray
 
 
 
@@ -15,8 +16,8 @@ def apply_unary_function(arr1, func):
 
 
 def apply_binary_function(arr1, arr2, func):
-    arr1 = md.tomdarray(arr1)
-    arr2 = md.tomdarray(arr2)
+    arr1 = tomdarray(arr1)
+    arr2 = tomdarray(arr2)
     return broadcast_bnry(arr1, arr2, func=func)
 
 

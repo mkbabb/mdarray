@@ -4,13 +4,50 @@ import numpy as np
 
 import mdarray as md
 from core.exceptions import IncompatibleDimensions
-from core.helper import pair_wise_accumulate, roll_array, swap_item
+from core.helper import (flatten_list, pair_wise_accumulate, roll_array,
+                         swap_item)
 
-__all__ = ["zeros", "ones", "full",
+__all__ = ["tomdarray", "tondarray",
+           "zeros", "ones", "full",
            "arange", "linear_range", "log_range",
            "repeat", "meshgrid", "dense_meshgrid", "sort_raxes", "make_mdim",
            "diagonal", "eye",
            "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays"]
+
+
+'''
+toarray routines:
+'''
+
+
+def tomdarray(arr):
+    if isinstance(arr, md.mdarray):
+        return arr
+    elif isinstance(arr, np.ndarray):
+        arr_out = md.mdarray(data=np.ravel(arr), shape=arr.shape, dtype=arr.dtype, order=arr.order)
+        return arr_out
+    else:
+        if isinstance(arr, list) or isinstance(arr, tuple):
+            arr, mdim, shape = flatten_list(arr, order=-1)
+            shape = [1]
+            arr_out = md.mdarray(shape=shape, data=arr)
+        elif isinstance(arr, dict):
+            arr_out = [[i, j] for i, j in arr.items()]
+        else:
+            arr_out = [arr]
+
+        return tomdarray(arr_out)
+
+
+def tondarray(arr):
+    nd = np.asarray(arr.data, dtype=arr.dtype, order=arr.order).reshape(arr.shape[::-1])
+    return nd
+
+
+'''
+End toarray routines.
+'''
+
 
 '''
 M-d arrays filled with pre-defined values:
@@ -173,7 +210,7 @@ def meshgrid_internal(*arrs, dense=False):
         slc = [1] * mdim
         slc[i] = sizes[i]
 
-        arr_i = md.tomdarray(arrs[i]).reshape(slc)
+        arr_i = tomdarray(arrs[i]).reshape(slc)
 
         if not dense:
             for j in range(mdim):
@@ -309,7 +346,7 @@ def generate_broadcast_shape(*arrs):
 
     for i in range(ndim):
         if mdims[i] < mdim:
-            shapes[i] += [1] * (mdim - mdims[0])
+            shapes[i] += [1] * (mdim - mdims[i])
         arrs[i].reshape(shapes[i])
 
     repts = [[1] * mdim for i in range(ndim)]
@@ -343,14 +380,11 @@ def broadcast_bnry(*arrs, func):
     return arr_out
 
 
-def broadcast_arrays(*arrs, shape=None):
+def broadcast_arrays(*arrs):
     arrs = list(arrs)
     ndim = len(arrs)
-    if shape:
-        arr_shape = md.mdarray(shape=shape)
-        new_shape, repts = generate_broadcast_shape(*arrs, arr_shape)
-    else:
-        new_shape, repts = generate_broadcast_shape(*arrs)
+
+    new_shape, repts = generate_broadcast_shape(*arrs)
 
     raxes = [i for i in range(len(new_shape))]
     for i in range(ndim):

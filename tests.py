@@ -261,57 +261,55 @@ mat = tomdarray(mat)
 v = tomdarray(v)
 
 
-arr = arange([3, 3, 3])
-nparr = tondarray(arr)
+arr = arange([4, 3]) + 1000
+rows = inf
+cols = 2
 
 
-def ix_(*dense_ixs):
-    global j
-    dense_ixs = tuple(dense_ixs)
-    ndim = len(dense_ixs)
-    mdim = dense_ixs[0].mdim
-    shape = dense_ixs[0].shape
-    strides = dense_ixs[0].strides
+print(arr[rows, cols])
+arr[rows, cols] = 99
+print(arr)
+# print(arr)
+# ixs = [rows, cols, depths, depths2]
+# slc = slice_array(ixs, arr)
+# print(slc)
 
-    arr_out = zeros([mdim, reductor.mul().reduce(shape)])
+# arr = arange([3, 4, 2])
+# rows = tomdarray([[0, 2],
+#                   [0, 2]])
 
-    axis_counter = [0] * mdim
-
-    def recurse(ix):
-        global j
-
-        axis = shape[ix]
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
-            for i in range(axis):
-                axis_counter[0] = i
-                ix_i = pair_wise_accumulate(axis_counter, strides)
-                for k in range(ndim):
-                    arr_val = dense_ixs[k].data[ix_i]
-                    arr_out.data[j] = arr_val
-                    j += 1
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i
-                recurse(ix - 1)
-    j = 0
-    recurse(mdim - 1)
-    return arr_out
+# cols = tomdarray([[0, 0],
+#                   [3, 3]])
 
 
-print(arange([2, 3]))
+# ixs = [[0, 2], inf, inf]
+
+# ixs = [rows, cols]
+# slc = slice_array(ixs, arr)
+# print(slc)
 
 
-ixs = [0, 1, 2], [0, 99, 2], [0, 3, 4]
-ixs = dense_meshgrid(*ixs)
-for i in ixs:
-    print(i)
-ixs = broadcast_arrays(*ixs)
+# arr = tondarray(arr)
+# rows = tondarray(rows)
+# cols = tondarray(cols)
+
+# print(arr[1, cols, rows])
+
+# print(arr[rows, cols])
+
+# ixs = expand_dims(ixs, arr)
+# # roll_array(ixs, 1)
 
 
-arr_out = ix_(*ixs)
-print(arr_out)
+# ixs = dense_meshgrid(*ixs)
+
+# for i in ixs:
+#     print(i)
+# ixs = broadcast_arrays(*ixs)
+
+
+# arr_out = ix_(*ixs)
+# print(arr_out)
 # print(np.ix_([0, 1, 2], [0, 1, 0]))
 
 
