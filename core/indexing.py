@@ -197,6 +197,7 @@ def slice_array_get(slc, arr):
         slc = broadcast_arrays(*slc)
     else:
         slc = broadcast_arrays(*slc)
+
         new_shape = slc[0].shape
 
     arr_vals = unravel_dense_get(*slc, arr=arr, new_shape=new_shape)

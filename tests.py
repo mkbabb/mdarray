@@ -261,66 +261,29 @@ mat = tomdarray(mat)
 v = tomdarray(v)
 
 
-arr = arange([4, 3]) + 1000
-rows = inf
-cols = 2
+# arr = arange([4, 3]) + 1000
+# rows = inf
+# cols = 2
 
 
-print(arr[rows, cols])
-arr[rows, cols] = 99
-print(arr)
+# print(arr[rows, cols])
+# arr[rows, cols] = 99
+# print(arr)
 # print(arr)
 # ixs = [rows, cols, depths, depths2]
 # slc = slice_array(ixs, arr)
 # print(slc)
 
-# arr = arange([3, 4, 2])
-# rows = tomdarray([[0, 2],
-#                   [0, 2]])
+arr = arange([3, 4])
+rows = tomdarray([[0, 2],
+                  [0, 2]])
 
-# cols = tomdarray([[0, 0],
-#                   [3, 3]])
-
-
-# ixs = [[0, 2], inf, inf]
-
-# ixs = [rows, cols]
-# slc = slice_array(ixs, arr)
-# print(slc)
+cols = tomdarray([[0, 0],
+                  [3, 3]])
 
 
-# arr = tondarray(arr)
-# rows = tondarray(rows)
-# cols = tondarray(cols)
-
-# print(arr[1, cols, rows])
-
-# print(arr[rows, cols])
-
-# ixs = expand_dims(ixs, arr)
-# # roll_array(ixs, 1)
-
-
-# ixs = dense_meshgrid(*ixs)
-
-# for i in ixs:
-#     print(i)
-# ixs = broadcast_arrays(*ixs)
-
-
-# arr_out = ix_(*ixs)
-# print(arr_out)
-# print(np.ix_([0, 1, 2], [0, 1, 0]))
-
-
-# print(arr.strides)
-# ix = [ix1]
-# ix = expand_dims(ix, arr)
-# # print(ix)
-# slc = expand_slice_array2(ix, 3, arr.strides)
-# print(slc)
-
-# print(nparr[ix1, ix2])
+arr[rows, cols] = 999
+print(arr)
 
 
 '''

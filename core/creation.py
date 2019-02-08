@@ -29,7 +29,6 @@ def tomdarray(arr):
     else:
         if isinstance(arr, list) or isinstance(arr, tuple):
             arr, mdim, shape = flatten_list(arr, order=-1)
-            shape = [1]
             arr_out = md.mdarray(shape=shape, data=arr)
         elif isinstance(arr, dict):
             arr_out = [[i, j] for i, j in arr.items()]
