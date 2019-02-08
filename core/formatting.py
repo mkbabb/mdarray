@@ -5,7 +5,7 @@ from functools import reduce
 from core.helper import pair_wise_accumulate
 from core.types import inf, nan
 
-__all__ = ["print_array", "pad_array_fmt"]
+__all__ = ["print_array", "pad_array_fmt", "trim_string"]
 
 MAX_CHAR_LINE = 50
 SAVED_CHAR = 3

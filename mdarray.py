@@ -83,10 +83,11 @@ class mdarray(object):
         return self.__repr__()
 
     def __setitem__(self, slc, arr2):
-        return core.slice_array_set(slc, self, arr2)
+        core.slice_array(slc, self, arr2, True)
+        return self
 
     def __getitem__(self, slc):
-        return core.slice_array_get(slc, self)
+        return core.slice_array(slc, self, None, False)
 
     def __iter__(self):
         self.pos = 0

@@ -12,7 +12,8 @@ __all__ = ["tomdarray", "tondarray",
            "arange", "linear_range", "log_range",
            "repeat", "meshgrid", "dense_meshgrid", "sort_raxes", "make_mdim",
            "diagonal", "eye",
-           "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays"]
+           "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays",
+           "broadcast_toshape", ]
 
 
 '''
@@ -178,8 +179,8 @@ def repeat(arr, raxes, repts):
         if remaining_axes == mdim:
             for k in range(repts[0]):
                 for i in range(axis):
-                    axis_counter[0] = i
-                    ix_i = pair_wise_accumulate(axis_counter, strides)
+                    axis_counter[0] = i * strides[0]
+                    ix_i = sum(axis_counter)
 
                     arr_val = arr.data[ix_i]
 
@@ -187,7 +188,7 @@ def repeat(arr, raxes, repts):
                     j += 1
         else:
             for i in range(axis):
-                axis_counter[ix] = i
+                axis_counter[ix] = i * strides[ix]
 
                 for k in range(1, mdim):
                     rept = repts[k]
@@ -268,7 +269,6 @@ def broadcast_bnry_internal(*arrs, new_shape, repts, func):
 
     mdim = arrs[0].mdim
     arr_out = zeros(shape=new_shape)
-
     axis_counters = [[0] * mdim for i in range(ndim)]
 
     def recurse(warr, ix, flag):
@@ -285,9 +285,8 @@ def broadcast_bnry_internal(*arrs, new_shape, repts, func):
         if remaining_axes == mdim:
             for i in range(axis):
                 for k in range(repts_j[0]):
-                    axis_counter[0] = i
-                    ix_i = pair_wise_accumulate(
-                        axis_counter, strides)
+                    axis_counter[0] = i * strides[0]
+                    ix_i = sum(axis_counter)
 
                     if flag:
                         arr_out.data[j] = func(
@@ -298,7 +297,7 @@ def broadcast_bnry_internal(*arrs, new_shape, repts, func):
                     j += 1
         else:
             for i in range(axis):
-                axis_counter[ix] = i
+                axis_counter[ix] = i * strides[ix]
 
                 for k in range(1, mdim):
                     rept = repts_j[k]
@@ -382,11 +381,16 @@ def broadcast_bnry(*arrs, func):
 def broadcast_arrays(*arrs):
     arrs = list(arrs)
     ndim = len(arrs)
-
     new_shape, repts = generate_broadcast_shape(*arrs)
-
     raxes = [i for i in range(len(new_shape))]
     for i in range(ndim):
         arrs[i] = repeat(arrs[i], raxes, repts[i])
-
     return arrs
+
+
+def broadcast_toshape(arr, shape):
+    arr_shape = md.mdarray(shape=shape)
+    new_shape, repts = generate_broadcast_shape(arr, arr_shape)
+    raxes = [i for i in range(arr_shape.mdim)]
+    arr = repeat(arr, raxes, repts[0])
+    return arr

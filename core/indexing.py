@@ -1,15 +1,14 @@
 from functools import reduce
 
 import mdarray as md
-from core.creation import (arange, broadcast_arrays, dense_meshgrid, tomdarray,
-                           zeros)
+from core.creation import (arange, broadcast_arrays, broadcast_toshape,
+                           dense_meshgrid, tomdarray, zeros)
 from core.exceptions import IncompatibleDimensions
 from core.helper import get_strides, pair_wise_accumulate
 from core.types import inf, nan
 
 __all__ = ["ravel", "unravel",
-           "unravel_dense_get", "unravel_dense_set", "expand_indicies",
-           "slice_array_get", "slice_array_set"]
+           "unravel_dense", "slice_array", "expand_indicies"]
 
 
 '''
@@ -90,80 +89,36 @@ M-d array slicing:
 '''
 
 
-def unravel_dense_get(*dense_ixs, arr, new_shape):
+def unravel_dense(*dense_ixs, arr_in, arr_out, set):
     global j
     dense_ixs = tuple(dense_ixs)
     ndim = len(dense_ixs)
     mdim = dense_ixs[0].mdim
     shape = dense_ixs[0].shape
-    strides = dense_ixs[0].strides
-    astrides = arr.strides
-
-    arr_out = zeros(new_shape)
-
-    axis_counter = [0] * mdim
+    strides = arr_in.strides
 
     def recurse(ix):
         global j
-
         axis = shape[ix]
-        remaining_axes = mdim - ix
 
-        if remaining_axes == mdim:
+        if ix == 0:
             for i in range(axis):
-                axis_counter[0] = i
-                ix_i = pair_wise_accumulate(axis_counter, strides)
-                ix_k = 0
+                ix_i = 0
 
                 for k in range(ndim):
-                    ix_k += dense_ixs[k].data[ix_i] * astrides[k]
+                    ix_k = dense_ixs[k].data[j] * strides[k]
+                    ix_i += ix_k
 
-                arr_out.data[j] = arr.data[ix_k]
+                if set:
+                    arr_in.data[ix_i] = arr_out.data[j]
+                else:
+                    arr_out.data[j] = arr_in.data[ix_i]
                 j += 1
         else:
             for i in range(axis):
-                axis_counter[ix] = i
                 recurse(ix - 1)
     j = 0
     recurse(mdim - 1)
-    return arr_out
-
-
-def unravel_dense_set(*dense_ixs, arr1, arr2):
-    global j
-    dense_ixs = tuple(dense_ixs)
-    ndim = len(dense_ixs)
-    mdim = dense_ixs[0].mdim
-    shape = dense_ixs[0].shape
-    strides = dense_ixs[0].strides
-    astrides = arr1.strides
-
-    axis_counter = [0] * mdim
-
-    def recurse(ix):
-        global j
-
-        axis = shape[ix]
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
-            for i in range(axis):
-                axis_counter[0] = i
-                ix_i = pair_wise_accumulate(axis_counter, strides)
-                ix_k = 0
-
-                for k in range(ndim):
-                    ix_k += dense_ixs[k].data[ix_i] * astrides[k]
-
-                arr1.data[ix_k] = arr2.data[j]
-                j += 1
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i
-                recurse(ix - 1)
-    j = 0
-    recurse(mdim - 1)
-    return arr1
 
 
 def expand_indicies(slc, arr):
@@ -189,24 +144,8 @@ def expand_indicies(slc, arr):
     return slc, new_shape, oned
 
 
-def slice_array_get(slc, arr):
-    slc, new_shape, oned = expand_indicies(slc, arr)
-
-    if oned:
-        slc = dense_meshgrid(*slc)
-        slc = broadcast_arrays(*slc)
-    else:
-        slc = broadcast_arrays(*slc)
-
-        new_shape = slc[0].shape
-
-    arr_vals = unravel_dense_get(*slc, arr=arr, new_shape=new_shape)
-    return arr_vals
-
-
-def slice_array_set(slc, arr1, arr2):
-    slc, new_shape, oned = expand_indicies(slc, arr1)
-    arr2 = tomdarray(arr2)
+def slice_array(slc, arr_in, arr_out, set=True):
+    slc, new_shape, oned = expand_indicies(slc, arr_in)
 
     if oned:
         slc = dense_meshgrid(*slc)
@@ -215,12 +154,16 @@ def slice_array_set(slc, arr1, arr2):
         slc = broadcast_arrays(*slc)
         new_shape = slc[0].shape
 
-    if arr2.shape != arr2.shape:
-        arr_shape = md.mdarray(shape=new_shape)
-        arr2 = broadcast_arrays(arr2, arr_shape)[0]
+    if not arr_out:
+        arr_out = zeros(new_shape)
+    else:
+        arr_out = tomdarray(arr_out)
 
-    unravel_dense_set(*slc, arr1=arr1, arr2=arr2)
-    return arr1
+    if arr_in.shape != arr_out.shape:
+        arr_out = broadcast_toshape(arr_out, new_shape)
+
+    unravel_dense(*slc, arr_in=arr_in, arr_out=arr_out, set=set)
+    return arr_out
 
 
 '''

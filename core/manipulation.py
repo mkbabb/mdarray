@@ -144,7 +144,7 @@ Concatenation and splitting routines:
 
 
 def concatenate(*arrs, caxis):
-    global j
+    global j, k
     arr1 = arrs[0]
 
     ndim = len(arrs)
@@ -153,7 +153,6 @@ def concatenate(*arrs, caxis):
     new_shape = list(arr1.shape)
     new_shape[caxis] = 0
 
-    axis_counters = [[0] * mdim] * ndim
     for i in range(ndim):
         arr_i = arrs[i]
 
@@ -168,48 +167,37 @@ def concatenate(*arrs, caxis):
                         "The shape of array one (disregarding caxis) does not equal the rest!")
         new_shape[caxis] += arr_i.shape[caxis]
 
+    axis_counter = [0] * mdim
     arr_out = zeros(shape=new_shape)
+    strides = arr_out.strides
 
     def recurse(warr, ix):
-        global j
-        axis_counter = axis_counters[warr]
-        arr_i = arrs[warr]
-
-        shape = arr_i.shape
-        strides = arr_i.strides
-        data = arr_i.data
+        global j, k
+        arr = arrs[warr]
+        shape = arr.shape
         axis = shape[ix]
 
         remaining_axes = mdim - ix
 
         if remaining_axes == mdim:
             for i in range(axis):
-                axis_counter[0] = i
+                axis_counter[0] = i * strides[0]
+                ix_i = sum(axis_counter) + k * strides[caxis]
 
-                ix_i = pair_wise_accumulate(axis_counter, strides)
+                arr_val = arr.data[j]
 
-                try:
-                    arr_val = data[ix_i]
-                except:
-                    arr_val = nan
-
-                arr_out.data[j] = arr_val
+                arr_out.data[ix_i] = arr_val
                 j += 1
+
         else:
             for i in range(axis):
-                axis_counter[ix] = i
+                axis_counter[ix] = i * strides[ix]
                 recurse(warr, ix - 1)
-
-                if ix == caxis + 1:
-                    for k in range(ndim - 1):
-                        recurse(k + 1, ix - 1)
-
-    j = 0
-    if caxis == mdim - 1:
-        for i in range(ndim):
-            recurse(i, mdim - 1)
-    else:
-        recurse(0, mdim - 1)
+    j = k = 0
+    for i in range(ndim):
+        recurse(i, mdim - 1)
+        j = 0
+        k += arrs[i].shape[caxis]
 
     return arr_out
 
@@ -317,14 +305,14 @@ def mdarray_iter(arr):
 
         if remaining_axes == mdim:
             for i in range(axis):
-                axis_counter[0] = i
-                ix_i = pair_wise_accumulate(axis_counter, strides)
+                axis_counter[0] = i * strides[0]
+                ix_i = sum(axis_counter)
                 arr_val = data[ix_i]
                 arr_out.data[j] = arr_val
 
         else:
             for i in range(axis):
-                axis_counter[ix] = i
+                axis_counter[ix] = i * strides[ix]
                 recurse(ix - 1)
     j = 0
     recurse(mdim - 1)
