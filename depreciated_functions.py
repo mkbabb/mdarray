@@ -443,3 +443,42 @@ Iteration over an array by a given gslice. Used for any type of indexing into an
 #         return array_out
 
 #     return recurse(slice_array, array_out)
+'''
+Depreciated padding routine:
+'''
+# def pad_array(arr, pad_width, pad_func=None):
+#     if pad_func == None:
+#         pad_func = lambda shape, arr_i, i, j: full(shape=shape, fill_value=0)
+
+#     ndim = len(pad_width)
+#     pdim = len(pad_width[0])
+
+#     shape = arr.shape
+#     new_shape = list(shape)
+
+#     for i in range(ndim):
+#         v = reduce(lambda x, y: x + y, pad_width[i])
+#         new_shape[i] += v
+
+#     arrs = [0] * (pdim + 1)
+#     middle = len(arrs) // 2
+#     shape_i = list(shape)
+#     arr_i = arr
+
+#     for i in range(ndim):
+#         pad_i = pad_width[i]
+
+#         for j in range(pdim):
+#             shape_ij = list(shape_i)
+#             shape_ij[i] = pad_i[j]
+
+#             arr_ij = pad_func(shape=shape_ij, arr_i=arr_i, i=i, j=j)
+#             arrs[j] = arr_ij
+
+#         arrs[pdim] = arr_i
+#         swap_item(arrs, middle, pdim)
+
+#         arr_i = concatenate(*arrs, caxis=i)
+#         shape_i[i] = new_shape[i]
+
+#     return arr_i

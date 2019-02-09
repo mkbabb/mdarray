@@ -4,7 +4,7 @@ from inspect import signature
 import numpy as np
 
 import mdarray as md
-from core.creation import zeros, make_mdim
+from core.creation import make_mdim, zeros
 from core.helper import pair_wise, pair_wise_accumulate
 from core.manipulation import roll_axis
 
@@ -16,6 +16,16 @@ __all__ = ["reductor", "inner_product",
 Generalised reduction of a 1-d array.
 The reductor class can either apply a reduction or an accumulation
 across a 1-d array. Functions of an airty >= 2 are accepted for both routines.
+
+Parameters:
+    op: function=None
+        n-ary function that must return a 0-d output.
+    
+    ix: integer=0
+        Starting index of the reductor.
+    
+    stride: integer=1
+        Stride of the reductor.
 '''
 
 
@@ -101,10 +111,45 @@ Generalised reduction routines:
 '''
 
 
+'''
+Helper functions for reduce_array:
+'''
+
+
+def get_ret_shaped(arr, axis, shape):
+    if isinstance(arr, list):
+        shape[0] = len(arr)
+    elif isinstance(arr, md.mdarray):
+        shape.pop(0)
+        shape = arr.shape + shape
+    else:
+        shape.pop(0)
+    shape.insert(axis, 1)
+    arr_out = zeros(shape)
+    return arr_out
+
+
+def insert_into_flattened(arr_in, arr_out, ix):
+    if isinstance(arr_in, list):
+        for l in range(len(arr_in)):
+            arr_out.data[ix] = arr_in[l]
+            ix += 1
+    elif isinstance(arr_in, md.mdarray):
+        for l in range(len(arr_in)):
+            arr_out.data[ix] = arr_in.data[l]
+            ix += 1
+    else:
+        arr_out.data[ix] = arr_in
+        ix += 1
+    return ix
+
+
+'''
+'''
+
+
 def reduce_array(arr, faxis, func):
     global j, k, arr_out, new_shape
-
-    make_mdim(arr, arr.mdim + 1)
 
     if isinstance(faxis, list):
         ndim = len(faxis)
@@ -112,9 +157,12 @@ def reduce_array(arr, faxis, func):
             arr = reduce_array(arr, faxis[i], func)
         return arr
 
-    roll_axis(arr, faxis)
-
     mdim = arr.mdim
+
+    if faxis < 1:
+        faxis += mdim
+
+    roll_axis(arr, faxis)
     shape = arr.shape
     strides = arr.strides
     data = arr.data
@@ -131,47 +179,27 @@ def reduce_array(arr, faxis, func):
 
         if remaining_axes == mdim:
             for i in range(axis):
-                axis_counter[0] = i
-
-                ix_i = pair_wise_accumulate(axis_counter, strides)
-
+                axis_counter[0] = i * strides[0]
+                ix_i = sum(axis_counter)
                 arr_val = data[ix_i]
 
                 tmp0[j] = arr_val
                 j += 1
         else:
             for i in range(axis):
-                axis_counter[ix] = i
+                axis_counter[ix] = i * strides[ix]
                 recurse(ix - 1)
 
                 if ix == 1:
                     j = 0
                     tmp1 = func(tmp0)
-
                     if k == 0:
-                        if isinstance(tmp1, list):
-                            new_shape[0] = len(tmp1)
-                        elif isinstance(tmp1, md.mdarray):
-                            new_shape.pop(0)
-                            new_shape = tmp1.shape + new_shape
-                        else:
-                            new_shape.pop(0)
-                        arr_out = zeros(new_shape)
-
-                    if isinstance(tmp1, list):
-                        for l in range(len(tmp1)):
-                            arr_out.data[k] = tmp1[l]
-                            k += 1
-                    elif isinstance(tmp1, md.mdarray):
-                        for l in range(len(tmp1)):
-                            arr_out.data[k] = tmp1.data[l]
-                            k += 1
-                    else:
-                        arr_out.data[k] = tmp1
-                        k += 1
+                        arr_out = get_ret_shaped(tmp1, faxis, new_shape)
+                    k = insert_into_flattened(tmp1, arr_out, k)
 
     j = k = 0
     recurse(mdim - 1)
+    roll_axis(arr, faxis, mdim - 1)
     return arr_out
 
 

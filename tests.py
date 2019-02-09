@@ -13,8 +13,11 @@ Concatenation tests:
 # arr = arange(size).reshape(shape)
 
 # c1 = full(shape=[1, 3, 2], fill_value=99)
-# c2 = full(shape=[2, 3, 2], fill_value=99)
-# print(c1)
+# c2 = full(shape=[2, 3, 2], fill_value=33)
+# concat = concatenate(c1, c2, caxis=0)
+# print(concat)
+
+
 '''
 End concatenation tests.
 '''
@@ -289,19 +292,19 @@ Begin slicing tests:
 # slc = slice_array(ixs, arr)
 # print(slc)
 
-arr = arange([3, 4])
+# arr = arange([3, 4])
 # rows = tomdarray([[0, 2],
 #                   [0, 2]])
 
 # cols = tomdarray([[0, 0],
 #                   [3, 3]])
 
-rows = [0, 2]
-cols = [0, 3]
-print(arr[rows, cols])
+# rows = [0, 2]
+# cols = [0, 3]
+# print(arr[rows, cols])
 
-arr[rows, cols] = 999
-print(arr, "lol")
+# arr[rows, cols] = 999
+# print(arr, "lol")
 
 '''
 End slicing tests.
@@ -311,11 +314,28 @@ End slicing tests.
 # arr1 = arange([2, 5, 2])
 # arr2 = arange([2, 5, 2]) * 99
 
-# # arr1 = arange([5, 2, 2])
-# # arr2 = arange([5, 1, 2])
+# arr1 = arange([5, 2, 2])
+# arr2 = arange([5, 2, 1])
 # print(arr1)
 # print("\n")
 # print(arr2)
-# concat = concatenate(arr1, arr2, caxis=2)
+# concat = concatenate(arr1, arr2, arr1, caxis=2)
 # print("\n")
 # print(concat)
+
+'''
+'''
+
+pad = [[1, 2], [1, 1], [1, 1]]
+arr = arange([3, 3, 2])
+
+padded = pad_array(arr, pad, pad_wrap)
+print(padded)
+
+
+# np_padarr = np.pad(np_arr, ((1, 1), (1, 1), (1, 1)), mode="reflect")
+# print(np_padarr)
+
+# print(arr)
+# out, slc = pad_array2(arr, pad)
+# print(out)

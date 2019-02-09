@@ -8,3 +8,4 @@ from core.manipulation import *
 from core.math import *
 from core.reduction import *
 from core.types import *
+from core.padding import *

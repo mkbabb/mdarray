@@ -13,7 +13,7 @@ __all__ = ["make_nested_list",
            "reshape", "transpose", "swap_axis", "roll_axis",
            "flatten", "astype",
            "concatenate", "hstack", "vstack", "dstack",
-           "tile", "pad_array", "mdarray_iter"]
+           "tile", "mdarray_iter"]
 
 
 '''
@@ -145,10 +145,14 @@ Concatenation and splitting routines:
 
 def concatenate(*arrs, caxis):
     global j, k
+
     arr1 = arrs[0]
 
     ndim = len(arrs)
     mdim = arr1.mdim
+
+    if caxis < 0:
+        caxis += mdim
 
     new_shape = list(arr1.shape)
     new_shape[caxis] = 0
@@ -230,50 +234,6 @@ def tile(arr, tiles):
             arrs[j] = arr_i
 
         arr_i = concatenate(*arrs, caxis=i)
-    return arr_i
-
-
-'''
-Implicitly a concatenation routine:
-Uses pdim pad arrays concatenated with the main "arr" array.
-'''
-
-
-def pad_array(arr, pad_width, pad_values):
-    ndim = len(pad_width)
-    pdim = len(pad_width[0])
-
-    if not isinstance(pad_values, list):
-        pad_values = [pad_values] * ndim
-
-    shape = arr.shape
-    new_shape = list(shape)
-
-    for i in range(ndim):
-        v = reduce(lambda x, y: x + y, pad_width[i])
-        new_shape[i] += v
-
-    arrs = [0] * (pdim + 1)
-    middle = len(arrs) // 2
-    shape_i = list(shape)
-    arr_i = arr
-
-    for i in range(ndim):
-        pad_i = pad_width[i]
-
-        for j in range(pdim):
-            shape_ij = list(shape_i)
-            shape_ij[i] = pad_i[j]
-
-            arr_ij = full(shape=shape_ij, fill_value=pad_values[i])
-            arrs[j] = arr_ij
-
-        arrs[pdim] = arr_i
-        swap_item(arrs, middle, pdim)
-
-        arr_i = concatenate(*arrs, caxis=i)
-        shape_i[i] = new_shape[i]
-
     return arr_i
 
 
