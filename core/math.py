@@ -2,11 +2,8 @@ import math
 import operator
 
 import mdarray as md
-from core.creation import broadcast_bnry
+from core.creation import broadcast_bnry, tomdarray
 from core.exceptions import IncompatibleDimensions
-from core.creation import tomdarray
-
-
 
 
 def apply_unary_function(arr1, func):

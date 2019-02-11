@@ -54,19 +54,25 @@ def roll_axis(arr, axis, iterations=1):
     roll_array(arr.strides, axis, iterations)
 
 
-def flatten(arr, order=1):
+def flatten(arr, order=-1):
+    mdim = arr.mdim
+
+    if order < 0:
+        order += mdim
+    elif order == 0:
+        return arr
+
     new_mdim = arr.mdim - order
     new_shape = [0] * (arr.mdim - order)
 
-    for i in range(new_mdim - 1):
+    for i in range(new_mdim):
         new_shape[i] = arr.shape[i]
 
-    init = 1
-    for i in range(order + 1):
-        init *= arr.shape[i]
+    red = 1
+    for i in range(new_mdim - 1, mdim):
+        red *= arr.shape[i]
 
-    new_shape[0] = init
-
+    new_shape[-1] = red
     reshape(arr, new_shape)
 
 
@@ -81,15 +87,11 @@ def make_nested_list(arr):
         axis = shape[ix]
         tmp = [0] * axis
 
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
+        if ix == 0:
             for i in range(axis):
                 axis_counter[0] = i
                 ix_i = pair_wise_accumulate(axis_counter, strides)
-
                 arr_val = data[ix_i]
-
                 tmp[i] = arr_val
         else:
             for i in range(axis):
@@ -110,7 +112,7 @@ def astype(arr, dtype):
         if dtype == complex and mdim > 1:
             if shape[0] % 2 == 0:
                 shape[0] //= 2
-                arr_out = zeros(shape=shape, dtype=complex)
+                arr_out = zeros(shape=shape, order=arr.order, dtype=complex)
                 j = 0
                 for i in range(0, size, 2):
                     arr_out.data[j] = arr.data[i] + 1j * arr.data[i + 1]
@@ -120,7 +122,7 @@ def astype(arr, dtype):
                 raise IncompatibleDimensions
         elif arr.dtype == complex:
             shape[0] *= 2
-            arr_out = zeros(shape=shape, dtype=dtype)
+            arr_out = zeros(shape=shape, order=arr.order, dtype=dtype)
             j = 0
             for i in range(0, arr_out.size, 2):
                 arr_out.data[i] = arr.data[j].real
@@ -172,7 +174,7 @@ def concatenate(*arrs, caxis):
         new_shape[caxis] += arr_i.shape[caxis]
 
     axis_counter = [0] * mdim
-    arr_out = zeros(shape=new_shape)
+    arr_out = zeros(shape=new_shape, order=arrs[0].order, dtype=arrs[0].dtype)
     strides = arr_out.strides
 
     def recurse(warr, ix):
@@ -255,7 +257,7 @@ def mdarray_iter(arr):
     data = arr.data
 
     axis_counter = [0] * mdim
-    arr_out = zeros(arr.shape)
+    arr_out = zeros(arr.shape, order=arr.order, dtype=arr.dtype)
 
     def recurse(ix):
         global j

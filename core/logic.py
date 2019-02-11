@@ -1,49 +1,96 @@
-from functools import reduce
+from functools import partial, reduce
 
-import numpy as np
-
-import mdarray as md
-from core.creation import full, zeros
-from core.exceptions import IncompatibleDimensions
-from core.helper import (get_strides, pair_wise_accumulate, roll_array,
-                         swap_item)
-from core.manipulation import roll_axis
+from core.reduction import reduce_array
 from core.types import inf, nan
+from core.manipulation import roll_axis
 
-__all__ = ["mask"]
+__all__ = ["any", "all", "where",
+           "argsort", "argmax", "argmin"]
 
 
-def mask(arr, predicate):
-    mdim = arr.mdim
-    axis_counter = [0] * mdim
+def _pred(x):
+    if x > inf:
+        return True
+    else:
+        return False
 
-    if not predicate:
-        predicate = lambda x: True
 
-    def recurse(ix):
-        shape = arr.shape
-        strides = arr.strides
-        data = arr.data
-        axis = shape[ix]
+def _any(pred, lst):
+    N = len(lst)
+    for i in range(N):
+        lst_i = lst[i]
+        b_i = pred(lst_i)
+        if b_i:
+            return True
+    return False
 
-        remaining_axes = mdim - ix
 
-        if remaining_axes == mdim:
-            for i in range(axis):
-                axis_counter[0] = i
+def _all(pred, lst):
+    N = len(lst)
+    for i in range(N):
+        lst_i = lst[i]
+        b_i = pred(lst_i)
+        if not b_i:
+            return False
+    return True
 
-                ix_i = pair_wise_accumulate(axis_counter, strides)
 
-                try:
-                    arr_val = data[ix_i]
-                except:
-                    arr_val = nan
+def any(arr, axis, pred):
+    func = partial(_any, pred)
+    return reduce_array(arr, axis, func)
 
-                data[ix_i] = predicate(arr_val)
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i
-                recurse(ix - 1)
 
-    recurse(mdim - 1)
-    return arr
+def all(arr, axis, pred):
+    func = partial(_all, pred)
+    return reduce_array(arr, axis, func)
+
+
+def _where(lst):
+    N = len(lst)
+    ixs = []
+    for i in range(N):
+        lst_i = lst[i]
+        if lst_i:
+            ixs.append(i)
+    return ixs
+
+
+def where(arr, axis=inf):
+    return reduce_array(arr, axis, _where)
+
+
+def argmax(arr, axis):
+    def amx(seq):
+        N = len(seq)
+        _max = 0
+        _max_ix = 0
+        for i in range(N):
+            lst_i = seq[i]
+            if lst_i > _max:
+                _max = lst_i
+                _max_ix = i
+        return _max_ix
+    return reduce_array(arr, axis, amx)
+
+
+def argmin(arr, axis):
+    def amx(seq):
+        N = len(seq)
+        _min = inf
+        _min_ix = 0
+        for i in range(N):
+            lst_i = seq[i]
+            if lst_i < _min:
+                _min = lst_i
+                _min_ix = i
+        return _min_ix
+    return reduce_array(arr, axis, amx)
+
+
+def argsort(arr, axis, roll=False):
+    def asort(seq):
+        return sorted(range(len(seq)), key=seq.__getitem__)
+    arr_out = reduce_array(arr, axis, asort)
+    if roll:
+        roll_axis(arr_out, axis)
+    return arr_out

@@ -29,6 +29,7 @@ def trim_string(s, sep):
 
 def print_array(arr, sep='', formatter=None):
     mdim = arr.mdim
+    strides = arr.strides
     axis_counter = [0] * mdim
 
     if not formatter:
@@ -41,8 +42,8 @@ def print_array(arr, sep='', formatter=None):
         s = ''
         if remaining_axes == mdim:
             for i in range(axis):
-                axis_counter[0] = i
-                ix_i = pair_wise_accumulate(axis_counter, arr.strides)
+                axis_counter[0] = i * strides[0]
+                ix_i = sum(axis_counter)
 
                 arr_val = arr.data[ix_i]
 
@@ -51,7 +52,7 @@ def print_array(arr, sep='', formatter=None):
         else:
             new_line = '\n' * (ix)
             for i in range(axis):
-                axis_counter[ix] = i
+                axis_counter[ix] = i * strides[ix]
 
                 val = recurse(ix - 1)
 

@@ -1,8 +1,10 @@
 from functools import reduce
 
 from core import *
+from linalg import *
 from mdarray import *
 import numpy as np
+import random
 
 
 '''
@@ -326,11 +328,11 @@ End slicing tests.
 '''
 '''
 
-pad = [[1, 2], [1, 1], [1, 1]]
-arr = arange([3, 3, 2])
+# pad = [[1, 2], [1, 1], [1, 1]]
+# arr = arange([3, 3, 2])
 
-padded = pad_array(arr, pad, pad_wrap)
-print(padded)
+# padded = pad_array(arr, pad, pad_wrap)
+# print(padded)
 
 
 # np_padarr = np.pad(np_arr, ((1, 1), (1, 1), (1, 1)), mode="reflect")
@@ -339,3 +341,35 @@ print(padded)
 # print(arr)
 # out, slc = pad_array2(arr, pad)
 # print(out)
+
+
+'''
+'''
+
+random.seed(1)
+
+def scramble(arr, axis):
+    def scrmble(seq):
+        random.shuffle(seq)
+        return seq
+    return reduce_array(arr, axis, scrmble)
+
+
+arr1 = arange([5, 1])
+arr2 = arange([1, 5])
+
+arr1 = scramble(arr1, 0)
+arr2 = scramble(arr2, 1)
+
+narr1 = tondarray(arr1)
+narr2 = tondarray(arr2)
+
+print(arr1)
+print(arr2)
+
+
+out = arr2.T()*arr1.T()
+print(out)
+
+nout = np.kron(narr1, narr2)
+print(nout)

@@ -1,6 +1,7 @@
 from functools import reduce
 
 import numpy as np
+import types
 
 import mdarray as md
 from core.exceptions import IncompatibleDimensions
@@ -33,8 +34,10 @@ def tomdarray(arr):
             arr_out = md.mdarray(shape=shape, data=arr)
         elif isinstance(arr, dict):
             arr_out = [[i, j] for i, j in arr.items()]
-        else:
+        elif isinstance(arr, int) or isinstance(arr, float) or isinstance(arr, str):
             arr_out = [arr]
+        else:
+            arr_out = list(arr)
 
         return tomdarray(arr_out)
 
@@ -169,7 +172,7 @@ def repeat(arr, raxes, repts):
         raxis = raxes[i]
         new_shape[raxis] *= rept
 
-    arr_out = zeros(shape=new_shape)
+    arr_out = zeros(shape=new_shape, order=arr.order, dtype=arr.dtype)
     axis_counter = [0] * mdim
 
     def recurse(ix):
@@ -219,7 +222,7 @@ def meshgrid_internal(*arrs, dense=False):
                     arr_i = repeat(arr_i, [j], [sizes[j]])
         arr_out.append(arr_i)
 
-    return tuple(arr_out)
+    return arr_out
 
 
 def dense_meshgrid(*arrs):
@@ -236,12 +239,12 @@ def diagonal(arr):
     shape = arr.shape
 
     if mdim == 1:
-        arr_out = zeros([size, size])
+        arr_out = zeros([size, size], order=arr.order)
         col_stride = arr_out.strides[1]
         for i in range(size):
             arr_out.data[i * (col_stride + 1)] = arr.data[i]
     elif mdim == 2:
-        arr_out = zeros([shape[0]])
+        arr_out = zeros([shape[0]], order=arr.order)
         col_stride = arr.strides[1]
         for i in range(shape[0]):
             arr_out.data[i] = arr.data[i * (col_stride + 1)]
@@ -269,7 +272,7 @@ def broadcast_bnry_internal(*arrs, new_shape, repts, func):
     ndim = len(arrs)
 
     mdim = arrs[0].mdim
-    arr_out = zeros(shape=new_shape)
+    arr_out = zeros(shape=new_shape, order=arrs[0].order, dtype=arrs[0].dtype)
     axis_counters = [[0] * mdim for i in range(ndim)]
 
     def recurse(warr, ix, flag):
@@ -390,7 +393,7 @@ def broadcast_arrays(*arrs):
 
 
 def broadcast_toshape(arr, shape):
-    arr_shape = md.mdarray(shape=shape)
+    arr_shape = md.mdarray(shape=shape, order=arr.order, dtype=arr.dtype)
     new_shape, repts = generate_broadcast_shape(arr, arr_shape)
     raxes = [i for i in range(arr_shape.mdim)]
     arr = repeat(arr, raxes, repts[0])

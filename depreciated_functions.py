@@ -482,3 +482,35 @@ Depreciated padding routine:
 #         shape_i[i] = new_shape[i]
 
 #     return arr_i
+
+
+'''
+Depreciated unraveling routine:
+'''
+# def unravel_mdim(arr, shape):
+#     global j
+#     mdim = arr.mdim
+#     istrides = arr.strides
+#     ostrides = core.get_strides(shape)
+#     print(istrides, ostrides)
+
+#     axis_counter = [0] * mdim
+#     arr_out = core.zeros(arr.shape)
+
+#     def recurse(ix):
+#         global j
+#         axis = arr.shape[ix]
+
+#         if ix == 0:
+#             for i in range(axis):
+#                 axis_counter[0] = arr.data[j]
+#                 ix_ii = core.pair_wise_accumulate(axis_counter, ostrides)
+#                 arr_out.data[j] = list(axis_counter)
+#                 j += 1
+#         else:
+#             for i in range(axis):
+#                 axis_counter[ix] = i
+#                 recurse(ix - 1)
+#     j = 0
+#     recurse(mdim - 1)
+#     return arr_out

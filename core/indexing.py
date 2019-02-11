@@ -104,7 +104,6 @@ def unravel_dense(*dense_ixs, arr_in, arr_out, set):
         if ix == 0:
             for i in range(axis):
                 ix_i = 0
-
                 for k in range(ndim):
                     ix_k = dense_ixs[k].data[j] * strides[k]
                     ix_i += ix_k
@@ -131,10 +130,11 @@ def expand_indicies(slc, arr):
     while i < ndim:
         arr_i = slc[i]
 
-        if arr_i == inf or arr_i == Ellipsis:
-            arr_i = arange(arr.shape[i])
-        else:
-            arr_i = tomdarray(slc[i])
+        if not isinstance(arr_i, md.mdarray):
+            if arr_i == inf or arr_i == Ellipsis:
+                arr_i = arange(arr.shape[i])
+            else:
+                arr_i = tomdarray(slc[i])
 
         new_shape[i] = arr_i.size
         oned = False if arr_i.mdim > 1 else oned
@@ -155,9 +155,11 @@ def slice_array(slc, arr_in, arr_out, set=True):
         new_shape = slc[0].shape
 
     if not arr_out:
-        arr_out = zeros(new_shape)
+        arr_out = zeros(new_shape, order=arr_in.order, dtype=arr_in.dtype)
     else:
         arr_out = tomdarray(arr_out)
+
+    # arr_out.order = arr_in.order
 
     if arr_in.shape != arr_out.shape:
         arr_out = broadcast_toshape(arr_out, new_shape)
@@ -169,3 +171,17 @@ def slice_array(slc, arr_in, arr_out, set=True):
 '''
 End M-d array slicing
 '''
+
+
+def indicies(arr, ixs, axis=-1):
+    mdim = arr.mdim
+    shape = arr.shape
+
+    ranges = [0] * mdim
+    for i in range(mdim):
+        ranges[i] = list(range(shape[i]))
+
+    ix_grid = dense_meshgrid(*ranges)
+    ix_grid[axis] = ixs
+
+    return arr[ix_grid]

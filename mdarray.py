@@ -19,7 +19,7 @@ class mdarray(object):
         self.strides = [1]
         self.data = [0]
         self.dtype = int
-        self.order = "C"
+        self._order = "C"
 
         self.__dict__.update(kwargs)
 
@@ -35,8 +35,8 @@ class mdarray(object):
             self._get_strides()
         if "dtype" not in kwargs:
             self._get_dtype()
-
-        self.set_order(self.order)
+        
+        self.order = self._order
         self.formatter = None
 
     def reshape(self, new_shape):
@@ -47,16 +47,21 @@ class mdarray(object):
         core.transpose(self, axis1, axis2)
         return self
 
-    def flatten(self, order=1):
+    def flatten(self, order=-1):
         core.flatten(self, order)
         return self
 
-    def set_order(self, order="C"):
-        if order == "F":
+    @property
+    def order(self):
+        return self._order
+
+    @order.setter
+    def order(self, other):
+        if other != self.order:
             if self.mdim == 1:
                 self.reshape(self.shape + [1])
             self.T()
-        return self
+        self._order = other
 
     def to_list(self):
         return core.make_nested_list(self)
@@ -75,6 +80,10 @@ class mdarray(object):
 
     def _get_dtype(self):
         self.dtype = type(self.data[0])
+
+    '''
+    Operator overloads
+    '''
 
     def __repr__(self):
         return core.print_array(self, ', ', self.formatter)
@@ -105,8 +114,34 @@ class mdarray(object):
     def __len__(self):
         return self.size
 
+    '''
+    Logical operators
+    '''
+
+    def __eq__(self, other):
+        return core.apply_binary_function(self, other, operator.eq)
+
+    def __le__(self, other):
+        return core.apply_binary_function(self, other, operator.le)
+
+    def __ge__(self, other):
+        return core.apply_binary_function(self, other, operator.ge)
+
+    def __lt__(self, other):
+        return core.apply_binary_function(self, other, operator.lt)
+
+    def __gt__(self, other):
+        return core.apply_binary_function(self, other, operator.gt)
+
+    '''
+    Mathematical operators
+    '''
+
     def __add__(self, other):
         return core.apply_binary_function(self, other, operator.add)
+
+    def __iadd__(self, other):
+        return self.__add__(other)
 
     def __radd__(self, other):
         return core.apply_binary_function(other, self, operator.add)

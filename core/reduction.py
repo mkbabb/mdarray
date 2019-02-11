@@ -4,9 +4,10 @@ from inspect import signature
 import numpy as np
 
 import mdarray as md
-from core.creation import make_mdim, zeros
+from core.creation import make_mdim, zeros, tomdarray
 from core.helper import pair_wise, pair_wise_accumulate
 from core.manipulation import roll_axis
+from core.types import nan, inf
 
 __all__ = ["reductor", "inner_product",
            "reduce_array"]
@@ -45,7 +46,7 @@ class reductor(object):
             raise ValueError
 
         i = self.ix
-        out = arr[0]
+        out = arr[i]
         args = [0] * (self.nargs)
         self.stride *= (self.nargs - 1)
 
@@ -81,24 +82,24 @@ class reductor(object):
         return arr
 
     @classmethod
-    def add(cls):
-        return cls(operator.add)
+    def add(cls, ix=0, stride=1):
+        return cls(operator.add, ix, stride)
 
     @classmethod
-    def sub(cls):
-        return cls(operator.sub)
+    def sub(cls, ix=0, stride=1):
+        return cls(operator.sub, ix, stride)
 
     @classmethod
-    def mul(cls):
-        return cls(operator.mul)
+    def mul(cls, ix=0, stride=1):
+        return cls(operator.mul, ix, stride)
 
     @classmethod
-    def div(cls):
-        return cls(operator.truediv)
+    def div(cls, ix=0, stride=1):
+        return cls(operator.truediv, ix, stride)
 
     @classmethod
-    def floordiv(cls):
-        return cls(operator.floordiv)
+    def floordiv(cls, ix=0, stride=1):
+        return cls(operator.floordiv, ix, stride)
 
 
 def inner_product(arr1, arr2):
@@ -118,13 +119,14 @@ Helper functions for reduce_array:
 
 def get_ret_shaped(arr, axis, shape):
     if isinstance(arr, list):
-        shape[0] = len(arr)
+        shape[axis] = len(arr)
     elif isinstance(arr, md.mdarray):
-        shape.pop(0)
+        shape.pop(axis)
         shape = arr.shape + shape
+        shape.insert(axis, 1)
     else:
-        shape.pop(0)
-    shape.insert(axis, 1)
+        shape.pop(axis)
+        shape.insert(axis, 1)
     arr_out = zeros(shape)
     return arr_out
 
@@ -159,25 +161,28 @@ def reduce_array(arr, faxis, func):
 
     mdim = arr.mdim
 
-    if faxis < 1:
+    if faxis == inf:
+        arr_out = func(arr.data)
+        return arr_out
+
+    if faxis < 0:
         faxis += mdim
 
+    new_shape = list(arr.shape)
     roll_axis(arr, faxis)
+
     shape = arr.shape
     strides = arr.strides
     data = arr.data
 
-    new_shape = list(shape)
-    tmp0 = [0] * arr.shape[0]
+    tmp0 = [0] * shape[0]
     axis_counter = [0] * mdim
 
     def recurse(ix):
         global j, k, arr_out, new_shape
-
         axis = shape[ix]
-        remaining_axes = mdim - ix
 
-        if remaining_axes == mdim:
+        if ix == 0:
             for i in range(axis):
                 axis_counter[0] = i * strides[0]
                 ix_i = sum(axis_counter)
