@@ -1,9 +1,0 @@
-{
-    "python.pythonPath": "/Users/mkbabb/anaconda3/bin/python",
-    "git.ignoreLimitWarning": true,
-    "files.exclude": {
-        "**/__pycache__": true,
-        "**/.idea": true,
-        "**/.pyc": true
-    }
-}
