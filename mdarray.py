@@ -35,7 +35,7 @@ class mdarray(object):
             self._get_strides()
         if "dtype" not in kwargs:
             self._get_dtype()
-        
+
         self.order = self._order
         self.formatter = None
 
@@ -106,7 +106,7 @@ class mdarray(object):
         ppos = self.pos
         self.pos += 1
 
-        if self.pos == self.size:
+        if self.pos == self.size + 1:
             raise StopIteration
         else:
             return self.data[ppos]

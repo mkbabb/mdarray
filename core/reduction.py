@@ -171,8 +171,8 @@ def insert_into_flattened(arr_in, arr_out, ix):
 '''
 
 
-def reduce_array(arr, faxis, func):
-    global j, k, arr_out, new_shape
+def reduce_array(arr, faxis, func, arr_out=None, jiter=False):
+    global j, k, _arr_out, new_shape
 
     if isinstance(faxis, list):
         ndim = len(faxis)
@@ -183,8 +183,10 @@ def reduce_array(arr, faxis, func):
     mdim = arr.mdim
 
     if faxis == inf:
-        arr_out = func(arr.data)
-        return arr_out
+        _arr_out = func(arr.data)
+        return _arr_out
+    elif arr_out:
+        _arr_out = arr_out
 
     if faxis < 0:
         faxis += mdim
@@ -200,7 +202,7 @@ def reduce_array(arr, faxis, func):
     axis_counter = [0] * mdim
 
     def recurse(ix):
-        global j, k, arr_out, new_shape
+        global j, k, _arr_out, new_shape
         axis = shape[ix]
 
         if ix == 0:
@@ -219,14 +221,15 @@ def reduce_array(arr, faxis, func):
                 if ix == 1:
                     j = 0
                     tmp1 = func(tmp0)
-                    if k == 0:
-                        arr_out = get_ret_shaped(tmp1, faxis, new_shape)
-                    k = insert_into_flattened(tmp1, arr_out, k)
+                    if k == 0 and not (_arr_out or jiter):
+                        _arr_out = get_ret_shaped(tmp1, faxis, new_shape)
+                    elif not jiter:
+                        k = insert_into_flattened(tmp1, _arr_out, k)
 
     j = k = 0
     recurse(mdim - 1)
     roll_axis(arr, faxis, mdim - 1)
-    return arr_out
+    return _arr_out
 
 
 '''

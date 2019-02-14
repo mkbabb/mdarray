@@ -43,7 +43,8 @@ def _permute(ai, ao, ifac, seq):
     global ii, jj
 
     ix = [i for i in range(ii, ii + ifac)]
-    ao[seq, ] = ai[ix, ]
+    print(ix, seq)
+    ai[seq, ] = ao[ix, ].data
 
     ii += ifac
 
@@ -56,7 +57,6 @@ def _radix(radix, ifac, pdiv, seq):
     if jj >= pdiv:
         jj = 0
     seq = radix(seq, jj / (pdiv * ifac))
-    print(seq)
 
     jj += 1
     return seq
@@ -78,9 +78,11 @@ ao = arange(size)
 
 pdiv = 1
 swch = 1
+m2 = True if size % 2 == 0 else False
 for i in range(ndim):
     ii = 0
     jj = 0
+    p = 0 if ((i == ndim - 1) and not m2) else i
     ifac = ifax[i]
     size_i = size // ifac
     pdiv *= ifax[i - 1] if i > 0 else 1
@@ -91,9 +93,13 @@ for i in range(ndim):
         radix = radix3
 
     ai.reshape([size_i, ifac])
-    ai = reduce_array(ai, 1, lambda x: _radix(radix, ifac, pdiv, x))
-    reduce_array(ixs, i, lambda x: _permute(ai, ao, ifac, x))
-    ai, ao = ao, ai
+    reduce_array(ai, 1, lambda x: _radix(radix, ifac, pdiv, x), ao)
+
+    if i != 0 or ((i != ndim) and m2):
+        reduce_array(ixs, p, lambda x: _permute(ai, ao, ifac, x), jiter=True)
+    else:
+        ai, ao = ao, ai
+
 
 ao.formatter = lambda x: f"{x:.2f}"
 # print(ixs)
