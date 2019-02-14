@@ -346,30 +346,79 @@ End slicing tests.
 '''
 '''
 
-random.seed(1)
-
-def scramble(arr, axis):
-    def scrmble(seq):
-        random.shuffle(seq)
-        return seq
-    return reduce_array(arr, axis, scrmble)
+'''
+Outer product tests:
+'''
+# random.seed(1)
 
 
-arr1 = arange([5, 1])
-arr2 = arange([1, 5])
-
-arr1 = scramble(arr1, 0)
-arr2 = scramble(arr2, 1)
-
-narr1 = tondarray(arr1)
-narr2 = tondarray(arr2)
-
-print(arr1)
-print(arr2)
+# def scramble(arr, axis):
+#     def scrmble(seq):
+#         random.shuffle(seq)
+#         return seq
+#     return reduce_array(arr, axis, scrmble)
 
 
-out = arr2.T()*arr1.T()
-print(out)
+# arr1 = arange([5, 1])
+# arr2 = arange([1, 5])
 
-nout = np.kron(narr1, narr2)
-print(nout)
+# arr1 = scramble(arr1, 0)
+# arr2 = scramble(arr2, 1)
+
+# narr1 = tondarray(arr1)
+# narr2 = tondarray(arr2)
+
+# print(arr1)
+# print(arr2)
+
+
+# out = arr2.T()*arr1.T()
+# print(out)
+
+# nout = np.kron(narr1, narr2)
+# print(nout)
+'''
+End outer product tests.
+'''
+
+'''
+Sort by tests
+'''
+
+
+def sort2(*keys, axis, roll=False):
+    keys = tuple(keys)
+    ndim = len(keys)
+    arr = concatenate(*keys, caxis=0)
+
+    def srt(seq):
+        print(seq)
+        size = list(range(len(seq)))
+        sort(size, key=lambda x, ix: seq[ix])
+        return size
+
+    arr_out = reduce_array(arr, axis, srt)
+
+    # arr_out._get_strides()
+    if roll:
+        roll_axis(arr_out, axis)
+    return arr_out
+
+
+# random.seed(2)
+
+# arr = scramble(arange([4, 4, 2]), 1)
+# print(arr)
+
+
+# srt = sort2(arr[1, ..., ...], axis=1, roll=False)
+# print(srt)
+# part = tomdarray([2, 3]).reshape([1, 1, 2])
+# part = repeat(part, [0, 1], [4, 4])
+
+# srt = concatenate(srt, part, caxis=0)
+# print(srt)
+
+
+# ixs = indicies(arr, srt, axis=1)
+# print(ixs)

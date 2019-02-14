@@ -8,7 +8,8 @@ from core.helper import get_strides, pair_wise_accumulate
 from core.types import inf, nan
 
 __all__ = ["ravel", "unravel",
-           "unravel_dense", "slice_array", "expand_indicies"]
+           "unravel_dense", "slice_array", "expand_indicies",
+           "indicies"]
 
 
 '''
@@ -159,7 +160,7 @@ def slice_array(slc, arr_in, arr_out, set=True):
     else:
         arr_out = tomdarray(arr_out)
 
-    # arr_out.order = arr_in.order
+    arr_out.order = arr_in.order
 
     if arr_in.shape != arr_out.shape:
         arr_out = broadcast_toshape(arr_out, new_shape)

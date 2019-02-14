@@ -1,11 +1,14 @@
 from functools import partial, reduce
+import random
 
 from core.reduction import reduce_array
 from core.types import inf, nan
 from core.manipulation import roll_axis
+from core.helper import swap_item
 
 __all__ = ["any", "all", "where",
-           "argsort", "argmax", "argmin"]
+           "argsort", "argmax", "argmin",
+           "sort"]
 
 
 def _pred(x):
@@ -94,3 +97,39 @@ def argsort(arr, axis, roll=False):
     if roll:
         roll_axis(arr_out, axis)
     return arr_out
+
+
+def scramble(arr, axis):
+    def scrmble(seq):
+        random.shuffle(seq)
+        return seq
+    return reduce_array(arr, axis, scrmble)
+
+
+def partition(seq, key, left, right):
+    pix = left
+    pivot = key(seq[right], right)
+
+    for i in range(left, right):
+        seq_i = key(seq[i], i)
+        if seq_i <= pivot:
+            swap_item(seq, pix, i)
+            pix += 1
+
+    swap_item(seq, pix, right)
+    return pix
+
+
+def quicksort(seq, key, left, right):
+    if left < right:
+        pix = partition(seq, key, left, right)
+        quicksort(seq, key, left, pix - 1)
+        quicksort(seq, key, pix + 1, right)
+
+
+def sort(seq, key, kind="quicksort"):
+    size = len(seq)
+    if kind == "quicksort":
+        quicksort(seq, key, 0, size - 1)
+    elif kind == "mergesort":
+        pass

@@ -104,7 +104,7 @@ def flatten_list(arr, order=1):
                 M = len(a_i)
 
                 if len(shape) <= dim_counter + 1:
-                    shape.insert(0, M)
+                    shape.insert(-1, M)
 
                 dim_counter += 1
                 tmp += [tmp0] if dim_counter <= order else tmp0

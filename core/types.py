@@ -38,7 +38,7 @@ class mdarray_inquery(object):
 
         for i, j in self.__dict__.items():
             current_len = len(str(i))
-            space = ' '*(max_len - current_len)
+            space = ' ' * (max_len - current_len)
             s += '{0}:{1}{2}\n'.format(i, space, j)
         return s
 
@@ -46,6 +46,9 @@ class mdarray_inquery(object):
 class md_nan(object):
     def __init__(self):
         self.value = 'not arr number!'
+
+    def __float__(self):
+        return float("nan")
 
     def __eq__(self, other):
         if isinstance(other, md_nan):
@@ -76,7 +79,7 @@ class md_infp(object):
         return self
 
     def __float__(self):
-        return self
+        return float("inf")
 
     def __repr__(self):
         return 'inf'
@@ -102,7 +105,7 @@ class md_infn(object):
         return self
 
     def __float__(self):
-        return self
+        return float("-inf")
 
     def __repr__(self):
         return '-inf'

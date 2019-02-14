@@ -22,6 +22,7 @@ Reshaping routines:
 
 
 def reshape(arr, new_shape):
+    new_shape = list(new_shape)
     mdim = len(new_shape)
     new_size = reduce(lambda x, y: x * y, new_shape)
 
@@ -89,13 +90,13 @@ def make_nested_list(arr):
 
         if ix == 0:
             for i in range(axis):
-                axis_counter[0] = i
-                ix_i = pair_wise_accumulate(axis_counter, strides)
+                axis_counter[0] = i * strides[0]
+                ix_i = sum(axis_counter)
                 arr_val = data[ix_i]
                 tmp[i] = arr_val
         else:
             for i in range(axis):
-                axis_counter[ix] = i
+                axis_counter[ix] = i * strides[ix]
                 tmp[i] = recurse(ix - 1)
         return tmp
 

@@ -21,20 +21,26 @@ across a 1-d array. Functions of an airty >= 2 are accepted for both routines.
 Parameters:
     op: function=None
         n-ary function that must return a 0-d output.
-    
+
     ix: integer=0
         Starting index of the reductor.
-    
+
     stride: integer=1
         Stride of the reductor.
 '''
 
 
 class reductor(object):
-    def __init__(self, op=None, ix=0, stride=1):
+    def __init__(self, op=None, ix=0, init=0, stride=1, exclude=None):
         self.op = op
         self.ix = ix
+        self.init = init
         self.stride = stride
+        self.exclude = exclude
+
+        if self.exclude == None:
+            self.exclude = [-1]
+
         if self.op:
             self.nargs = len(signature(self.op).parameters)
 
@@ -46,16 +52,23 @@ class reductor(object):
             raise ValueError
 
         i = self.ix
-        out = arr[i]
-        args = [0] * (self.nargs)
+        out = self.init
+        args = [self.init] * (self.nargs)
         self.stride *= (self.nargs - 1)
 
         while i < size - 1:
-            args[0] = out
-
-            for j in range(1, self.nargs):
-                args[j] = arr[i + j]
-
+            for j in range(self.nargs):
+                ij = i + j
+                exclude = False
+                args[j] = self.init
+                for k in self.exclude:
+                    if ij == k:
+                        exclude = True
+                        break
+                if j == 0:
+                    args[0] = arr[0] if i == 0 and not exclude else out
+                elif not exclude:
+                    args[j] = arr[ij]
             out = self.op(*args)
             i += self.stride
         return out
@@ -68,38 +81,46 @@ class reductor(object):
             raise ValueError
 
         i = self.ix
-        args = [0] * (self.nargs)
+        args = [self.init] * (self.nargs)
         self.stride *= (self.nargs - 1)
 
         while i < size - 1:
-            args[0] = arr[i]
-
-            for j in range(1, self.nargs):
-                args[j] = arr[i + j]
+            for j in range(self.nargs):
+                ij = i + j
+                exclude = False
+                args[j] = self.init
+                for k in self.exclude:
+                    if ij == k:
+                        exclude = True
+                        break
+                if not exclude:
+                    args[j] = arr[ij]
+                elif j == 0:
+                    args[0] = arr[j]
 
             arr[i + 1] = self.op(*args)
             i += self.stride
         return arr
 
     @classmethod
-    def add(cls, ix=0, stride=1):
-        return cls(operator.add, ix, stride)
+    def add(cls, ix=0, init=0, stride=1, exclude=None):
+        return cls(operator.add, ix, init, stride, exclude)
 
     @classmethod
-    def sub(cls, ix=0, stride=1):
-        return cls(operator.sub, ix, stride)
+    def sub(cls, ix=0, init=0, stride=1, exclude=None):
+        return cls(operator.sub, ix, init, stride, exclude)
 
     @classmethod
-    def mul(cls, ix=0, stride=1):
-        return cls(operator.mul, ix, stride)
+    def mul(cls, ix=0, init=1, stride=1, exclude=None):
+        return cls(operator.mul, ix, init, stride, exclude)
 
     @classmethod
-    def div(cls, ix=0, stride=1):
-        return cls(operator.truediv, ix, stride)
+    def div(cls, ix=0, init=1, stride=1, exclude=None):
+        return cls(operator.truediv, ix, init, stride, exclude)
 
     @classmethod
-    def floordiv(cls, ix=0, stride=1):
-        return cls(operator.floordiv, ix, stride)
+    def floordiv(cls, ix=0, init=1, stride=1, exclude=None):
+        return cls(operator.floordiv, ix, init, stride, exclude)
 
 
 def inner_product(arr1, arr2):
