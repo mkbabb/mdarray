@@ -422,3 +422,53 @@ def sort2(*keys, axis, roll=False):
 
 # ixs = indicies(arr, srt, axis=1)
 # print(ixs)
+
+def mdarray_iter2(arr1, arr2):
+    global j
+
+    mdim = arr1.mdim
+    bshape = arr2.shape
+    shapes = [arr1.shape, arr2.shape]
+
+    strides = [arr1.strides, arr2.strides]
+    print(arr1.shape, arr2.shape)
+    print(strides)
+
+    axis_counters = [[0] * mdim for i in range(2)]
+
+    def recurse(ix):
+        global j
+
+        axis = bshape[ix]
+
+        if ix == 0:
+            for i in range(axis):
+                for k in range(2):
+                    axis_counters[k][0] = i * strides[k][0]
+
+                    ix_i = sum(axis_counters[k])
+
+                    if k == 1:
+                        print(axis_counters[k], ix_i)
+                    j += 1
+
+        else:
+            for i in range(axis):
+                for k in range(2):
+                    if i < shapes[k][ix]:
+                        axis_counters[k][ix] = i * strides[k][ix]
+                    else:
+                        axis_counters[k][-1] = bshape[ix]
+                        print('ok', k, ix, i)
+
+                recurse(ix - 1)
+    j = 0
+    recurse(mdim - 1)
+
+
+arr1 = arange([4, 3, 1])
+arr2 = arange([3, 2, 2])
+
+roll_axis(arr1, 1)
+roll_axis(arr2, 1)
+mdarray_iter2(arr1, arr2)
