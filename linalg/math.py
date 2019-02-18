@@ -153,10 +153,11 @@ def swap_mdim(arr, ix1, ix2):
 
 
 random.seed(1)
-# mat1 = core.arange([3, 3])
-# mat1 = scramble(mat1, 1)
-# print(mat1)
-# sort = core.argsort(mat1[0, core.inf], 1)
+mat1 = core.arange([3, 3])
+mat1 = scramble(mat1, 1)
+print(mat1)
+sort = core.argsort(mat1[0, core.inf], 1)
+print(sort)
 # sort = core.repeat(sort, [0], [3])
 
 # I, J = core.dense_meshgrid(range(3), range(3))

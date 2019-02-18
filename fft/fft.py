@@ -3,6 +3,8 @@ import numpy as np
 import cmath
 
 
+TWOPI = 6.283185307179586476925286766559005768394338798750
+
 SQRT3_2 = 0.866025403784438646763723170752936183471402626905190314027
 SQRT5_4 = 0.559016994374947424102293417182819058860154589902881431067
 SIN_2PI_5 = 0.951056516295153572116439333379382143405698634125750222447
@@ -15,146 +17,6 @@ COS_6PI_7 = -0.900968867902419126236102319507445051165919162131
 SIN_2PI_7 = 0.781831482468029808708444526674057750232334518708
 SIN_4PI_7 = 0.974927912181823607018131682993931217232785800619
 SIN_6PI_7 = 0.433883739117558120475768332848358754609990727787
-
-
-def radix2(seq, twiddles, twix):
-    omega1 = twiddles[twix]
-
-    z0 = seq[0]
-    z1 = omega1 * seq[1]
-
-    t0 = z0 + z1
-    t1 = z0 - z1
-
-    seq[0] = t0
-    seq[1] = t1
-
-    return seq
-
-
-def radix3(seq, twiddles, twix):
-    omega1 = twiddles[twix]
-    omega2 = twiddles[twix + 1]
-
-    z0 = seq[0]
-    z1 = omega1 * seq[1]
-    z2 = omega2 * seq[2]
-
-    t0 = z1 + z2
-    t1 = z0 - 0.5 * (z1 + z2)
-    t2 = -SQRT3_2 * (z1 - z2)
-
-    seq[0] = z0 + t0
-    seq[1] = (t1 + 1j * t2)
-    seq[2] = (t1 - 1j * t2)
-
-    return seq
-
-
-def radix4(seq, twiddles, twix):
-    omega1 = twiddles[twix]
-    omega2 = twiddles[twix + 1]
-    omega3 = twiddles[twix + 2]
-
-    z0 = seq[0]
-    z1 = omega1 * seq[1]
-    z2 = omega2 * seq[2]
-    z3 = omega3 * seq[3]
-
-    t0 = z0 + z2
-    t1 = z1 + z3
-    t2 = z0 - z2
-    t3 = z1 - z3
-
-    seq[0] = t0 + t1
-    seq[1] = t2 - 1j * t3
-    seq[2] = t0 - t1
-    seq[3] = t2 + 1j * t3
-
-    return seq
-
-
-def radix5(seq, twiddles, twix):
-    omega1 = twiddles[twix]
-    omega2 = twiddles[twix + 1]
-    omega3 = twiddles[twix + 2]
-    omega4 = twiddles[twix + 3]
-
-    z0 = seq[0]
-    z1 = omega1 * seq[1]
-    z2 = omega2 * seq[2]
-    z3 = omega3 * seq[3]
-    z4 = omega4 * seq[4]
-
-    t0 = z1 + z4
-    t1 = z2 + z3
-    t2 = z1 - z4
-    t3 = z2 - z3
-    t4 = t0 + t1
-
-    t5 = SQRT5_4 * (t0 - t1)
-    t6 = z0 - 1 / 4 * t4
-
-    t7 = t6 + t5
-    t8 = t6 - t5
-
-    t9 = SIN_2PI_5 * t2 + SIN_2PI_10 * t3
-    t10 = SIN_2PI_10 * t2 - SIN_2PI_5 * t3
-
-    seq[0] = z0 + t4
-    seq[1] = t7 - 1j * t9
-    seq[2] = t8 - 1j * t10
-    seq[3] = t8 + 1j * t10
-    seq[4] = t7 + 1j * t9
-
-    return seq
-
-
-def radix7(seq, twiddles, twix):
-    omega1 = twiddles[twix]
-    omega2 = twiddles[twix + 1]
-    omega3 = twiddles[twix + 2]
-    omega4 = twiddles[twix + 3]
-    omega5 = twiddles[twix + 4]
-    omega6 = twiddles[twix + 5]
-
-    z0 = seq[0]
-    z1 = omega1 * seq[1]
-    z2 = omega2 * seq[2]
-    z3 = omega3 * seq[3]
-    z4 = omega4 * seq[4]
-    z5 = omega5 * seq[5]
-    z6 = omega6 * seq[6]
-
-    t0 = z1 + z6
-    t1 = z2 + z5
-    t2 = z3 + z4
-    t3 = z1 - z6
-    t4 = z2 - z5
-    t5 = z3 - z4
-
-    t6 = z0 + COS_2PI_7 * t0 + COS_4PI_7 * t1 + COS_6PI_7 * t2
-    t7 = z0 + COS_4PI_7 * t0 + COS_6PI_7 * t1 + COS_2PI_7 * t2
-    t8 = z0 + COS_6PI_7 * t0 + COS_2PI_7 * t1 + COS_4PI_7 * t2
-
-    t9 = SIN_2PI_7 * t3 + SIN_4PI_7 * t4 + SIN_6PI_7 * t5
-    t10 = SIN_4PI_7 * t3 - SIN_6PI_7 * t4 - SIN_2PI_7 * t5
-    t11 = SIN_6PI_7 * t3 - SIN_2PI_7 * t4 + SIN_4PI_7 * t5
-
-    seq[0] = z0 + t0 + t1 + t2
-    seq[1] = t6 - 1j * t9
-    seq[2] = t7 - 1j * t10
-    seq[3] = t8 - 1j * t11
-    seq[4] = t8 + 1j * t11
-    seq[5] = t7 + 1j * t10
-    seq[6] = t6 + 1j * t9
-
-    return seq
-
-
-def radixg(seq, twiddles, twix):
-    pass
-
 
 
 def slice_sfax(N, sfax, fax):
@@ -199,7 +61,7 @@ def twiddle_table(ndim, ifax):
         pdiv *= ifax[i - 1] if i > 0 else 1
         pmul = ifac * pdiv
         for j in range(pdiv):
-            omega = -2j * cmath.pi * j
+            omega = -1j * TWOPI * j
             for k in range(1, ifac):
                 if j == 0:
                     tw_k = 1
@@ -210,12 +72,165 @@ def twiddle_table(ndim, ifax):
     return twiddles.data
 
 
+def radix2(seq, twiddles, pix, twix, pdiv):
+    omega1 = twiddles[twix]
+
+    z0 = seq[0]
+    z1 = omega1 * seq[1]
+
+    t0 = z0 + z1
+    t1 = z0 - z1
+
+    seq[0] = t0
+    seq[1] = t1
+
+    return seq
+
+
+def radix3(seq, twiddles, pix, twix, pdiv):
+    omega1 = twiddles[twix]
+    omega2 = twiddles[twix + 1]
+
+    z0 = seq[0]
+    z1 = omega1 * seq[1]
+    z2 = omega2 * seq[2]
+
+    t0 = z1 + z2
+    t1 = z0 - 0.5 * (z1 + z2)
+    t2 = -SQRT3_2 * (z1 - z2)
+
+    seq[0] = z0 + t0
+    seq[1] = (t1 + 1j * t2)
+    seq[2] = (t1 - 1j * t2)
+
+    return seq
+
+
+def radix4(seq, twiddles, pix, twix, pdiv):
+    omega1 = twiddles[twix]
+    omega2 = twiddles[twix + 1]
+    omega3 = twiddles[twix + 2]
+
+    z0 = seq[0]
+    z1 = omega1 * seq[1]
+    z2 = omega2 * seq[2]
+    z3 = omega3 * seq[3]
+
+    t0 = z0 + z2
+    t1 = z1 + z3
+    t2 = z0 - z2
+    t3 = z1 - z3
+
+    seq[0] = t0 + t1
+    seq[1] = t2 - 1j * t3
+    seq[2] = t0 - t1
+    seq[3] = t2 + 1j * t3
+
+    return seq
+
+
+def radix5(seq, twiddles, pix, twix, pdiv):
+    omega1 = twiddles[twix]
+    omega2 = twiddles[twix + 1]
+    omega3 = twiddles[twix + 2]
+    omega4 = twiddles[twix + 3]
+
+    z0 = seq[0]
+    z1 = omega1 * seq[1]
+    z2 = omega2 * seq[2]
+    z3 = omega3 * seq[3]
+    z4 = omega4 * seq[4]
+
+    t0 = z1 + z4
+    t1 = z2 + z3
+    t2 = z1 - z4
+    t3 = z2 - z3
+    t4 = t0 + t1
+
+    t5 = SQRT5_4 * (t0 - t1)
+    t6 = z0 - 1 / 4 * t4
+
+    t7 = t6 + t5
+    t8 = t6 - t5
+
+    t9 = SIN_2PI_5 * t2 + SIN_2PI_10 * t3
+    t10 = SIN_2PI_10 * t2 - SIN_2PI_5 * t3
+
+    seq[0] = z0 + t4
+    seq[1] = t7 - 1j * t9
+    seq[2] = t8 - 1j * t10
+    seq[3] = t8 + 1j * t10
+    seq[4] = t7 + 1j * t9
+
+    return seq
+
+
+def radix7(seq, twiddles, pix, twix, pdiv):
+    omega1 = twiddles[twix]
+    omega2 = twiddles[twix + 1]
+    omega3 = twiddles[twix + 2]
+    omega4 = twiddles[twix + 3]
+    omega5 = twiddles[twix + 4]
+    omega6 = twiddles[twix + 5]
+
+    z0 = seq[0]
+    z1 = omega1 * seq[1]
+    z2 = omega2 * seq[2]
+    z3 = omega3 * seq[3]
+    z4 = omega4 * seq[4]
+    z5 = omega5 * seq[5]
+    z6 = omega6 * seq[6]
+
+    t0 = z1 + z6
+    t1 = z2 + z5
+    t2 = z3 + z4
+    t3 = z1 - z6
+    t4 = z2 - z5
+    t5 = z3 - z4
+
+    t6 = z0 + COS_2PI_7 * t0 + COS_4PI_7 * t1 + COS_6PI_7 * t2
+    t7 = z0 + COS_4PI_7 * t0 + COS_6PI_7 * t1 + COS_2PI_7 * t2
+    t8 = z0 + COS_6PI_7 * t0 + COS_2PI_7 * t1 + COS_4PI_7 * t2
+
+    t9 = SIN_2PI_7 * t3 + SIN_4PI_7 * t4 + SIN_6PI_7 * t5
+    t10 = SIN_4PI_7 * t3 - SIN_6PI_7 * t4 - SIN_2PI_7 * t5
+    t11 = SIN_6PI_7 * t3 - SIN_2PI_7 * t4 + SIN_4PI_7 * t5
+
+    seq[0] = z0 + t0 + t1 + t2
+    seq[1] = t6 - 1j * t9
+    seq[2] = t7 - 1j * t10
+    seq[3] = t8 - 1j * t11
+    seq[4] = t8 + 1j * t11
+    seq[5] = t7 + 1j * t10
+    seq[6] = t6 + 1j * t9
+
+    return seq
+
+
+def radixg(seq, twiddles, pix, twix, pdiv):
+    print(twiddles)
+    ifac = len(seq)
+    tmp = [0] * ifac
+
+    for i in range(ifac):
+        tn = 0
+        for j in range(ifac):
+            ix = (pix + i * pdiv) * j
+            ww = cmath.exp(-1j * TWOPI * ix / (ifac * pdiv))
+            print(ww)
+            print(twiddles[twix])
+            zn = seq[j]
+            tn += zn * ww
+        tmp[i] = tn
+    return tmp
+
+
 def butterfly(arr_in, arr_out, twiddles, radix, ifac, pdiv, baxis, twix):
-    global j, tmp_in
+    global pix, tmp_in
 
     roll_axis(arr_in, 1)
     roll_axis(arr_out, baxis)
-    
+
     mdim = arr_out.mdim
     shape = arr_out.shape
 
@@ -225,14 +240,14 @@ def butterfly(arr_in, arr_out, twiddles, radix, ifac, pdiv, baxis, twix):
     axis_counters = [[0] * mdim for i in range(2)]
 
     def recurse(ix):
-        global j, tmp_in
+        global pix, tmp_in
         axis = shape[ix]
 
         if ix == 0:
             for k in range(2):
                 if k == 1:
-                    j = 0 if j >= pdiv else j
-                    tmp_in = radix(tmp_in, twiddles, twix + j * (ifac - 1))
+                    pix %= pdiv
+                    tmp_in = radix(tmp_in, twiddles, pix, pix * (ifac - 1), pdiv)
 
                 for i in range(axis):
                     axis_counters[k][0] = i * strides[k][0]
@@ -242,7 +257,7 @@ def butterfly(arr_in, arr_out, twiddles, radix, ifac, pdiv, baxis, twix):
                         tmp_in[i] = arr_in.data[ix_i]
                     elif k == 1:
                         arr_out.data[ix_i] = tmp_in[i]
-            j += 1
+            pix += 1
         else:
             for i in range(axis):
                 for k in range(2):
@@ -251,7 +266,7 @@ def butterfly(arr_in, arr_out, twiddles, radix, ifac, pdiv, baxis, twix):
                     else:
                         axis_counters[k][-1] += shape[1]
                 recurse(ix - 1)
-    j = 0
+    pix = 0
     recurse(mdim - 1)
 
 
@@ -266,7 +281,7 @@ def cfft_internal(ndim, ifax, arr_in, arr_out):
         size_i = size // ifac
         pdiv *= ifax[i - 1] if i > 0 else 1
 
-        if ifac == 2:
+        if ifac == 99:
             radix = radix2
         elif ifac == 3:
             radix = radix3
@@ -285,7 +300,7 @@ def cfft_internal(ndim, ifax, arr_in, arr_out):
         arr_in.reshape(radix_shape)
         arr_out.reshape(ifax)
 
-        butterfly(arr_in, arr_out, twiddles, radix, ifac, pdiv, i, twix)
+        butterfly(arr_in, arr_out, twiddles[twix:], radix, ifac, pdiv, i, twix)
         arr_in, arr_out = arr_out, arr_in
 
         twix += pdiv * (ifac - 1)
@@ -295,7 +310,7 @@ def cfft_internal(ndim, ifax, arr_in, arr_out):
 
 def cfft(arr):
     size = arr.size
-    ifax = factorize(size, [4])
+    ifax = factorize(size)
     ndim = len(ifax)
 
     arr_in = arr.reshape(ifax)
@@ -306,7 +321,7 @@ def cfft(arr):
     return cfft_internal(ndim, ifax, arr_in, arr_out)
 
 
-ifax = [4, 2]
+ifax = [2, 2, 2]
 
 
 size = reductor.mul().reduce(ifax)

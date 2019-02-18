@@ -6,7 +6,7 @@ import numpy as np
 import mdarray as md
 from core.creation import make_mdim, zeros, tomdarray
 from core.helper import pair_wise, pair_wise_accumulate
-from core.manipulation import roll_axis
+from core.manipulation import roll_axis, swap_axis
 from core.types import nan, inf
 
 __all__ = ["reductor", "inner_product",
@@ -171,24 +171,15 @@ def insert_into_flattened(arr_in, arr_out, ix):
 '''
 
 
-def reduce_array(arr, faxis, func, arr_out=None, jiter=False):
-    global j, k, _arr_out, new_shape
-
-    if isinstance(faxis, list):
-        ndim = len(faxis)
-        for i in range(ndim):
-            arr = reduce_array(arr, faxis[i], func)
-        return arr
+def reduce_array(arr, faxis, func):
+    global j, k, arr_out, new_shape
 
     mdim = arr.mdim
 
     if faxis == inf:
-        _arr_out = func(arr.data)
-        return _arr_out
-    elif arr_out:
-        _arr_out = arr_out
-
-    if faxis < 0:
+        arr_out = func(arr.data)
+        return arr_out
+    elif faxis < 0:
         faxis += mdim
 
     new_shape = list(arr.shape)
@@ -202,7 +193,7 @@ def reduce_array(arr, faxis, func, arr_out=None, jiter=False):
     axis_counter = [0] * mdim
 
     def recurse(ix):
-        global j, k, _arr_out, new_shape
+        global j, k, arr_out, new_shape
         axis = shape[ix]
 
         if ix == 0:
@@ -221,15 +212,15 @@ def reduce_array(arr, faxis, func, arr_out=None, jiter=False):
                 if ix == 1:
                     j = 0
                     tmp1 = func(tmp0)
-                    if k == 0 and not (_arr_out or jiter):
-                        _arr_out = get_ret_shaped(tmp1, faxis, new_shape)
-                    elif not jiter:
-                        k = insert_into_flattened(tmp1, _arr_out, k)
+                    if k == 0:
+                        arr_out = get_ret_shaped(tmp1, faxis, new_shape)
+
+                    k = insert_into_flattened(tmp1, arr_out, k)
 
     j = k = 0
     recurse(mdim - 1)
     roll_axis(arr, faxis, mdim - 1)
-    return _arr_out
+    return arr_out
 
 
 '''

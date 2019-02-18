@@ -97,10 +97,15 @@ def arange(size):
     return md.mdarray(size=size, data=data).reshape(shape)
 
 
-def linear_range(start, stop, size):
+def linear_range(start, stop, size=None):
+    if not size:
+        size = stop - start
     arr_out = zeros(shape=[size])
 
-    step = (stop - start) / size
+    if type(start) == int:
+        step = (stop - start) // size
+    else:
+        step = (stop - start) / size
 
     i = start
     j = 0
