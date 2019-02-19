@@ -138,41 +138,57 @@ Helper functions for reduce_array:
 '''
 
 
-def get_ret_shaped(arr, axis, shape):
-    if isinstance(arr, list):
-        shape[axis] = len(arr)
-    elif isinstance(arr, md.mdarray):
-        shape.pop(axis)
-        shape = arr.shape + shape
-        shape.insert(axis, 1)
+def insert_merge(list1, list2, pos, o=True):
+    mdim = len(list1)
+    for i in range(pos):
+        list2.insert(0, list1[i])
+
+    pos = pos + 1 if o else pos
+
+    for i in range(pos, mdim):
+        list2.append(list1[i])
+
+
+def get_ret_shaped(buff, new_shape, axis, keepdims):
+    buff = tomdarray(buff)
+    if buff.size > 1:
+        new_shape.pop(axis)
+        new_shape = buff.shape + new_shape
+
     else:
-        shape.pop(axis)
-        shape.insert(axis, 1)
-    arr_out = zeros(shape)
+        if keepdims:
+            new_shape[axis] = 1
+        else:
+            new_shape.pop(axis)
+
+    arr_out = zeros(new_shape)
     return arr_out
 
 
-def insert_into_flattened(arr_in, arr_out, ix):
-    if isinstance(arr_in, list):
-        for l in range(len(arr_in)):
-            arr_out.data[ix] = arr_in[l]
-            ix += 1
-    elif isinstance(arr_in, md.mdarray):
-        for l in range(len(arr_in)):
-            arr_out.data[ix] = arr_in.data[l]
-            ix += 1
+def _insert_into_flattened(buff, arr_out, ixs, j, keepdims):
+    if isinstance(buff, md.mdarray):
+        buff = buff.data
+
+    if isinstance(buff, list):
+        if keepdims:
+            for n, i in enumerate(ixs):
+                arr_out.data[i] = buff[n]
+        else:
+            for n, i in enumerate(buff):
+                arr_out.data[n + j] = i
+        j += len(buff)
     else:
-        arr_out.data[ix] = arr_in
-        ix += 1
-    return ix
+        arr_out.data[j] = buff
+        j += 1
+    return j
 
 
 '''
 '''
 
 
-def reduce_array(arr, faxis, func):
-    global j, k, arr_out, new_shape
+def reduce_array(arr, faxis, func, keepdims=False):
+    global j, arr_out
 
     mdim = arr.mdim
 
@@ -189,37 +205,37 @@ def reduce_array(arr, faxis, func):
     strides = arr.strides
     data = arr.data
 
-    tmp0 = [0] * shape[0]
+    buff = [0] * shape[0]
+    ixs = [0] * shape[0]
     axis_counter = [0] * mdim
 
     def recurse(ix):
-        global j, k, arr_out, new_shape
+        global j, arr_out
         axis = shape[ix]
 
         if ix == 0:
             for i in range(axis):
                 axis_counter[0] = i * strides[0]
                 ix_i = sum(axis_counter)
-                arr_val = data[ix_i]
 
-                tmp0[j] = arr_val
-                j += 1
+                buff[i] = data[ix_i]
+                ixs[i] = ix_i
+
+            fbuff = func(buff)
+
+            if j == 0:
+                arr_out = get_ret_shaped(fbuff, new_shape, faxis, keepdims)
+            j = _insert_into_flattened(fbuff, arr_out, ixs, j, keepdims)
+
         else:
             for i in range(axis):
                 axis_counter[ix] = i * strides[ix]
                 recurse(ix - 1)
 
-                if ix == 1:
-                    j = 0
-                    tmp1 = func(tmp0)
-                    if k == 0:
-                        arr_out = get_ret_shaped(tmp1, faxis, new_shape)
-
-                    k = insert_into_flattened(tmp1, arr_out, k)
-
-    j = k = 0
+    j = 0
     recurse(mdim - 1)
     roll_axis(arr, faxis, mdim - 1)
+
     return arr_out
 
 

@@ -1,8 +1,11 @@
+import random
+from functools import partial
+
+import numpy as np
+
 import core
 import mdarray as md
-import random
-import numpy as np
-from functools import partial
+
 __all__ = ["dot", "norm"]
 
 
@@ -33,7 +36,7 @@ def norm(arr, metric=2):
     return arr_out**(1 / metric)
 
 
-# mat1 = core.repeat(core.arange([3, 1, 2]), [1], [3])
+# mat1 = core.repeat(core.irange([3, 1, 2]), [1], [3])
 # mat2 = core.ones([3, 3, 1]) * 2
 
 # import numpy as np
@@ -152,19 +155,19 @@ def swap_mdim(arr, ix1, ix2):
     return arr
 
 
-random.seed(1)
-mat1 = core.arange([3, 3])
-mat1 = scramble(mat1, 1)
-print(mat1)
-sort = core.argsort(mat1[0, core.inf], 1)
-print(sort)
+# random.seed(1)
+# mat1 = core.irange([3, 3])
+# mat1 = scramble(mat1, 1)
+# print(mat1)
+# sort = core.argsort(mat1[0, core.inf], 1)
+# print(sort)
 # sort = core.repeat(sort, [0], [3])
 
 # I, J = core.dense_meshgrid(range(3), range(3))
 
 # print(mat1[I, sort])
 
-# mat1 = core.arange([4, 4])
+# mat1 = core.irange([4, 4])
 # mat1 = scramble(mat1, 1)
 # print(mat1)
 # print(mat1)
@@ -181,9 +184,7 @@ print(sort)
 # mat1 = gaussian_elim(mat1, True)
 
 
-
-
-# mat3 = scramble(core.arange([4, 4]), 1)
+# mat3 = scramble(core.irange([4, 4]), 1)
 # print(mat3)
 # w = mat3 > mat1
 # wh = core.where(w, 0)

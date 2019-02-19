@@ -1,7 +1,7 @@
+import types
 from functools import reduce
 
 import numpy as np
-import types
 
 import mdarray as md
 from core.exceptions import IncompatibleDimensions
@@ -10,9 +10,8 @@ from core.helper import (flatten_list, pair_wise_accumulate, roll_array,
 
 __all__ = ["tomdarray", "tondarray",
            "zeros", "ones", "full",
-           "arange", "linear_range", "log_range",
-           "repeat", "meshgrid", "dense_meshgrid", "sort_raxes", "make_mdim",
-           "diagonal", "eye",
+           "irange", "linear_range", "log_range",
+           "sort_raxes", "make_mdim", "repeat", "meshgrid", "dense_meshgrid",
            "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays",
            "broadcast_toshape", ]
 
@@ -86,7 +85,7 @@ Array ranges:
 '''
 
 
-def arange(size):
+def irange(size):
     if isinstance(size, list):
         shape = size
         size = reduce(lambda x, y: x * y, size)
@@ -170,7 +169,6 @@ def repeat(arr, raxes, repts):
     strides = arr.strides
 
     sort_raxes(raxes, repts, mdim)
-
     new_shape = list(arr.shape)
 
     for i in range(mdim):
@@ -237,29 +235,6 @@ def dense_meshgrid(*arrs):
 
 def meshgrid(*arrs):
     return meshgrid_internal(*arrs, dense=False)
-
-
-def diagonal(arr):
-    mdim = arr.mdim
-    size = arr.size
-    shape = arr.shape
-
-    if mdim == 1:
-        arr_out = zeros([size, size], order=arr.order)
-        col_stride = arr_out.strides[1]
-        for i in range(size):
-            arr_out.data[i * (col_stride + 1)] = arr.data[i]
-    elif mdim == 2:
-        arr_out = zeros([shape[0]], order=arr.order)
-        col_stride = arr.strides[1]
-        for i in range(shape[0]):
-            arr_out.data[i] = arr.data[i * (col_stride + 1)]
-
-    return arr_out
-
-
-def eye(order=2):
-    return diagonal(ones([order]))
 
 
 '''

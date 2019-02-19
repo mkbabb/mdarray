@@ -325,7 +325,7 @@ ifax = [2, 2, 2]
 
 
 size = reductor.mul().reduce(ifax)
-arr = arange(size)
+arr = irange(size)
 
 ct = cfft(arr).reshape(ifax)
 

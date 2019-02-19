@@ -12,7 +12,7 @@ Concatenation tests:
 '''
 # shape = [5, 3, 2]
 # size = reduce(lambda x, y: x*y, shape)
-# arr = arange(size).reshape(shape)
+# arr = irange(size).reshape(shape)
 
 # c1 = full(shape=[1, 3, 2], fill_value=99)
 # c2 = full(shape=[2, 3, 2], fill_value=33)
@@ -30,12 +30,12 @@ Repeat tests:
 '''
 # shape = [5, 3, 2]
 # size = reduce(lambda x, y: x*y, shape)
-# arr = arange(size).reshape(shape)
+# arr = irange(size).reshape(shape)
 
 # repeated = repeat(arr, raxis=1, rept=2)
 # print(repeated)
 
-# np_arr = np.arange(0, size).reshape(shape[::-1])
+# np_arr = np.irange(0, size).reshape(shape[::-1])
 # np_repeated = np.repeat(np_arr, 2, 1)
 # print(np_repeated)
 '''
@@ -72,7 +72,7 @@ Pad array tests:
 '''
 # shape = [5, 3, 2]
 # size = reduce(lambda x, y: x*y, shape)
-# arr = arange(size).reshape(shape)
+# arr = irange(size).reshape(shape)
 # np_arr = tondarray(arr)
 
 # pad1 = (1, 1)
@@ -108,7 +108,7 @@ Reduce array tests:
 '''
 # shape = [5, 3, 2]
 # size = reduce(lambda x, y: x*y, shape)
-# arr = arange(size).reshape(shape)
+# arr = irange(size).reshape(shape)
 # np_arr = tondarray(arr)
 
 # print(arr)
@@ -148,11 +148,11 @@ Broadcasting tests:
 
 # shape1 = [6, 4, 1, 2, 1, 2]
 # size1 = reduce(lambda x, y: x*y, shape1)
-# X = arange(size1).reshape(shape1)
+# X = irange(size1).reshape(shape1)
 
 # shape1 = [1, 4, 3, 2, 2, 1]
 # size1 = reduce(lambda x, y: x*y, shape1)
-# Y = arange(size1).reshape(shape1)
+# Y = irange(size1).reshape(shape1)
 
 
 # np_X = md.tondarray(X)
@@ -177,7 +177,7 @@ Broadcasting tests:
 
 # More tests
 
-# a0 = arange(24).reshape([2, 3, 4, 1])
+# a0 = irange(24).reshape([2, 3, 4, 1])
 # a1 = ones([2, 3, 1])*12
 # a2 = ones([1, 3, 1])*12
 # a3 = zeros([2, 3, 4])
@@ -187,7 +187,7 @@ Broadcasting tests:
 # a0, a4 = broadcast_arrays(a0, a4)
 # print(a0)
 
-# arr1 = arange(100).reshape([2, 25, 2])
+# arr1 = irange(100).reshape([2, 25, 2])
 # arr2 = ones([1, 25, 1])*1.0
 
 # arr1 = md.tondarray(arr1)
@@ -206,13 +206,13 @@ Reduction tests:
 
 # shape = [5, 3, 2]
 # size = reduce(lambda x, y: x*y, shape)
-# arr = arange(size).reshape(shape)
+# arr = irange(size).reshape(shape)
 # np_arr = md.tondarray(arr)
 
 # arr = md.tomdarray([[1,2,3], [4,5,6], [7,8,9]])
 
 
-# func = lambda x: arange(9).reshape([3, 3])
+# func = lambda x: irange(9).reshape([3, 3])
 # rarr = reduce_array(arr, 0, func)
 # print(np_arr.sum(-1))
 # print(rarr)
@@ -222,7 +222,7 @@ Reduction tests:
 # arr = md.tondarray(arr)
 # print(np.diag(arr))
 
-# arr = arange(24).reshape([4, 3, 2])
+# arr = irange(24).reshape([4, 3, 2])
 # np_arr = tondarray(arr)
 # print(arr)
 
@@ -235,11 +235,11 @@ Reduction tests:
 # arr = repeat(arr, [0, 1], [4, 4])
 # print(arr)
 
-# print(10*eye(5))
+# print(10*identity(5))
 
 # mshape = [5, 4, 3, 2, 2, 5]
 
-# arr1 = arange([5, 1, 3, 2, 2, 1])
+# arr1 = irange([5, 1, 3, 2, 2, 1])
 # np_arr1 = tondarray(arr1)
 # arr2 = ones([1, 4, 3, 2, 1, 5])
 # arr3 = ones([5, 4, 1, 1, 2, 5])
@@ -281,7 +281,7 @@ Begin slicing tests:
 #     print(mat[i, inf])
 
 
-# arr = arange([4, 3]) + 1000
+# arr = irange([4, 3]) + 1000
 # rows = inf
 # cols = 2
 
@@ -294,7 +294,7 @@ Begin slicing tests:
 # slc = slice_array(ixs, arr)
 # print(slc)
 
-# arr = arange([3, 4])
+# arr = irange([3, 4])
 # rows = tomdarray([[0, 2],
 #                   [0, 2]])
 
@@ -313,11 +313,11 @@ End slicing tests.
 '''
 
 
-# arr1 = arange([2, 5, 2])
-# arr2 = arange([2, 5, 2]) * 99
+# arr1 = irange([2, 5, 2])
+# arr2 = irange([2, 5, 2]) * 99
 
-# arr1 = arange([5, 2, 2])
-# arr2 = arange([5, 2, 1])
+# arr1 = irange([5, 2, 2])
+# arr2 = irange([5, 2, 1])
 # print(arr1)
 # print("\n")
 # print(arr2)
@@ -329,7 +329,7 @@ End slicing tests.
 '''
 
 # pad = [[1, 2], [1, 1], [1, 1]]
-# arr = arange([3, 3, 2])
+# arr = irange([3, 3, 2])
 
 # padded = pad_array(arr, pad, pad_wrap)
 # print(padded)
@@ -359,8 +359,8 @@ Outer product tests:
 #     return reduce_array(arr, axis, scrmble)
 
 
-# arr1 = arange([5, 1])
-# arr2 = arange([1, 5])
+# arr1 = irange([5, 1])
+# arr2 = irange([1, 5])
 
 # arr1 = scramble(arr1, 0)
 # arr2 = scramble(arr2, 1)
@@ -400,13 +400,13 @@ def sort2(*keys, axis, roll=False):
     def srt(seq):
         size = list(range(len(seq)))
         sort(size, key=lambda x, ix: seq[ix])
-        return size
+        return seq
 
-    arr_out = reduce_array(arr, axis, srt)
+    arr_out = reduce_array(arr, axis, srt, True)
 
-    swap_item(arr_out.shape, 0, axis)
-    arr_out._get_strides()
-    swap_axis(arr_out, 0, axis)
+    # swap_item(arr_out.shape, 0, axis)
+    # arr_out._get_strides()
+    # swap_axis(arr_out, 0, axis)
 
     if roll:
         roll_axis(arr_out, axis)
@@ -421,10 +421,10 @@ def complete_ix(arr, ixs, axis=-1):
     ixs_part = linear_range(axis1 - axis2, axis1)
     make_mdim(ixs_part, mdim)
     swap_axis(ixs_part, 0, axis)
-    
+
     new_shape = list(arr.shape)
     new_shape[0] = arr.shape[0] - ixs.shape[0]
-    
+
     ixs_part = broadcast_toshape(ixs_part, new_shape)
 
     return concatenate(ixs, ixs_part, caxis=0)
@@ -432,18 +432,39 @@ def complete_ix(arr, ixs, axis=-1):
 
 random.seed(2)
 
-arr = scramble(arange([4, 4]), 1)
+arr = irange([4, 3])
 print(arr)
-col1 = arr[0, ...]
-col2 = arr[3, ...]
 
 
-srt = sort2(col1, col2, axis=1)
-print(srt)
+def rfunc(seq):
+    seq1 = diagonal(tomdarray(seq))
+    return reductor.add().reduce(seq)
+    # return reductor.add().accumulate(seq)
 
 
-srt = complete_ix(arr, srt, 1)
-print(srt)
+
+
+
+rarr = reduce_array(arr, 0, rfunc, True)
+print(rarr)
+# print(rarr)
+# narr = tondarray(arr)
+# rnarr = np.apply_along_axis(np.diag, 0, narr)
+# print(rnarr)
+# print(rnarr.shape)
+
+# col1 = arr[0, ...]
+# col2 = arr[3, ...]
+
+# print("\n")
+
+# srt = sort2(col1, col2, axis=1)
+# print(srt)
+# print(srt.strides)
+
+
+# srt = complete_ix(arr, srt, 1)
+# print(srt)
 # ixs = indicies(arr, srt, 1)
 # print(ixs)
 

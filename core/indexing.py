@@ -1,7 +1,7 @@
 from functools import reduce
 
 import mdarray as md
-from core.creation import (arange, broadcast_arrays, broadcast_toshape,
+from core.creation import (irange, broadcast_arrays, broadcast_toshape,
                            dense_meshgrid, tomdarray, zeros)
 from core.exceptions import IncompatibleDimensions
 from core.helper import get_strides, pair_wise_accumulate
@@ -55,11 +55,15 @@ def ravel(ixs, shape):
 
     for i in range(ndim):
         ix = ixs[i]
+        mdim_ix_i = [0] * mdim
         if ix > size:
             raise IncompatibleDimensions(
                 "The raveled index is too large to unravel using the provided shape!")
-        mdim_ix_i = [0] * mdim
-        mdim_ixs[i] = ravel_internal(ix, mdim_ix_i, strides, size, mdim)
+        elif ix == 0:
+            mdim_ixs[i] = mdim_ix_i
+        else:
+            ix += size if ix < 0 else 0
+            mdim_ixs[i] = ravel_internal(ix, mdim_ix_i, strides, size, mdim)
 
     return mdim_ixs
 
@@ -133,7 +137,7 @@ def expand_indicies(slc, arr):
 
         if not isinstance(arr_i, md.mdarray):
             if arr_i == inf or arr_i == Ellipsis:
-                arr_i = arange(arr.shape[i])
+                arr_i = irange(arr.shape[i])
             else:
                 arr_i = tomdarray(slc[i])
 
