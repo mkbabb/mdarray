@@ -2,7 +2,7 @@ from functools import reduce
 
 
 __all__ = ["update_dict", "get_strides", "swap_item", "roll_array",
-           "pair_wise", "pair_wise_accumulate", "remove_extraneous_dims", "flatten_list"]
+           "pair_wise", "remove_extraneous_dims", "flatten_list"]
 
 
 def update_dict(d1, d2, recursive=True):
@@ -65,10 +65,6 @@ def pair_wise(a1, a2, func):
         t = func(i, a2[n])
         tmp[n] = t
     return tmp
-
-
-def pair_wise_accumulate(a1, a2):
-    return reduce(lambda x, y: x + y, pair_wise(a1, a2, lambda x, y: x * y))
 
 
 def remove_extraneous_dims(arr):

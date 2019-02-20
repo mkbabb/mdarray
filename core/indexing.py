@@ -1,10 +1,10 @@
 from functools import reduce
 
 import mdarray as md
-from core.creation import (irange, broadcast_arrays, broadcast_toshape,
-                           dense_meshgrid, tomdarray, zeros)
+from core.creation import (broadcast_arrays, broadcast_toshape, dense_meshgrid,
+                           irange, tomdarray, zeros)
 from core.exceptions import IncompatibleDimensions
-from core.helper import get_strides, pair_wise_accumulate
+from core.helper import get_strides
 from core.types import inf, nan
 
 __all__ = ["ravel", "unravel",
@@ -154,6 +154,7 @@ def expand_indicies(slc, arr):
 
 def slice_array(slc, arr_in, arr_out, set=True):
     slc, new_shape, oned = expand_indicies(slc, arr_in)
+    order = arr_in.order
 
     if oned:
         slc = dense_meshgrid(*slc)
@@ -163,11 +164,9 @@ def slice_array(slc, arr_in, arr_out, set=True):
         new_shape = slc[0].shape
 
     if not arr_out:
-        arr_out = zeros(new_shape, order=arr_in.order, dtype=arr_in.dtype)
+        arr_out = zeros(new_shape, order=order, dtype=arr_in.dtype)
     else:
         arr_out = tomdarray(arr_out)
-
-    arr_out.order = arr_in.order
 
     if arr_in.shape != arr_out.shape:
         arr_out = broadcast_toshape(arr_out, new_shape)

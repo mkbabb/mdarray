@@ -5,6 +5,7 @@ from linalg import *
 from mdarray import *
 import numpy as np
 import random
+import operator
 
 
 '''
@@ -462,6 +463,11 @@ arr = tomdarray([[4, 2, 3],
                  [3, 4, 1],
                  [5, 3, 4]])
 
+
+# ix1 = arr[[0], ...]
+# print(ix1)
+
+
 # x, y, z = arr[0, ...], arr[1, ...], arr[2, ...]
 # srt = lexical_sort(x, y, z, axis=0)
 # print(srt)
@@ -478,7 +484,6 @@ arr = tomdarray([[4, 2, 3],
 def lexical_sort(*keys, axis):
     keys = tuple(keys)
     arr = concatenate(*keys, caxis=0)
-    print(arr)
 
     mdim = arr.mdim
     shape = keys[0].shape
@@ -491,18 +496,34 @@ def lexical_sort(*keys, axis):
 
     def key(seq, ix):
         tix1[axis] = ix
-        return tuple(seq[tix1])
+        return seq[tix1]
 
     quicksort(arr, ix_arr, key, axis, 0, shape[axis] - 1)
     return ix_arr
 
 
-print(arr)
-x, y = arr[0, ...], arr[2, ...]
-ix_arr = lexical_sort(x, y, axis=1)
-print(ix_arr)
-ixs = indicies(arr, ix_arr, 1)
-print(ixs)
+# arr1 = tomdarray([[4, 5, 3],
+#                   [4, 5, 5],
+#                   [5, 5, 5],
+#                   [5, 4, 2]])
+
+# arr2 = tomdarray([[4, 5, 2],
+#                   [4, 5, 8],
+#                   [5, 4, 3],
+#                   [5, 9, 9]])
+
+# eq = arr1 >= arr2
+# print(eq)
+# eq1 = ((4, 5, 2) <= (4, 5, 3))
+# print(eq1)
+# print(mdall(eq, 0))
+
+
+# print(arr)
+# x, y = arr[0, ...], arr[2, ...]
+# ix_arr = lexical_sort(x, y, axis=1)
+# ixs = indicies(arr, ix_arr, 1)
+# print(ixs)
 
 # def mykey(seq, i):
 #     return seq[[0, 2], i]
@@ -521,3 +542,50 @@ print(ixs)
 # print(srt2)
 # ixs = indicies(arr, srt, 1)
 # print(ixs)
+
+
+# slc = [[0, 1, 2], ...]
+# slc, new_shape, oned = expand_indicies(slc, arr)
+# print(slc)
+# print(new_shape)
+# arr = irange([4, 2, 2, 1])
+# print(arr.strides)
+# arr.order = "NP"
+# print(arr)
+# print(arr[0, 1])
+# narr = np.arange(16).reshape([4, 2, 2, 1])
+# print(narr[0, 1])
+# print(narr.shape)
+
+arr = irange([4, 2, 2, 1])
+# arr.order = "NP"
+
+def sm(seq):
+    print(seq)
+    return sum(seq)
+arr.order = "NP"
+
+def normalize_axis(arr, order="C", axis=0):
+    if order == "C":
+        pass
+    elif order == "F":
+        pass
+    elif order == "NP":
+        pass
+
+
+
+print(reduce_array(arr, 0, sm))
+
+
+
+narr = tondarray(irange([4, 2, 2, 1]))
+
+print(narr.sum(0))
+# print(arr[0, 1])
+
+
+# arr = tondarray(arr)
+# rows = [[0, 2], [0, 2]]
+# cols = [[0, 0], [3, 3]]
+# print(arr[cols, rows])

@@ -5,7 +5,7 @@ import numpy as np
 
 import mdarray as md
 from core.exceptions import IncompatibleDimensions
-from core.helper import (flatten_list, pair_wise_accumulate, roll_array,
+from core.helper import (flatten_list, roll_array,
                          swap_item)
 
 __all__ = ["tomdarray", "tondarray",
@@ -43,7 +43,10 @@ def tomdarray(arr):
 
 
 def tondarray(arr):
-    nd = np.asarray(arr.data, dtype=arr.dtype, order=arr.order).reshape(arr.shape[::-1])
+    if isinstance(arr, md.mdarray):
+        nd = np.asarray(arr.data, dtype=arr.dtype, order=arr.order).reshape(arr.shape[::-1])
+    else:
+        nd = np.asarray(arr)
     return nd
 
 

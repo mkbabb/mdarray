@@ -5,7 +5,7 @@ import numpy as np
 import mdarray as md
 from core.creation import full, zeros
 from core.exceptions import IncompatibleDimensions
-from core.helper import (get_strides, pair_wise_accumulate, roll_array,
+from core.helper import (get_strides, roll_array,
                          swap_item)
 from core.types import inf, nan
 

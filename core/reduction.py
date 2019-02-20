@@ -5,7 +5,7 @@ import numpy as np
 
 import mdarray as md
 from core.creation import make_mdim, tomdarray, zeros
-from core.helper import pair_wise, pair_wise_accumulate
+from core.helper import pair_wise
 from core.manipulation import roll_axis, swap_axis
 from core.types import inf, nan
 
@@ -138,7 +138,7 @@ Helper functions for reduce_array:
 '''
 
 
-def get_ret_shaped(buff, new_shape, axis, keepdims):
+def get_ret_shaped(buff, arr, new_shape, axis, keepdims):
     buff = tomdarray(buff)
     if buff.size > 1:
         if not keepdims:
@@ -150,6 +150,7 @@ def get_ret_shaped(buff, new_shape, axis, keepdims):
         else:
             new_shape.pop(axis)
     arr_out = zeros(new_shape)
+    arr_out.order = 
     return arr_out
 
 
@@ -212,7 +213,7 @@ def reduce_array(arr, faxis, func, keepdims=False):
             fbuff = func(buff)
 
             if j == 0:
-                arr_out = get_ret_shaped(fbuff, new_shape, faxis, keepdims)
+                arr_out = get_ret_shaped(fbuff, arr, new_shape, faxis, keepdims)
             j = _insert_into_flattened(fbuff, arr_out, ixs, j, keepdims)
 
         else:

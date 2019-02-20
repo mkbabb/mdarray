@@ -36,7 +36,6 @@ class mdarray(object):
         if "dtype" not in kwargs:
             self._get_dtype()
 
-        self.order = self._order
         self.formatter = None
 
     def reshape(self, new_shape):
@@ -58,9 +57,13 @@ class mdarray(object):
     @order.setter
     def order(self, other):
         if other != self.order:
-            if self.mdim == 1:
-                self.reshape(self.shape + [1])
-            self.T()
+            if other == "F":
+                if self.mdim == 1:
+                    self.reshape(self.shape + [1])
+                self.T()
+            elif other == "NP":
+                self.reshape(self.shape[::-1])
+
         self._order = other
 
     def to_list(self):

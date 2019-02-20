@@ -2,7 +2,6 @@ import math
 import re
 from functools import reduce
 
-from core.helper import pair_wise_accumulate
 from core.types import inf, nan
 
 __all__ = ["print_array", "pad_array_fmt", "trim_string"]
