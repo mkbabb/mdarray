@@ -1,2 +1,2 @@
-# from math import *
-from matrix import *
+from .matrix import *
+from .math import *

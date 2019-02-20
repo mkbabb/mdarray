@@ -386,33 +386,6 @@ Sort by tests
 '''
 
 
-def scramble(arr, axis):
-    def scrmble(seq):
-        random.shuffle(seq)
-        return seq
-    return reduce_array(arr, axis, scrmble)
-
-
-def sort2(*keys, axis, roll=False):
-    keys = tuple(keys)
-    arr = concatenate(*keys, caxis=0)
-
-    def srt(seq):
-        size = list(range(len(seq)))
-        sort(size, key=lambda x, ix: seq[ix])
-        return seq
-
-    arr_out = reduce_array(arr, axis, srt, True)
-
-    # swap_item(arr_out.shape, 0, axis)
-    # arr_out._get_strides()
-    # swap_axis(arr_out, 0, axis)
-
-    if roll:
-        roll_axis(arr_out, axis)
-    return arr_out
-
-
 def complete_ix(arr, ixs, axis=-1):
     mdim = arr.mdim
     axis1 = arr.shape[axis]
@@ -424,7 +397,6 @@ def complete_ix(arr, ixs, axis=-1):
 
     new_shape = list(arr.shape)
     new_shape[0] = arr.shape[0] - ixs.shape[0]
-
     ixs_part = broadcast_toshape(ixs_part, new_shape)
 
     return concatenate(ixs, ixs_part, caxis=0)
@@ -432,40 +404,38 @@ def complete_ix(arr, ixs, axis=-1):
 
 random.seed(2)
 
-arr = irange([4, 3])
-print(arr)
+# arr = irange([5, 3])
+# arr = scramble(arr, 1)
+# print(arr)
 
 
-def rfunc(seq):
-    seq1 = diagonal(tomdarray(seq))
-    return reductor.add().reduce(seq)
-    # return reductor.add().accumulate(seq)
+# def rfunc(seq):
+#     seq1 = diagonal(tomdarray(seq))
+#     print(seq1.shape)
+#     return seq1
 
 
-
-
-
-rarr = reduce_array(arr, 0, rfunc, True)
-print(rarr)
-# print(rarr)
+# rarr = reduce_array(arr, 1, rfunc)
 # narr = tondarray(arr)
 # rnarr = np.apply_along_axis(np.diag, 0, narr)
 # print(rnarr)
 # print(rnarr.shape)
 
 # col1 = arr[0, ...]
-# col2 = arr[3, ...]
+# col2 = arr[1, ...]
+
 
 # print("\n")
 
-# srt = sort2(col1, col2, axis=1)
+# srt = lexical_sort(col1, col2, axis=0)
 # print(srt)
-# print(srt.strides)
 
 
 # srt = complete_ix(arr, srt, 1)
 # print(srt)
+
 # ixs = indicies(arr, srt, 1)
+# print(ixs)
 # print(ixs)
 
 
@@ -479,4 +449,75 @@ print(rarr)
 
 
 # ixs = indicies(arr, srt, axis=1)
+# print(ixs)
+
+arr = tomdarray([[4, 2, 3],
+                 [4, 2, 5],
+                 [3, 5, 5],
+                 [1, 5, 5],
+                 [3, 2, 1],
+                 [5, 2, 2],
+                 [3, 2, 3],
+                 [4, 3, 4],
+                 [3, 4, 1],
+                 [5, 3, 4]])
+
+# x, y, z = arr[0, ...], arr[1, ...], arr[2, ...]
+# srt = lexical_sort(x, y, z, axis=0)
+# print(srt)
+# ixs = indicies(arr, srt, 0)
+# print(ixs)
+
+
+arr = tomdarray([[4, 2, 5],
+                 [4, 2, 3],
+                 [3, 5, 5],
+                 [3, 5, 4]])
+
+
+def lexical_sort(*keys, axis):
+    keys = tuple(keys)
+    arr = concatenate(*keys, caxis=0)
+    print(arr)
+
+    mdim = arr.mdim
+    shape = keys[0].shape
+
+    tmp = irange(shape[axis])
+    make_mdim(tmp, mdim)
+    swap_axis(tmp, 0, axis)
+    ix_arr = broadcast_toshape(tmp, shape)
+    tix1 = [...] * mdim
+
+    def key(seq, ix):
+        tix1[axis] = ix
+        return seq[tix1]
+
+    quicksort(arr, ix_arr, key, axis, 0, shape[axis] - 1)
+    return ix_arr
+
+
+print(arr)
+x, y = arr[0, ...], arr[2, ...]
+ix_arr = lexical_sort(x, y, axis=1)
+print(ix_arr)
+ixs = indicies(arr, ix_arr, 1)
+print(ixs)
+
+# def mykey(seq, i):
+#     return seq[[0, 2], i]
+
+# axis = 1
+
+# quicksort(arr, mykey, axis, 0, arr.shape[axis] - 1)
+# print(arr)
+
+
+# srt = lexical_sort(arr[0, ...], axis=1)
+# print(srt)
+# ixs = indicies(arr[2, ...], srt, 1)
+# print(ixs)
+# srt2 = lexical_sort(ixs, axis=1)
+# print(srt2)
+# ixs = indicies(arr, srt, 1)
 # print(ixs)

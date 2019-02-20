@@ -1,14 +1,15 @@
-from functools import partial, reduce
 import random
+from functools import partial, reduce
 
+import mdarray as md
+from core.helper import swap_item
+from core.manipulation import roll_axis
 from core.reduction import reduce_array
 from core.types import inf, nan
-from core.manipulation import roll_axis
-from core.helper import swap_item
 
-__all__ = ["any", "all", "where",
+__all__ = ["mdany", "mdall", "where",
            "argsort", "argmax", "argmin",
-           "sort"]
+           "sort", "scramble", "quicksort"]
 
 
 def _pred(x):
@@ -38,12 +39,12 @@ def _all(pred, lst):
     return True
 
 
-def any(arr, axis, pred):
+def mdany(arr, axis, pred):
     func = partial(_any, pred)
     return reduce_array(arr, axis, func)
 
 
-def all(arr, axis, pred):
+def mdall(arr, axis, pred):
     func = partial(_all, pred)
     return reduce_array(arr, axis, func)
 
@@ -103,33 +104,54 @@ def scramble(arr, axis):
     def scrmble(seq):
         random.shuffle(seq)
         return seq
-    return reduce_array(arr, axis, scrmble)
+    return reduce_array(arr, axis, scrmble, True)
 
 
-def partition(seq, key, left, right):
+def mdswap_item(arr, axis, ix1, ix2):
+    if ix1 == ix2 or not arr:
+        return
+    else:
+        if isinstance(arr, md.mdarray):
+            if axis != nan:
+                mdim = arr.mdim
+                tix1 = [...] * mdim
+                tix2 = [...] * mdim
+                tix1[axis] = ix1
+                tix2[axis] = ix2
+                ix1 = tix1
+                ix2 = tix2
+        swap_item(arr, ix1, ix2)
+
+
+def partition(seq, ixs, key, axis, left, right):
     pix = left
-    pivot = key(seq[right], right)
+    pivot = key(seq, right)
 
     for i in range(left, right):
-        seq_i = key(seq[i], i)
-        if seq_i <= pivot:
-            swap_item(seq, pix, i)
+        seq_i = key(seq, i)
+        eq = (seq_i <= pivot)
+        if not isinstance(eq, bool):
+            eq = all(eq)
+        if eq:
+            mdswap_item(seq, axis, pix, i)
+            mdswap_item(ixs, axis, pix, i)
             pix += 1
 
-    swap_item(seq, pix, right)
+    mdswap_item(seq, axis, pix, right)
+    mdswap_item(ixs, axis, pix, right)
     return pix
 
 
-def quicksort(seq, key, left, right):
+def quicksort(seq, ixs, key, axis, left, right):
     if left < right:
-        pix = partition(seq, key, left, right)
-        quicksort(seq, key, left, pix - 1)
-        quicksort(seq, key, pix + 1, right)
+        pix = partition(seq, ixs, key, axis, left, right)
+        quicksort(seq, ixs, key, axis, left, pix - 1)
+        quicksort(seq, ixs, key, axis, pix + 1, right)
 
 
-def sort(seq, key, kind="quicksort"):
+def sort(seq, ixs, key, axis, kind="quicksort"):
     size = len(seq)
     if kind == "quicksort":
-        quicksort(seq, key, 0, size - 1)
+        quicksort(seq, ixs, key, 0, lambda x: x, size - 1)
     elif kind == "mergesort":
         pass

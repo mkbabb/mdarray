@@ -1,5 +1,6 @@
 from functools import reduce
 
+
 __all__ = ["update_dict", "get_strides", "swap_item", "roll_array",
            "pair_wise", "pair_wise_accumulate", "remove_extraneous_dims", "flatten_list"]
 

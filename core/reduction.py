@@ -4,10 +4,10 @@ from inspect import signature
 import numpy as np
 
 import mdarray as md
-from core.creation import make_mdim, zeros, tomdarray
+from core.creation import make_mdim, tomdarray, zeros
 from core.helper import pair_wise, pair_wise_accumulate
 from core.manipulation import roll_axis, swap_axis
-from core.types import nan, inf
+from core.types import inf, nan
 
 __all__ = ["reductor", "inner_product",
            "reduce_array"]
@@ -138,29 +138,17 @@ Helper functions for reduce_array:
 '''
 
 
-def insert_merge(list1, list2, pos, o=True):
-    mdim = len(list1)
-    for i in range(pos):
-        list2.insert(0, list1[i])
-
-    pos = pos + 1 if o else pos
-
-    for i in range(pos, mdim):
-        list2.append(list1[i])
-
-
 def get_ret_shaped(buff, new_shape, axis, keepdims):
     buff = tomdarray(buff)
     if buff.size > 1:
-        new_shape.pop(axis)
-        new_shape = buff.shape + new_shape
-
+        if not keepdims:
+            new_shape.pop(axis)
+            new_shape = buff.shape + new_shape
     else:
         if keepdims:
             new_shape[axis] = 1
         else:
             new_shape.pop(axis)
-
     arr_out = zeros(new_shape)
     return arr_out
 
@@ -170,7 +158,7 @@ def _insert_into_flattened(buff, arr_out, ixs, j, keepdims):
         buff = buff.data
 
     if isinstance(buff, list):
-        if keepdims:
+        if keepdims and len(buff) == len(ixs):
             for n, i in enumerate(ixs):
                 arr_out.data[i] = buff[n]
         else:

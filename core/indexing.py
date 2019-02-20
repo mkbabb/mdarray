@@ -126,7 +126,10 @@ def unravel_dense(*dense_ixs, arr_in, arr_out, set):
 
 
 def expand_indicies(slc, arr):
-    slc = list(slc)
+    try:
+        slc = list(slc)
+    except TypeError:
+        slc = [slc]
     ndim = len(slc)
     oned = True
     new_shape = [0] * ndim
@@ -188,7 +191,5 @@ def indicies(arr, ixs, axis=-1):
 
     ix_grid = dense_meshgrid(*ranges)
     ix_grid[axis] = ixs
-    for i in ix_grid:
-        print(i)
 
     return arr[ix_grid]
