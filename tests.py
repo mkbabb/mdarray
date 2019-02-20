@@ -469,10 +469,10 @@ arr = tomdarray([[4, 2, 3],
 # print(ixs)
 
 
-arr = tomdarray([[4, 2, 5],
-                 [4, 2, 3],
-                 [3, 5, 5],
-                 [3, 5, 4]])
+# arr = tomdarray([[4, 2, 5],
+#                  [4, 2, 3],
+#                  [3, 5, 5],
+#                  [3, 5, 4]])
 
 
 def lexical_sort(*keys, axis):
@@ -491,7 +491,7 @@ def lexical_sort(*keys, axis):
 
     def key(seq, ix):
         tix1[axis] = ix
-        return seq[tix1]
+        return tuple(seq[tix1])
 
     quicksort(arr, ix_arr, key, axis, 0, shape[axis] - 1)
     return ix_arr

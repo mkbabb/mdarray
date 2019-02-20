@@ -44,6 +44,13 @@ def mdany(arr, axis, pred):
     return reduce_array(arr, axis, func)
 
 
+def cont_any(arr):
+    for i in arr:
+        if not i:
+            return False
+    return True
+
+
 def mdall(arr, axis, pred):
     func = partial(_all, pred)
     return reduce_array(arr, axis, func)
@@ -131,7 +138,7 @@ def partition(seq, ixs, key, axis, left, right):
         seq_i = key(seq, i)
         eq = (seq_i <= pivot)
         if not isinstance(eq, bool):
-            eq = all(eq)
+            eq = any(eq)
         if eq:
             mdswap_item(seq, axis, pix, i)
             mdswap_item(ixs, axis, pix, i)
