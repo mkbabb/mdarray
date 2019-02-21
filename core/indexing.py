@@ -7,7 +7,7 @@ from core.exceptions import IncompatibleDimensions
 from core.helper import get_strides
 from core.types import inf, nan
 
-__all__ = ["ravel", "unravel",
+__all__ = ["ravel_internal", "ravel", "unravel",
            "unravel_dense", "slice_array", "expand_indicies",
            "indicies"]
 
@@ -17,25 +17,27 @@ Raveling and unraveling indicies:
 '''
 
 
-def ravel_internal(ix, mdim_ix_i, strides, size, mdim):
-    j = 0
-    while j < mdim:
-        stride = strides[mdim - (j + 1)]
-        k = 1
+def ravel_internal(ix, mdim_ix_i, mdim, strides):
+    if ix == 0:
+        for j in range(mdim):
+            mdim_ix_i[j] = 0
+    else:
+        for j in range(mdim):
+            stride = strides[mdim - (j + 1)]
+            k = 1
 
-        while True:
-            stride_k = stride * k
-            if stride_k >= ix:
-                if stride != 1:
-                    k -= 1
+            while True:
                 stride_k = stride * k
-                break
-            else:
-                k += 1
+                if stride_k >= ix:
+                    k -= 1
+                    stride_k = stride * k
+                    break
+                else:
+                    k += 1
 
-        ix -= stride_k
-        mdim_ix_i[mdim - (j + 1)] = k
-        j += 1
+            ix -= stride_k
+            mdim_ix_i[mdim - (j + 1)] = k
+
     return mdim_ix_i
 
 
@@ -63,7 +65,7 @@ def ravel(ixs, shape):
             mdim_ixs[i] = mdim_ix_i
         else:
             ix += size if ix < 0 else 0
-            mdim_ixs[i] = ravel_internal(ix, mdim_ix_i, strides, size, mdim)
+            mdim_ixs[i] = ravel_internal(ix, mdim_ix_i, mdim, strides)
 
     return mdim_ixs
 
@@ -112,7 +114,6 @@ def unravel_dense(*dense_ixs, arr_in, arr_out, set):
                 for k in range(ndim):
                     ix_k = dense_ixs[k].data[j] * strides[k]
                     ix_i += ix_k
-
                 if set:
                     arr_in.data[ix_i] = arr_out.data[j]
                 else:
@@ -134,10 +135,8 @@ def expand_indicies(slc, arr):
     oned = True
     new_shape = [0] * ndim
 
-    i = 0
-    while i < ndim:
+    for i in range(ndim):
         arr_i = slc[i]
-
         if not isinstance(arr_i, md.mdarray):
             if arr_i == inf or arr_i == Ellipsis:
                 arr_i = irange(arr.shape[i])
@@ -147,7 +146,6 @@ def expand_indicies(slc, arr):
         new_shape[i] = arr_i.size
         oned = False if arr_i.mdim > 1 else oned
         slc[i] = arr_i
-        i += 1
 
     return slc, new_shape, oned
 

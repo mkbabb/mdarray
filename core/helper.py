@@ -60,11 +60,11 @@ def roll_array(arr, axis, iterations=1):
 
 
 def pair_wise(a1, a2, func):
-    tmp = [0] * len(a1)
+    buff = [0] * len(a1)
     for n, i in enumerate(a1):
         t = func(i, a2[n])
-        tmp[n] = t
-    return tmp
+        buff[n] = t
+    return buff
 
 
 def remove_extraneous_dims(arr):
@@ -82,33 +82,30 @@ def remove_extraneous_dims(arr):
 
 
 def flatten_list(arr, order=1):
-    global shape, dim_counter
+    global shape, mdim
     shape = [len(arr)]
-    dim_counter = 0
+    mdim = 0
 
     def recurse(arr):
-        global shape, dim_counter
+        global shape, mdim
         ndim = len(arr)
-
-        tmp = []
-        dim_counter = 0
+        buff = []
+        mdim = 0
 
         for i in range(ndim):
-            a_i = arr[i]
-
-            if isinstance(a_i, list):
-                tmp0 = recurse(a_i)
-                M = len(a_i)
-
-                if len(shape) <= dim_counter + 1:
+            arr_i = arr[i]
+            if isinstance(arr_i, list):
+                buff_r = recurse(arr_i)
+                M = len(arr_i)
+                if len(shape) <= mdim + 1:
                     shape.insert(-1, M)
-
-                dim_counter += 1
-                tmp += [tmp0] if dim_counter <= order else tmp0
-            else:
-                tmp += [a_i]
-
-        return tmp
-
+                mdim += 1
+                buff += [buff_r] if mdim <= order else buff_r
+            elif mdim != 0:
+                buff += [arr_i]
+        if mdim == 0:
+            return arr
+        else:
+            return buff
     flt = recurse(arr)
-    return flt, dim_counter, shape
+    return flt, mdim, shape

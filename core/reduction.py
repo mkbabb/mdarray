@@ -150,7 +150,6 @@ def get_ret_shaped(buff, arr, new_shape, axis, keepdims):
         else:
             new_shape.pop(axis)
     arr_out = zeros(new_shape)
-    arr_out.order = 
     return arr_out
 
 

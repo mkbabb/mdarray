@@ -557,31 +557,105 @@ def lexical_sort(*keys, axis):
 # print(narr[0, 1])
 # print(narr.shape)
 
-arr = irange([4, 2, 2, 1])
+
+def parse_dtype(dtype):
+    if isinstance(dtype, str):
+        id = dtype[0]
+        bit_size = dtype[1:]
+        return id + bit_size
+    else:
+        return dtype
+
+
+class DataType(object):
+    def __init__(self, name="dtype", dtype=None):
+        self.dtype = dtype
+        self.name = name
+        self.head = 0
+        self.dlen = 0
+
+        if not self.name:
+            self.name = f"{self.dtype}"
+
+        if isinstance(self.dtype, list) or isinstance(self.dtype, tuple):
+            if self.head == 0:
+                self.name = name
+            self.head += 1
+            self.dlen = len(self.dtype)
+            dtype = [0] * self.dlen
+
+            for i in range(self.dlen):
+                dtype_i = self.dtype[i]
+                if isinstance(dtype_i, tuple):
+                    if len(dtype_i) == 2:
+                        dtype_i = DataType(dtype_i[0], dtype_i[1])
+                        self.dlen += dtype_i.dlen
+                    else:
+                        dtype_i = DataType(None, dtype_i[0])
+                else:
+                    dtype_i = DataType(None, dtype_i)
+                dtype[i] = dtype_i
+            self.dtype = dtype
+        else:
+            self.dtype = parse_dtype(self.dtype)
+
+    def __repr__(self):
+        return f"{self.name, self.dtype}"
+
+
+# types = [("mytype1", ("mytype99", ("mytype33", int))), ("mytype2", "uint32")]
+types = [("mytype1", int), ("mytype2", float), ("mtype3", int)]
+t = DataType(dtype=types)
+
+
+def astype2(arr, dtype):
+    shape = list(arr.shape)
+
+    if isinstance(dtype, DataType):
+        dlen = dtype.dlen
+        shape[0] //= dlen
+        arr_out = zeros(shape=shape, order=arr.order, dtype=dtype)
+
+        i = 0
+        j = 0
+        while j < arr_out.size:
+            tmp = [0] * dlen
+            for k in range(dlen):
+                data_ik = arr.data[i + k]
+                tmp[k] = dtype.dtype[k].dtype(data_ik)
+            arr_out.data[j] = tmp
+            j += 1
+            i += dlen
+
+    return arr_out
+
+
+arr = irange([3, 10])
+arr2 = astype2(arr, t)
+# print(arr2)
+
 # arr.order = "NP"
 
-def sm(seq):
-    print(seq)
-    return sum(seq)
-arr.order = "NP"
+# def sm(seq):
+#     print(seq)
+#     return sum(seq)
+# arr.order = "NP"
 
-def normalize_axis(arr, order="C", axis=0):
-    if order == "C":
-        pass
-    elif order == "F":
-        pass
-    elif order == "NP":
-        pass
-
-
-
-print(reduce_array(arr, 0, sm))
+# def normalize_axis(arr, order="C", axis=0):
+#     if order == "C":
+#         pass
+#     elif order == "F":
+#         pass
+#     elif order == "NP":
+#         pass
 
 
+# print(reduce_array(arr, 0, sm))
 
-narr = tondarray(irange([4, 2, 2, 1]))
 
-print(narr.sum(0))
+# narr = tondarray(irange([4, 2, 2, 1]))
+
+# print(narr.sum(0))
 # print(arr[0, 1])
 
 

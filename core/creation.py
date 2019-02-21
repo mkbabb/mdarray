@@ -32,14 +32,12 @@ def tomdarray(arr):
         if isinstance(arr, list) or isinstance(arr, tuple):
             arr, mdim, shape = flatten_list(arr, order=-1)
             arr_out = md.mdarray(shape=shape, data=arr)
-        elif isinstance(arr, dict):
-            arr_out = [[i, j] for i, j in arr.items()]
         elif isinstance(arr, int) or isinstance(arr, float) or isinstance(arr, str):
-            arr_out = [arr]
+            arr_out = md.mdarray(size=1, data=[arr])
         else:
-            arr_out = list(arr)
-
-        return tomdarray(arr_out)
+            arr = list(arr)
+            arr_out = md.mdarray(size=len(arr), data=arr)
+        return arr_out
 
 
 def tondarray(arr):
@@ -60,21 +58,21 @@ M-d arrays filled with pre-defined values:
 '''
 
 
-def zeros(shape=None, **kwargs):
-    arr_out = md.mdarray(shape=shape, **kwargs)
+def zeros(shape=None, size=None, dtype=None, order=None):
+    arr_out = md.mdarray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [0] * arr_out.size
     return arr_out
 
 
-def ones(shape=None, **kwargs):
-    arr_out = md.mdarray(shape=shape, **kwargs)
+def ones(shape=None, size=None, dtype=None, order=None):
+    arr_out = md.mdarray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [1] * arr_out.size
     return arr_out
 
 
-def full(shape=None, fill_value=0, **kwargs):
-    arr_out = md.mdarray(shape=shape, **kwargs)
-    arr_out.data = [fill_value] * arr_out.size
+def full(fill=0, shape=None, size=None, dtype=None, order=None):
+    arr_out = md.mdarray(shape=shape, size=size, dtype=dtype, order=order)
+    arr_out.data = [fill] * arr_out.size
     return arr_out
 
 
@@ -95,8 +93,8 @@ def irange(size):
     else:
         shape = [size]
     data = [i for i in range(size)]
-
-    return md.mdarray(size=size, data=data).reshape(shape)
+    arr = md.mdarray(shape=shape, data=data)
+    return arr
 
 
 def linear_range(start, stop, size=None):
@@ -185,9 +183,8 @@ def repeat(arr, raxes, repts):
     def recurse(ix):
         global j
         axis = shape[ix]
-        remaining_axes = mdim - ix
 
-        if remaining_axes == mdim:
+        if ix == 0:
             for k in range(repts[0]):
                 for i in range(axis):
                     axis_counter[0] = i * strides[0]
@@ -211,7 +208,7 @@ def repeat(arr, raxes, repts):
     return arr_out
 
 
-def meshgrid_internal(*arrs, dense=False):
+def meshgrid_internal(*arrs, dense):
     arrs = tuple(arrs)
     sizes = list(map(len, arrs))
     mdim = len(arrs)
@@ -220,7 +217,8 @@ def meshgrid_internal(*arrs, dense=False):
     for i in range(mdim):
         slc = [1] * mdim
         slc[i] = sizes[i]
-
+        print(slc)
+    
         arr_i = tomdarray(arrs[i]).reshape(slc)
 
         if not dense:

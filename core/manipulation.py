@@ -27,17 +27,21 @@ def reshape(arr, new_shape):
     new_size = reduce(lambda x, y: x * y, new_shape)
 
     if new_size != arr.size:
-        raise IncompatibleDimensions
+        raise IncompatibleDimensions("The desired shape is incompatible with the current array's shape.")
     else:
-        arr.shape = new_shape
-        arr.mdim = mdim
-        arr.strides = get_strides(new_shape)
+        arr._shape = new_shape
+        arr._mdim = mdim
+        arr._strides = get_strides(new_shape)
 
 
 def transpose(arr, axis1=0, axis2=1):
     mdim = arr.mdim
+    if axis1 < 0:
+        axis1 += mdim
+    if axis2 < 0:
+        axis2 += mdim
 
-    maxis = max(abs(axis1), abs(axis2))
+    maxis = max(axis1, axis2)
     if maxis > mdim - 1:
         paxis = maxis - (mdim - 1)
         reshape(arr, arr.shape + [1] * paxis)
@@ -51,6 +55,9 @@ def swap_axis(arr, axis1=0, axis2=1):
 
 
 def roll_axis(arr, axis, iterations=1):
+    mdim = arr.mdim
+    if axis < 0:
+        axis += mdim
     roll_array(arr.shape, axis, iterations)
     roll_array(arr.strides, axis, iterations)
 
@@ -99,9 +106,7 @@ def make_nested_list(arr):
                 axis_counter[ix] = i * strides[ix]
                 tmp[i] = recurse(ix - 1)
         return tmp
-
-    arr_out = recurse(mdim - 1)
-    return arr_out
+    return recurse(mdim - 1)
 
 
 def astype(arr, dtype):
@@ -165,17 +170,17 @@ def concatenate(*arrs, caxis):
 
         if mdim != arr_i.mdim:
             raise IncompatibleDimensions(
-                "The dimensions of array one does not equal the rest!")
+                "The dimensions of array one do not equal the dimensions of array two!")
 
         for j in range(mdim):
             if j != caxis:
                 if new_shape[j] != arr_i.shape[j]:
                     raise IncompatibleDimensions(
-                        "The shape of array one (disregarding caxis) does not equal the rest!")
+                        "All axes but caxis must be equivalent to concatenate the arrays.")
         new_shape[caxis] += arr_i.shape[caxis]
 
+    arr_out = zeros(shape=new_shape, order=arr1.order, dtype=arr1.dtype)
     axis_counter = [0] * mdim
-    arr_out = zeros(shape=new_shape, order=arrs[0].order, dtype=arrs[0].dtype)
     strides = arr_out.strides
 
     def recurse(warr, ix):
@@ -184,18 +189,13 @@ def concatenate(*arrs, caxis):
         shape = arr.shape
         axis = shape[ix]
 
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
+        if ix == 0:
             for i in range(axis):
                 axis_counter[0] = i * strides[0]
                 ix_i = sum(axis_counter) + k * strides[caxis]
-
                 arr_val = arr.data[j]
-
                 arr_out.data[ix_i] = arr_val
                 j += 1
-
         else:
             for i in range(axis):
                 axis_counter[ix] = i * strides[ix]

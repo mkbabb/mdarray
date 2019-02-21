@@ -12,31 +12,105 @@ __all__ = ["mdarray"]
 
 
 class mdarray(object):
-    def __init__(self, shape=None, **kwargs):
-        self.shape = shape
-        self.size = 1
-        self.mdim = 1
-        self.strides = [1]
-        self.data = [0]
-        self.dtype = int
-        self._order = "C"
+    def __init__(self, shape=None, size=None, data=None, dtype=None, order=None):
+        self._shape = shape
 
-        self.__dict__.update(kwargs)
+        if not shape and not size:
+            raise TypeError
+        elif shape and not size:
+            self._shape = shape
+            self._size = reduce(lambda x, y: x * y, shape)
+        elif size and not shape:
+            self._size = size
+            self._shape = [size]
 
-        if "size" not in kwargs:
-            self._get_size()
+        if not order:
+            self._order = "C"
+        else:
+            self._order = order
 
-        if self.shape == None:
-            self.shape = [self.size]
+        if dtype == None:
+            self._dtype = int
+        else:
+            self._dtype = dtype
 
-        if "mdim" not in kwargs:
-            self._get_mdim()
-        if "strides" not in kwargs:
-            self._get_strides()
-        if "dtype" not in kwargs:
-            self._get_dtype()
-
+        self._data = data
+        self._mdim = len(self._shape)
+        self._strides = core.get_strides(self._shape)
         self.formatter = None
+
+    @property
+    def shape(self):
+        return self._shape
+
+    @shape.setter
+    def shape(self, other):
+        core.reshape(self, other)
+
+    @property
+    def size(self):
+        return self._size
+
+    @property
+    def mdim(self):
+        return self._mdim
+
+    @mdim.setter
+    def mdim(self, other):
+        diff = self._mdim - other
+        if diff < 0:
+            self.shape = self._shape + [1] * abs(diff)
+        else:
+            self.flatten(diff)
+
+    @property
+    def strides(self):
+        return self._strides
+
+    @strides.setter
+    def strides(self, other):
+        if len(other) != self._mdim:
+            raise core.IncompatibleDimensions
+        else:
+            self._strides = other
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, other):
+        other, mdim, shape = core.flatten_list(other, -1)
+        if mdim > 1:
+            if mdim > self._mdim:
+                raise core.IncompatibleDimensions()
+        elif shape[0] != self._size:
+            raise core.IncompatibleDimensions("This data is too large/small for this array")
+        else:
+            self._data = other
+
+    @property
+    def dtype(self):
+        return self._dtype
+
+    @dtype.setter
+    def dtype(self, other):
+        self.astype(other)
+
+    @property
+    def order(self):
+        return self._order
+
+    @order.setter
+    def order(self, other):
+        if other != self._order:
+            if other == "F":
+                if self.mdim == 1:
+                    self.reshape(self.shape + [1])
+                self.T()
+            elif self._order == "C" or self.order == "NP":
+                self.reshape(self.shape[::-1])
+        self._order = other
 
     def reshape(self, new_shape):
         core.reshape(self, new_shape)
@@ -50,39 +124,11 @@ class mdarray(object):
         core.flatten(self, order)
         return self
 
-    @property
-    def order(self):
-        return self._order
-
-    @order.setter
-    def order(self, other):
-        if other != self.order:
-            if other == "F":
-                if self.mdim == 1:
-                    self.reshape(self.shape + [1])
-                self.T()
-            elif other == "NP":
-                self.reshape(self.shape[::-1])
-
-        self._order = other
-
     def to_list(self):
         return core.make_nested_list(self)
 
     def astype(self, dtype):
         return core.astype(self, dtype)
-
-    def _get_mdim(self):
-        self.mdim = len(self.shape)
-
-    def _get_size(self):
-        self.size = reduce(lambda x, y: x * y, self.shape)
-
-    def _get_strides(self):
-        self.strides = core.get_strides(self.shape)
-
-    def _get_dtype(self):
-        self.dtype = type(self.data[0])
 
     '''
     Operator overloads
