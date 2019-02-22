@@ -18,25 +18,23 @@ Raveling and unraveling indicies:
 
 
 def ravel_internal(ix, mdim_ix_i, mdim, strides):
-    if ix == 0:
-        for j in range(mdim):
-            mdim_ix_i[j] = 0
-    else:
-        for j in range(mdim):
-            stride = strides[mdim - (j + 1)]
-            k = 1
+    for j in range(mdim):
+        stride = strides[mdim - (j + 1)]
+        k = 1
 
-            while True:
+        while True:
+            stride_k = stride * k
+            if stride_k > ix:
+                k -= 1
                 stride_k = stride * k
-                if stride_k >= ix:
-                    k -= 1
-                    stride_k = stride * k
-                    break
-                else:
-                    k += 1
+                break
+            elif stride_k == ix:
+                break
+            else:
+                k += 1
 
-            ix -= stride_k
-            mdim_ix_i[mdim - (j + 1)] = k
+        ix -= stride_k
+        mdim_ix_i[mdim - (j + 1)] = k
 
     return mdim_ix_i
 
