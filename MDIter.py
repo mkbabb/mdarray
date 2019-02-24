@@ -86,13 +86,15 @@ class MDIter(object):
                 self._rept_counter[1] += 1
                 self.at(self.rr[0])
         
-        # if self.was_advanced[2] and self._rept_counter[0] == 0:
-        #     print('work2')
-        #     if self._rept_counter[2] == self._repts[2] - 1:
-        #         self._rept_counter[2] = 0
-        #         self.rr[2] += 2
-        #     else:
-        #         self._rept_counter[2] += 1
+        if self.was_advanced[2] and self._rept_counter[0] == 0:
+            print('work2')
+            self.rr[0] -= 4
+            if self._rept_counter[2] == self._repts[2] - 1:
+                self._rept_counter[2] = 0
+                self.rr[0] += 4
+            else:
+                self._rept_counter[2] += 1
+                self.at(self.rr[0])
 
         # if self.was_advanced[2] and self._rept_counter[1] == 0:
         #     self.rr[1] = 0
@@ -163,7 +165,7 @@ class MDIter(object):
             raise StopIteration
 
     def __iter__(self):
-        for i in range(self.arr.size * 4):
+        for i in range(self.arr.size * 5):
             yield self
             next(self)
 
@@ -179,7 +181,7 @@ print(arr)
 print(arr.shape)
 
 mditer = MDIter(arr)
-mditer._repts = [2, 2, 2]
+mditer._repts = [2, 1, 2]
 
 for i in mditer:
     # print(i.index, i.axis_counter, i.pos, i._rept_counter, i.rr)
