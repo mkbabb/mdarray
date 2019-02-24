@@ -2,6 +2,7 @@ from __future__ import annotations
 from core import *
 import mdarray as md
 import typing
+from functools import reduce
 
 
 class MDIter(object):
@@ -16,8 +17,8 @@ class MDIter(object):
         self._size: int = (self._arr.size - 1)
 
         self._rept_counter = [0] * self._arr.mdim
-        self._repts = [0] * self._arr.mdim
-        self.rr = [0] * self.arr.mdim
+        self._repeats = [1] * self._arr.mdim
+        self._rpos = 0
 
     @property
     def arr(self) -> md.mdarray:
@@ -43,12 +44,20 @@ class MDIter(object):
     def size(self) -> int:
         return self._size
 
-    def advance(self, step: int = 1) -> int:
+    @property
+    def repeats(self) -> list:
+        return self._repeats
 
+    @repeats.setter
+    def repeats(self, other: list) -> None:
+        rsize = reduce(lambda x, y: x * y, other)
+        self._repeats = other
+        self._size = (self._size + 1)*rsize
+
+    def advance(self, step: int = 1) -> int:
         i = 0
         while i < step:
             self._axis_counter[0] += 1
-
             for j in range(self._arr.mdim - 1):
                 if self._axis_counter[j] >= self._arr.shape[j]:
                     self._axis_counter[j] = 0
@@ -56,67 +65,25 @@ class MDIter(object):
                     self._was_advanced[j + 1] = True
                 else:
                     self._was_advanced[j + 1] = False
+        # axis-repeat routine:
+            if self._rept_counter[0] == self._repeats[0] - 1:
+                self._rept_counter[0] = 0
+                self._rpos += 1
+            else:
+                self._rept_counter[0] += 1
+                self.at(self._rpos)
 
+            for j in range(1, self._arr.mdim):
+                stride_j = self._arr.strides[j]
+                if self.was_advanced[j] and zero_axes_before(self._rept_counter, j):
+                    self._rpos -= stride_j
+                    if self._rept_counter[j] == self._repeats[j] - 1:
+                        self._rept_counter[j] = 0
+                        self._rpos += self._arr.strides[j]
+                    else:
+                        self._rept_counter[j] += 1
+                        self.at(self._rpos)
             i += 1
-
-        if self._rept_counter[0] == self._repts[0] - 1:
-            self._rept_counter[0] = 0
-            self.rr[0] += 1
-        else:
-            self._rept_counter[0] += 1
-            self.at(self.rr[0])
-
-        for j in range(1, self._arr.mdim):
-            stride_j = self._arr.strides[j]
-            if self.was_advanced[j] and zero_axes_before(self._rept_counter, j):
-                self.rr[0] -= stride_j
-
-                if self._rept_counter[j] == self._repts[j] - 1:
-                    self._rept_counter[j] = 0
-                    self.rr[0] += self._arr.strides[j]
-                else:
-                    self._rept_counter[j] += 1
-                    self.at(self.rr[0])
-
-        # if self.was_advanced[0]:
-        #     if self._rept_counter[0] == self._repts[0] - 1:
-        #         self._rept_counter[0] = 0
-        #         self.rr[0] += 1
-        #     else:
-        #         self._rept_counter[0] += 1
-        #         self.at(self.rr[0])
-        # if self.was_advanced[1] and self._rept_counter[0] == 0:
-        #     print('work')
-        #     self.rr[0] -= 2
-        #     if self._rept_counter[1] == self._repts[1] - 1:
-        #         self._rept_counter[1] = 0
-        #         self.rr[0] += 2
-        #     else:
-        #         self._rept_counter[1] += 1
-        #         self.at(self.rr[0])
-
-        # if self.was_advanced[2] and zero_axes_before(self._rept_counter, 2):
-        #     print('work2')
-        #     self.rr[0] -= 4
-        #     if self._rept_counter[2] == self._repts[2] - 1:
-        #         self._rept_counter[2] = 0
-        #         self.rr[0] += 4
-        #     else:
-        #         self._rept_counter[2] += 1
-        #         self.at(self.rr[0])
-
-        # if self.was_advanced[2] and self._rept_counter[1] == 0:
-        #     self.rr[1] = 0
-        #     self.at(0)
-        #     self.was_advanced[2] = False
-        #     self.was_advanced[1] = False
-
-        # if self._rept_counter[1] == 8:
-        #     self.at(0)
-        #     self.rr[1] += 1
-        #     self.rr[0] = 0
-        #     self._rept_counter[1] = 0
-
         self._index = inner_product(self._axis_counter,
                                     self._arr.strides)
         self._pos += i
@@ -174,7 +141,7 @@ class MDIter(object):
             raise StopIteration
 
     def __iter__(self):
-        for i in range(self.arr.size * 6):
+        for i in range(self.size):
             yield self
             next(self)
 
@@ -191,16 +158,24 @@ def zero_axes_before(axis_counter, axis):
     return True
 
 
-arr = irange([2, 2, 2])
-narr = tondarray(arr)
-# print(narr.repeat(2, 0))
-print(arr)
-print(arr.shape)
+repts = [1, 3, 10]
+arr = irange([10, 5, 3])
+rarr = repeat(arr, [0, 1, 2], repts)
+
+# print(arr)
+# print(arr.shape)
 
 mditer = MDIter(arr)
-mditer._repts = [1, 2, 3]
+mditer.repeats = repts
+print(mditer.size, rarr.size)
+arr_out = zeros(list(rarr.shape))
 
-for i in mditer:
-    # print(i.index, i.axis_counter, i.pos, i._rept_counter, i.rr)
-    print(i.index)
+for n, i in enumerate(mditer):
+    # print(i.index)
+    arr_out.data[n] = i.index
     pass
+# print(rarr)
+
+
+for i in range(rarr.size):
+    print(rarr.data[i] == arr_out.data[i])
