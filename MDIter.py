@@ -68,6 +68,7 @@ class MDIter(object):
         #             self._rept_counter[j] += 1
         #             self.at(self.rr[j])
 
+        
         if self.was_advanced[0]:
             if self._rept_counter[0] == self._repts[0] - 1:
                 self._rept_counter[0] = 0
@@ -75,14 +76,24 @@ class MDIter(object):
             else:
                 self._rept_counter[0] += 1
                 self.at(self.rr[0])
-
-        # if self.was_advanced[1]:
-        #     if self._rept_counter[1] == self._repts[1] - 1:
-        #         self._rept_counter[1] = 0
-        #         self.rr[1] += 2
+        if self.was_advanced[1] and self._rept_counter[0] == 0:
+            print('work')
+            self.rr[0] -= 2
+            if self._rept_counter[1] == self._repts[1] - 1:
+                self._rept_counter[1] = 0
+                self.rr[0] += 2
+            else:
+                self._rept_counter[1] += 1
+                self.at(self.rr[0])
+        
+        # if self.was_advanced[2] and self._rept_counter[0] == 0:
+        #     print('work2')
+        #     if self._rept_counter[2] == self._repts[2] - 1:
+        #         self._rept_counter[2] = 0
+        #         self.rr[2] += 2
         #     else:
-        #         self._rept_counter[1] += 1
-        #         self.at(self.rr[1])
+        #         self._rept_counter[2] += 1
+
         # if self.was_advanced[2] and self._rept_counter[1] == 0:
         #     self.rr[1] = 0
         #     self.at(0)
@@ -129,6 +140,13 @@ class MDIter(object):
         self._size = (self.arr.size - 1) - self._pos
         ravel_internal(self._pos, self._axis_counter,
                        self.arr.mdim, self.arr.strides)
+
+        for i in range(1, self._arr.mdim):
+            if self._axis_counter[i] == (self._arr.shape[i] - 1):
+                self._was_advanced[i] = True
+            else:
+                self._was_advanced[i] = False
+
         self._index = inner_product(self._axis_counter,
                                     self._arr.strides)
         self._pos -= 1
@@ -145,7 +163,7 @@ class MDIter(object):
             raise StopIteration
 
     def __iter__(self):
-        for i in range(self.arr.size * 2):
+        for i in range(self.arr.size * 4):
             yield self
             next(self)
 
@@ -165,5 +183,5 @@ mditer._repts = [2, 2, 2]
 
 for i in mditer:
     # print(i.index, i.axis_counter, i.pos, i._rept_counter, i.rr)
-    print(i.index, i.was_advanced)
+    print(i.index, i.was_advanced, i.rr, i._rept_counter)
     pass
