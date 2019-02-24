@@ -59,42 +59,51 @@ class MDIter(object):
 
             i += 1
 
-        # for j in range(1, self._arr.mdim):
-        #     if self.was_advanced[j]:
-        #         if self._rept_counter[j] == self._repts[j]:
-        #             self._rept_counter[j] = 0
-        #             self.rr[j] += self._arr.strides[j]
-        #         else:
-        #             self._rept_counter[j] += 1
-        #             self.at(self.rr[j])
+        if self._rept_counter[0] == self._repts[0] - 1:
+            self._rept_counter[0] = 0
+            self.rr[0] += 1
+        else:
+            self._rept_counter[0] += 1
+            self.at(self.rr[0])
 
-        
-        if self.was_advanced[0]:
-            if self._rept_counter[0] == self._repts[0] - 1:
-                self._rept_counter[0] = 0
-                self.rr[0] += 1
-            else:
-                self._rept_counter[0] += 1
-                self.at(self.rr[0])
-        if self.was_advanced[1] and self._rept_counter[0] == 0:
-            print('work')
-            self.rr[0] -= 2
-            if self._rept_counter[1] == self._repts[1] - 1:
-                self._rept_counter[1] = 0
-                self.rr[0] += 2
-            else:
-                self._rept_counter[1] += 1
-                self.at(self.rr[0])
-        
-        if self.was_advanced[2] and self._rept_counter[0] == 0:
-            print('work2')
-            self.rr[0] -= 4
-            if self._rept_counter[2] == self._repts[2] - 1:
-                self._rept_counter[2] = 0
-                self.rr[0] += 4
-            else:
-                self._rept_counter[2] += 1
-                self.at(self.rr[0])
+        for j in range(1, self._arr.mdim):
+            stride_j = self._arr.strides[j]
+            if self.was_advanced[j] and zero_axes_before(self._rept_counter, j):
+                self.rr[0] -= stride_j
+
+                if self._rept_counter[j] == self._repts[j] - 1:
+                    self._rept_counter[j] = 0
+                    self.rr[0] += self._arr.strides[j]
+                else:
+                    self._rept_counter[j] += 1
+                    self.at(self.rr[0])
+
+        # if self.was_advanced[0]:
+        #     if self._rept_counter[0] == self._repts[0] - 1:
+        #         self._rept_counter[0] = 0
+        #         self.rr[0] += 1
+        #     else:
+        #         self._rept_counter[0] += 1
+        #         self.at(self.rr[0])
+        # if self.was_advanced[1] and self._rept_counter[0] == 0:
+        #     print('work')
+        #     self.rr[0] -= 2
+        #     if self._rept_counter[1] == self._repts[1] - 1:
+        #         self._rept_counter[1] = 0
+        #         self.rr[0] += 2
+        #     else:
+        #         self._rept_counter[1] += 1
+        #         self.at(self.rr[0])
+
+        # if self.was_advanced[2] and zero_axes_before(self._rept_counter, 2):
+        #     print('work2')
+        #     self.rr[0] -= 4
+        #     if self._rept_counter[2] == self._repts[2] - 1:
+        #         self._rept_counter[2] = 0
+        #         self.rr[0] += 4
+        #     else:
+        #         self._rept_counter[2] += 1
+        #         self.at(self.rr[0])
 
         # if self.was_advanced[2] and self._rept_counter[1] == 0:
         #     self.rr[1] = 0
@@ -165,13 +174,21 @@ class MDIter(object):
             raise StopIteration
 
     def __iter__(self):
-        for i in range(self.arr.size * 5):
+        for i in range(self.arr.size * 6):
             yield self
             next(self)
 
     def __repr__(self) -> str:
         s = f"unraveled index: {self._index}"
         return s
+
+
+def zero_axes_before(axis_counter, axis):
+    for i in range(axis):
+        if i != axis:
+            if axis_counter[i] != 0:
+                return False
+    return True
 
 
 arr = irange([2, 2, 2])
@@ -181,9 +198,9 @@ print(arr)
 print(arr.shape)
 
 mditer = MDIter(arr)
-mditer._repts = [2, 1, 2]
+mditer._repts = [1, 2, 3]
 
 for i in mditer:
     # print(i.index, i.axis_counter, i.pos, i._rept_counter, i.rr)
-    print(i.index, i.was_advanced, i.rr, i._rept_counter)
+    print(i.index)
     pass
