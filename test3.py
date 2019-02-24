@@ -1,122 +1,15 @@
+from __future__ import annotations
+
 import operator
 import random
+import typing
 from functools import reduce
+from MDIter import MDIter
 
 import numpy as np
 
+import mdarray as md
 from core import *
-from linalg import *
-from mdarray import *
-
-
-arr = tomdarray([[4, 2, 3],
-                 [4, 2, 5],
-                 [3, 5, 5],
-                 [1, 5, 5],
-                 [3, 2, 1],
-                 [5, 2, 2],
-                 [3, 2, 3],
-                 [4, 3, 4],
-                 [3, 4, 1],
-                 [5, 3, 4]])
-
-# arr2 = [0, 1], ...
-# slc, new_shape, oned = expand_indicies(arr2, arr)
-# slc = dense_meshgrid(*slc)
-# arr_out = zeros(shape=new_shape)
-# unravel_dense(*slc, arr_in=arr, arr_out=arr_out, set=False)
-
-
-class MDIter(object):
-    def __init__(self, mdarray=None):
-        self._mdarray = arr
-        self._axis_counter = [0] * self._mdarray.mdim
-        self._was_advanced = [False] * self._mdarray.mdim
-        self._pos = 0
-        self._index = 0
-
-    @property
-    def mdarray(self):
-        return self._mdarray
-
-    @property
-    def axis_counter(self):
-        return self._axis_counter
-
-    @property
-    def was_advanced(self):
-        return self._was_advanced
-
-    @property
-    def pos(self):
-        return self._pos
-
-    @pos.setter
-    def pos(self, other):
-        if other > self._mdarray.size:
-            raise ValueError
-        else:
-            ravel_internal(other, self._axis_counter,
-                           self.mdarray.mdim, self.mdarray.strides)
-            self._index = inner_product(self._axis_counter,
-                                        self._mdarray.strides)
-        self.__first = True if other == 0 else self.__first
-        self._pos = other
-
-    @property
-    def index(self):
-        return self._index
-
-    def grapple(self, buff, axis, func, count=1):
-        if not func:
-            func = lambda x: x
-        if axis < 0:
-            axis += self.mdarray.mdim
-
-        k = 0
-        flag_count = 0
-        for i in self:
-            flag = True
-            buff[k] = self.mdarray.data[self._index]
-            for j in range(axis):
-                if self._axis_counter[j] != 0:
-                    flag = False
-            if flag:
-                flag_count += 1
-            if flag and flag_count == count:
-                fbuff = func(buff)
-                return fbuff
-            k += 1
-
-    def advance(self, step=1):
-        i = 0
-        while i < step:
-            self._axis_counter[0] += 1
-            self._was_advanced[0] = True
-            for j in range(self._mdarray.mdim - 1):
-                if self._axis_counter[j] >= self._mdarray.shape[j]:
-                    self._axis_counter[j] = 0
-                    self._was_advanced[j + 1] = True
-                    self._axis_counter[j + 1] += 1
-                else:
-                    self._was_advanced[j + 1] = False
-
-            self._index = inner_product(self._axis_counter,
-                                        self._mdarray.strides)
-            self._pos += 1
-            i += 1
-        return self.index
-
-    def __next__(self):
-        if self._pos < self.mdarray.size + 1:
-            self.advance(1)
-            return self
-        else:
-            raise StopIteration
-
-    def __repr__(self):
-        s = f"unraveled index: {self._index}"
-        return s
 
 
 def get_ret_shaped2(buff, arr, new_shape, axis, keepdims):
@@ -148,7 +41,9 @@ def _insert_into_flattened2(buff, arr_out, j):
     return j
 
 
-def reduce_iter(arr, faxis, func, keepdims=False):
+def reduce_iter(arr: md.mdarray, faxis: int,
+                func: typing.Callable[[list], list],
+                keepdims: bool = False) -> md.mdarray:
     mdim = arr.mdim
     roll_axis(arr, faxis)
     mditer = MDIter(arr)
@@ -168,40 +63,97 @@ def reduce_iter(arr, faxis, func, keepdims=False):
     return arr_out
 
 
-def repeat_iter(arr, raxes, repts):
+def repeat_iter(arr: md.mdarray, raxes: list, repts: list) -> md.mdarray:
     ndim = len(raxes)
     strides = arr.strides
+    shape = arr.shape
     mditer = MDIter(arr)
 
+    def recurse(mditer, ix, start, end):
+        if ix == 0:
+            for i in range(repts[ix]):
+                mditer.at(start)
+                for k in range(strides[ix]):
+                    print(mditer.index)
+                    next(mditer)
+                mditer.at(end)
+        else:
+            for i in range(repts[ix]):
+                for k in range(shape[ix]):
+                    recurse(mditer, ix - 1, start + k, start + i)
+                    pass
+
+    repts = [1, 2]
     start = 0
-    for i in range(arr.size + 1):
-        for j in range(ndim):
-            raxis = raxes[j]
-            rept = repts[j]
+    for i in mditer:
+        if i.was_advanced[-1]:
+            end = i.pos
+            recurse(mditer, arr.mdim - 1, start, end)
+            mditer.at(end)
+            start = end
+        print('----')
 
-            if mditer.was_advanced[raxis]:
-                end = mditer.pos
-                for k in range(rept):
-                    mditer.pos = start
-                    for l in range(strides[raxis]):
-                        print(mditer.index)
-                        next(mditer)
-                mditer.pos = end
-                start = end
+        # for raxis, rept in zip(raxes, repts):
+        #     if i.was_advanced[raxis]:
+        #         end = mditer.pos
+        #         for k in range(rept):
+        #             if raxis > 0:
+        #                 mditer.at(start)
+        #             for l in range(strides[raxis]):
+        #                 print(mditer.index)
+        #                 next(mditer)
+        #             mditer.at(end)
+        #         start = end
+
+
+def swap_iter(mditer: MDIter, axis: int, ix1: list, ix2: list) -> None:
+    size: int = mditer.arr.strides[axis]
+    data = mditer.arr.data
+    buff = [0] * size
+
+    mditer.at(ix1)
+    ixs1 = mditer.grapple(buff, axis)
+    mditer.at(ix2)
+
+    for i in range(size):
         next(mditer)
+        ixs2 = mditer.index
+        swap_item(data, ixs1[i], ixs2)
 
 
-arr = irange([5, 5])
-print(arr)
-narr = tondarray(arr)
-mditer = MDIter(arr)
+# arr = irange([5, 5])
+# print(arr)
+# narr = tondarray(arr)
+# mditer = MDIter(arr)
 # for i in mditer:
-#     print(i.pos, i.index, i.axis_counter, i.was_advanced)
+#     print(i.index)
+
+
+# repeat_iter(arr, [0], [2])
+
+
+# swap_iter(mditer, 1, [0, 1], [0, 2])
+
+# mditer.at([0, 1])
+# for i in mditer:
+#     print(i.index, i.pos)
+# mditer.at(2)
+# for i in mditer:
+#     print(i.index, i.pos)
+# print(arr)
+
+# mditer.at([0, 2])
+# print(mditer.axis_counter)
+
+# buff = [0] * arr.shape[0]
+
+# buff = mditer.grapple(buff, 1)
+# print(buff)
+
 
 # print(np.repeat(narr, 2, 1))
 
 
-repeat_iter(arr, [0], [2])
 # t = reduce_iter(arr, 0, sum, True)
 # print(t.shape)
 # print(t)

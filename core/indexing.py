@@ -5,6 +5,7 @@ from core.creation import (broadcast_arrays, broadcast_toshape, dense_meshgrid,
                            irange, tomdarray, zeros)
 from core.exceptions import IncompatibleDimensions
 from core.helper import get_strides
+from core.reduction import inner_product
 from core.types import inf, nan
 
 __all__ = ["ravel_internal", "ravel", "unravel",
@@ -71,20 +72,16 @@ def ravel(ixs, shape):
 def unravel(mdim_ixs, shape):
     if isinstance(shape, md.mdarray):
         strides = shape.strides
-        size = shape.size
-        mdim = shape.mdim
     else:
         strides = get_strides(shape)
-        size = reduce(lambda x, y: x * y, shape)
-        mdim = len(shape)
-
+    
     mdim_ixs = tuple(mdim_ixs)
     ndim = len(mdim_ixs)
     ixs = [0] * ndim
 
     for i in range(ndim):
         mdim_ix_i = mdim_ixs[i]
-        ixs[i] = pair_wise_accumulate(strides, mdim_ix_i)
+        ixs[i] = inner_product(strides, mdim_ix_i)
 
     return ixs
 
