@@ -15,10 +15,6 @@ class MDIter(object):
         self._axis_counter = [0] * self._arr.mdim
         self._was_advanced = [False] * self._arr.mdim
 
-        for n, i in enumerate(self._arr.strides):
-            if i == 1:
-                self._was_advanced[n] = True
-
         self._rept_counter = [0] * self._arr.mdim
         self._repeats = [1] * self._arr.mdim
         self._repeat = False
@@ -251,9 +247,35 @@ def concatenate_iter(*arrs, caxis):
     return arr_out
 
 
-arr1 = irange([2, 2, 3, 1])
-arr2 = irange([2, 1, 1, 3])
-arr3 = irange([2, 2, 3, 3])
+arr1 = irange([2, 2, 4])
+
+mditer = MDIter(arr1)
+
+t = ""
+ts = [""] * mditer.mdim
+
+
+for _ in range(mditer.size):
+    i = mditer
+    t += f" {i.index} "
+    ts[0] = f"{t}"
+    next(mditer)
+
+    for n, j in enumerate(i.was_advanced):
+        if n > 0 and j:
+            ts[n] += f"[{ts[n - 1]}]\n"
+            ts[n] = " "*(n - 1) + ts[n]    
+            ts[n - 1] = ""
+
+    if any(i.was_advanced):
+        t = ""
+s = f"[{ts[-1]}]"
+print(s)
+
+
+# arr1 = irange([2, 2, 3, 1])
+# arr2 = irange([2, 1, 1, 3])
+# arr3 = irange([2, 2, 3, 3])
 # caxis = 1
 
 
@@ -262,8 +284,18 @@ arr3 = irange([2, 2, 3, 3])
 # eq = (base_arr1.data == test_arr1.data)
 # print(eq)
 
-broadcast_nary([arr1, arr2, arr3], func=sum)
+# broadcast_nary([arr1, arr2, arr3], func=sum)
 
-b1, b2, b3 = broadcast_arrays(arr1, arr2, arr3)
-for i in zip(b1.data, b2.data, b3.data):
-    print(i)
+# b1, b2, b3 = broadcast_arrays(arr1, arr2, arr3)
+# for i in zip(b1.data, b2.data, b3.data):
+#     print(i)
+
+# arr1 = irange([1, 2, 2])
+# arr2 = irange([1, 3, 2])
+# arr3 = irange([1, 1, 2])
+# caxis = 1
+
+# base_arr1 = concatenate(arr1, arr2, arr3, caxis=caxis)
+# print(base_arr1)
+# test_arr1 = concatenate_iter(arr1, arr2, arr3, caxis=caxis)
+# print(test_arr1)

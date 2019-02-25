@@ -5,7 +5,8 @@ import numpy as np
 import core
 import mdarray as md
 from core import inf, nan
-from MDIter import MDIter
+from MDIter import (MDIter, broadcast_nary, broadcast_toshape_iter,
+                    concatenate_iter)
 
 
 class test_mditer_repeat(unittest.TestCase):
@@ -83,6 +84,32 @@ class test_mditer_repeat(unittest.TestCase):
         self.assertTrue(eq3)
         self.assertTrue(eq4)
         self.assertTrue(eq5)
+
+
+class test_mditer_concatenate(unittest.TestCase):
+    def test_3_5d_concatenate(self):
+        arr1 = core.irange([5, 2, 5, 2, 1])
+        arr2 = core.irange([5, 2, 1, 2, 1])
+        arr3 = core.irange([5, 2, 3, 2, 1])
+        caxis = 2
+
+        base_arr1 = core.concatenate(arr1, arr2, arr3, caxis=caxis)
+        test_arr1 = concatenate_iter(arr1, arr2, arr3, caxis=caxis)
+
+        eq1 = (base_arr1.data == test_arr1.data)
+        self.assertTrue(eq1)
+
+    def test_3_3d_concatenate(self):
+        arr1 = core.irange([1, 7, 11])
+        arr2 = core.irange([1, 12, 11])
+        arr3 = core.irange([1, 1, 11])
+        caxis = 1
+
+        base_arr1 = core.concatenate(arr1, arr2, arr3, caxis=caxis)
+        test_arr1 = concatenate_iter(arr1, arr2, arr3, caxis=caxis)
+
+        eq1 = (base_arr1.data == test_arr1.data)
+        self.assertTrue(eq1)
 
 
 unittest.main()

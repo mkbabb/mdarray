@@ -61,7 +61,7 @@ def print_array(arr, sep='', formatter=None):
 
         if ix == 0:
             s = trim_string(s, sep)
-
+        print(s)
         s = '[{0}]'.format(s)
 
         return s
