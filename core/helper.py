@@ -1,7 +1,8 @@
 from functools import reduce
 
 
-__all__ = ["update_dict", "get_strides", "swap_item", "roll_array",
+__all__ = ["update_dict", "get_strides", "make_mdim_shape",
+           "swap_item", "roll_array",
            "pair_wise", "remove_extraneous_dims", "flatten_list"]
 
 
@@ -32,6 +33,35 @@ def get_strides(shape):
         strides[i + 1] = init
 
     return strides
+
+
+def flatten_shape(shape, order=-1):
+    mdim = len(shape)
+    if order < 0:
+        order += mdim
+    elif order == 0:
+        return shape
+    new_mdim = mdim - order
+    new_shape = [0] * (mdim - order)
+    
+    for i in range(new_mdim):
+        new_shape[i] = shape[i]
+    red = 1
+    
+    for i in range(new_mdim - 1, mdim):
+        red *= shape[i]
+    new_shape[-1] = red
+    return new_shape
+
+
+def make_mdim_shape(shape, ndim):
+    mdim = len(shape)
+    diff = mdim - ndim
+    if mdim < ndim:
+        shape += [1] * (ndim - mdim)
+    elif mdim > ndim:
+        shape = flatten_shape(shape, diff)
+    return shape
 
 
 def swap_item(arr, ix1, ix2):
@@ -85,13 +115,11 @@ def flatten_list(arr, order=1):
     global shape, mdim
     shape = [len(arr)]
     mdim = 0
-
     def recurse(arr):
         global shape, mdim
         ndim = len(arr)
         buff = []
         mdim = 0
-
         for i in range(ndim):
             arr_i = arr[i]
             if isinstance(arr_i, list):

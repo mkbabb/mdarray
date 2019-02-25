@@ -5,8 +5,7 @@ import numpy as np
 
 import mdarray as md
 from core.exceptions import IncompatibleDimensions
-from core.helper import (flatten_list, roll_array,
-                         swap_item)
+from core.helper import flatten_list, make_mdim_shape, roll_array, swap_item
 
 __all__ = ["tomdarray", "tondarray",
            "zeros", "ones", "full",
@@ -134,13 +133,8 @@ Tiling and grid routines:
 
 
 def make_mdim(arr, ndim):
-    mdim = arr.mdim
-    shape = arr.shape
-
-    if mdim < ndim:
-        arr.reshape(shape + [1] * (ndim - mdim))
-    elif mdim > ndim:
-        arr.flatten(order=mdim - ndim)
+    shape = make_mdim_shape(arr.shape, ndim)
+    return reshape(arr, shape)
 
 
 def sort_raxes(raxes, repts, mdim):
@@ -185,8 +179,8 @@ def repeat(arr, raxes, repts):
         axis = shape[ix]
 
         if ix == 0:
-            for k in range(repts[0]):
-                for i in range(axis):
+            for i in range(axis):
+                for k in range(repts[0]):
                     axis_counter[0] = i * strides[0]
                     ix_i = sum(axis_counter)
 
@@ -218,7 +212,7 @@ def meshgrid_internal(*arrs, dense):
         slc = [1] * mdim
         slc[i] = sizes[i]
         print(slc)
-    
+
         arr_i = tomdarray(arrs[i]).reshape(slc)
 
         if not dense:
