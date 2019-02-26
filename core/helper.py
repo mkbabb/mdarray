@@ -89,10 +89,10 @@ def roll_array(arr, axis, iterations=1):
         recurse(0)
 
 
-def pair_wise(a1, a2, func):
-    buff = [0] * len(a1)
-    for n, i in enumerate(a1):
-        t = func(i, a2[n])
+def pair_wise(arr1, arr2, func):
+    buff = [0] * len(arr1)
+    for n, i in enumerate(arr1):
+        t = func(i, arr2[n])
         buff[n] = t
     return buff
 

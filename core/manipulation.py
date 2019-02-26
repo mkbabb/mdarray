@@ -256,22 +256,16 @@ def mdarray_iter(arr):
     shape = arr.shape
     strides = arr.strides
     data = arr.data
-
     axis_counter = [0] * mdim
-    arr_out = zeros(arr.shape, order=arr.order, dtype=arr.dtype)
 
     def recurse(ix):
         global j
-
         axis = shape[ix]
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
+        if ix == 0:
             for i in range(axis):
                 axis_counter[0] = i * strides[0]
                 ix_i = sum(axis_counter)
                 arr_val = data[ix_i]
-                arr_out.data[j] = arr_val
 
         else:
             for i in range(axis):
@@ -279,4 +273,3 @@ def mdarray_iter(arr):
                 recurse(ix - 1)
     j = 0
     recurse(mdim - 1)
-    return arr_out

@@ -52,7 +52,7 @@ def print_array(arr, sep='', formatter=None):
             new_line = '\n' * (ix)
             for i in range(axis):
                 axis_counter[ix] = i * strides[ix]
-
+                
                 val = recurse(ix - 1)
 
                 s += ' ' * (remaining_axes) + val if i > 0 else val
@@ -61,11 +61,8 @@ def print_array(arr, sep='', formatter=None):
 
         if ix == 0:
             s = trim_string(s, sep)
-        print(s)
         s = '[{0}]'.format(s)
-
         return s
-
     return recurse(mdim - 1)
 
 

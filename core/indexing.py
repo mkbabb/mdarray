@@ -22,7 +22,6 @@ def ravel_internal(ix, mdim_ix_i, mdim, strides):
     for j in range(mdim):
         stride = strides[mdim - (j + 1)]
         k = 1
-
         while True:
             stride_k = stride * k
             if stride_k > ix:
@@ -33,10 +32,8 @@ def ravel_internal(ix, mdim_ix_i, mdim, strides):
                 break
             else:
                 k += 1
-
         ix -= stride_k
-        mdim_ix_i[mdim - (j + 1)] = k
-
+        mdim_ix_i[mdim - (j + 1)] = stride_k
     return mdim_ix_i
 
 
@@ -74,7 +71,7 @@ def unravel(mdim_ixs, shape):
         strides = shape.strides
     else:
         strides = get_strides(shape)
-    
+
     mdim_ixs = tuple(mdim_ixs)
     ndim = len(mdim_ixs)
     ixs = [0] * ndim

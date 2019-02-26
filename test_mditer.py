@@ -5,7 +5,7 @@ import numpy as np
 import core
 import mdarray as md
 from core import inf, nan
-from MDIter import (MDIter, broadcast_nary, broadcast_toshape_iter,
+from mditer2 import (MDIter, broadcast_nary, broadcast_toshape_iter,
                     concatenate_iter)
 
 

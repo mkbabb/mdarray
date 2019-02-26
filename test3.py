@@ -5,6 +5,7 @@ import random
 import typing
 from functools import reduce
 from MDIter import MDIter
+import timeit
 
 import numpy as np
 
@@ -157,3 +158,15 @@ def swap_iter(mditer: MDIter, axis: int, ix1: list, ix2: list) -> None:
 # t = reduce_iter(arr, 0, sum, True)
 # print(t.shape)
 # print(t)
+
+
+shape = [5, 9, 100]
+count = 100
+
+t1 = timeit.timeit(stmt='print_array(arr1)',
+                   setup=f'from core import print_array, irange; arr1 = irange({shape})', number=count)
+t2 = timeit.timeit(stmt='print_iter(arr1)',
+                   setup=f'from mditer2 import print_iter; from core import irange; arr1 = irange({shape})', number=count)
+print(t1 / count)
+print(t2 / count)
+print(t2/t1)

@@ -106,10 +106,11 @@ class mdarray(object):
         if other != self._order:
             if other == "F":
                 if self.mdim == 1:
-                    self.reshape(self.shape + [1])
-                self.T()
+                    self.reshape(self._shape + [1])
+                core.swap_item(self._shape, 0, 1)
+                self.reshape(self._shape)
             elif self._order == "C" or self.order == "NP":
-                self.reshape(self.shape[::-1])
+                self.reshape(self._shape[::-1])
         self._order = other
 
     def reshape(self, new_shape):

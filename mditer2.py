@@ -4,6 +4,8 @@ import mdarray as md
 import typing
 from functools import reduce
 import timeit
+from core.helper import pair_wise
+import numpy as np
 
 
 class MDIter(object):
@@ -12,7 +14,8 @@ class MDIter(object):
         self._shape = arr.shape
         self._size = arr.size
         self._mdim = arr.mdim
-
+        self._stride_shape = pair_wise(self._arr.shape, self._arr.strides,
+                                       operator.mul)
         self._axis_counter = [0] * self._arr.mdim
         self._was_advanced = [False] * self._arr.mdim
 
@@ -71,14 +74,14 @@ class MDIter(object):
     def advance(self, step: int = 1) -> int:
         i = 0
         while i < step:
-            self._axis_counter[0] += 1
-            for j in range(self._arr.mdim - 1):
-                if self._axis_counter[j] >= self._arr.shape[j]:
-                    self._axis_counter[j] = 0
-                    self._axis_counter[j + 1] += 1
-                    self._was_advanced[j + 1] = True
+            self._axis_counter[0] += self._arr.strides[0]
+            for j in range(1, self._arr.mdim):
+                if self._axis_counter[j - 1] >= self._stride_shape[j - 1]:
+                    self._axis_counter[j - 1] = 0
+                    self._axis_counter[j] += self._arr.strides[j]
+                    self._was_advanced[j] = True
                 else:
-                    self._was_advanced[j + 1] = False
+                    self._was_advanced[j] = False
             # axis-repeat routine:
             if self._repeat:
                 if self._rept_counter[0] == self._repeats[0] - 1:
@@ -100,29 +103,9 @@ class MDIter(object):
         if self._repeat:
             self.at(self._rpos)
         else:
-            self._index = inner_product(self._axis_counter,
-                                        self._arr.strides)
-        self._pos += i
-        return self.index
-
-    def grapple(self, buff: list, axis: int,
-                func: typing.Callable[[list], list] = None,
-                count: int = 1) -> list:
-        if not func:
-            func = lambda x: x
-        if axis < 0:
-            axis += self.arr.mdim
-        k = 0
-        _count = 0
-        for i in self:
-            if self.was_advanced[axis]:
-                _count += 1
-                if _count == count:
-                    fbuff = func(buff)
-                    return fbuff
-            buff[k] = self.arr.data[self._index]
-            k += 1
-        return buff
+            self._index = sum(self._axis_counter)
+        self._pos += step
+        return self._index
 
     def at(self, pos: typing.Union[list, int]) -> MDIter:
         if isinstance(pos, list):
@@ -131,23 +114,22 @@ class MDIter(object):
             self._pos = pos
 
         ravel_internal(self._pos, self._axis_counter,
-                       self.arr.mdim, self._arr.strides)
+                       self._arr.mdim, self._arr.strides)
         for i in range(1, self._arr.mdim):
             self.was_advanced_before(i)
 
-        self._index = inner_product(self._axis_counter,
-                                    self._arr.strides)
+        self._index = sum(self._axis_counter)
         self._pos -= 1
         return self
 
     def __next__(self) -> MDIter:
-        if self._pos < self.arr.size:
+        if self._pos < self._arr.size:
             self.advance(1)
             return self
         else:
             raise StopIteration
 
-    def __iter__(self) -> typing.Generator:
+    def __iter__(self):
         for i in range(self._size):
             yield self
             self.__next__()
@@ -155,6 +137,24 @@ class MDIter(object):
     def __repr__(self) -> str:
         s = f"unraveled index: {self._index}"
         return s
+
+    def grab(self, buff: list, axis: int,
+             func: typing.Callable[[list], list] = None,
+             count: int = 1) -> list:
+        if not func:
+            func = lambda x: x
+        if axis < 0:
+            axis += self.arr.mdim
+        _count = 0
+        for i in range(self._size):
+            buff[i] = self.arr.data[self._index]
+            self.__next__()
+            if self._was_advanced[axis]:
+                _count += 1
+                if _count == count:
+                    fbuff = func(buff)
+                    return fbuff
+        return buff
 
     def zero_axes_before(self, axis: int) -> bool:
         for i in range(axis):
@@ -165,7 +165,7 @@ class MDIter(object):
 
     def was_advanced_before(self, axis: int) -> bool:
         for i in range(axis):
-            if self._axis_counter[i] != (self._arr.shape[i] - 1):
+            if self._axis_counter[i] != (self._stride_shape[i] - 1):
                 self._was_advanced[axis] = False
                 return False
         self._was_advanced[axis] = True
@@ -215,7 +215,7 @@ def concatenate_iter(*arrs, caxis):
         arr_i = arrs[i]
         if mdim != arr_i.mdim:
             raise IncompatibleDimensions(
-                "The dimensions of array one do not equal the dimensions of array two!")
+                "The dimensions of array one do not equal the dimensions of one of the other arrays!")
         for j in range(mdim):
             if j != caxis:
                 if new_shape[j] != arr_i.shape[j]:
@@ -224,7 +224,6 @@ def concatenate_iter(*arrs, caxis):
         new_shape[caxis] += arr_i.shape[caxis]
 
     arr_out = zeros(shape=new_shape, order=arr1.order, dtype=arr1.dtype)
-
     if caxis != mdim - 1:
         iters = [MDIter(i) for i in arrs]
         k = 0
@@ -247,8 +246,8 @@ def concatenate_iter(*arrs, caxis):
     return arr_out
 
 
-def print_iter(arr: md.mdarray, sep: typing.Optional[str],
-               formatter: typing.Optional[typing.Callable[[str], str]]):
+def print_iter(arr: md.mdarray, sep: typing.Optional[str] = ", ",
+               formatter: typing.Optional[typing.Callable[[str], str]] = None):
     if not formatter:
         formatter = lambda x: f"{x}"
     if not sep:
@@ -260,69 +259,72 @@ def print_iter(arr: md.mdarray, sep: typing.Optional[str],
     mditer = MDIter(arr)
 
     s = ""
-    strings = [""] * mdim
+    strings = [""] * (mdim - 1)
     for i in range(size):
         s += formatter(arr.data[mditer.index])
         s += sep if mditer.axis_counter[0] < shape[0] - 1 else ''
-
         next(mditer)
-
         ix = 0
         for j in range(1, mdim):
             if mditer.was_advanced[j]:
                 if j == 1:
-                    strings[0] = s
+                    strings[0] += f"[{s}]"
                     s = ""
-                strings[j] += f"[{strings[j - 1]}]"
-                strings[j - 1] = ""
+                else:
+                    strings[j - 1] += f"[{strings[j - 2]}]"
+                    strings[j - 2] = ""
                 ix += 1
         if ix > 0 and i != size - 1:
-            strings[ix] += sep
-            strings[ix] += "\n" * ix
-            strings[ix] += " " * (ix) if ix < mdim - 1 else ""
+            strings[ix - 1] += sep
+            strings[ix - 1] += "\n" * ix
+            strings[ix - 1] += " " * ix if ix < mdim - 1 else ""
             if i > 0:
-                strings[ix] += " "
+                strings[ix - 1] += " "
     s = f"[{strings[-1]}]"
     return s
 
 
-# arr1 = irange([5, 2])
-# mditer = MDIter(arr1)
-# mditer.repeats = [1, 2]
-# for n, i in enumerate(mditer):
-#     print(n, i.index)
-
-# arr1 = irange([5, 4, 2])
-# s = print_iter(arr1, None, None)
-# print(s)
+def doiter(arr):
+    data = arr.data
+    mditer = MDIter(arr)
+    for i in range(arr.size):
+        arr_val = data[mditer.index]
+        next(mditer)
 
 
-# print(arr1)
+def unravel_dense_iter(dense_ixs: list, arr_in: md.mdarray,
+                       arr_out: typing.Optional[md.mdarray] = None, setter=False):
+    ndim = len(dense_ixs)
+    dense_iters = broadcast_iter(dense_ixs)
+    if not arr_out:
+        arr_out = zeros(dense_iters[0].shape)
+
+    strides = arr_in.strides
+    for n, i in enumerate(zip(*dense_iters)):
+        ix_i = 0
+        for m, j in enumerate(i):
+            ix_i += j.arr.data[j.index] * strides[m]
+        if setter:
+            arr_in.data[ix_i] = arr_out.data[n]
+        else:
+            arr_out.data[n] = arr_in.data[ix_i]
+
+    return arr_out
 
 
-# arr1 = irange([2, 2, 3, 3])
-# arr2 = irange([2, 3, 3, 3])
-# arr3 = irange([2, 1, 3, 3])
-# caxis = 1
+# shape = [5, 3, 2]
+# arr = irange(shape)
+# np_arr = tondarray(arr).reshape(shape)
+# # arr.order = "F"
 
+# print(arr)
+# grid = dense_meshgrid(range(2), range(3))
 
-# base_arr1 = concatenate(arr1, arr2, arr3, caxis=caxis)
-# test_arr1 = concatenate_iter(arr1, arr2, arr3, caxis=caxis)
-# eq = (base_arr1.data == test_arr1.data)
-# print(eq)
-
-# broadcast_nary([arr1, arr2, arr3], func=sum)
-
-# b1, b2, b3 = broadcast_arrays(arr1, arr2, arr3)
-# for i in zip(b1.data, b2.data, b3.data):
-#     print(i)
-
-# arr1 = irange([1, 2, 2])
-# arr2 = irange([1, 3, 2])
-# arr3 = irange([1, 1, 2])
-# caxis = 1
-
-# base_arr1 = concatenate(arr1, arr2, arr3, caxis=caxis)
-# print(base_arr1)
-# test_arr1 = concatenate_iter(arr1, arr2, arr3, caxis=caxis)
-# print(test_arr1)
+# arr_out = unravel_dense_iter(grid, arr)
+# print(arr_out)
+# mditer = MDIter(arr)
+# buff = [0]*5
+# for i in range(1, 6):
+#     buff = mditer.grab(buff, 1, None, 1)
+#     print(buff)
+#     mditer.at(5*i)

@@ -176,3 +176,30 @@ def sort(seq, ixs, key, axis, kind="quicksort"):
         quicksort(seq, ixs, key, 0, lambda x: x, size - 1)
     elif kind == "mergesort":
         pass
+
+
+def heapify(heap, N, ix, key):
+    lchild = 2 * ix + 1
+    rchild = 2 * ix + 2
+    _min = ix
+
+    if lchild < N and key(heap, lchild) > key(heap, _min):
+        _min = lchild
+    if rchild < N and key(heap, rchild) > key(heap, _min):
+        _min = rchild
+
+    if _min != ix:
+        swap_item(heap, ix, _min)
+        heapify(heap, N, _min, key)
+
+
+def heapsort(heap, key):
+    N = len(heap)
+    for i in range(N, -1, -1):
+        heapify(heap, N, i, key)
+    for i in range(N - 1, 0, -1):
+        swap_item(heap, i, 0)
+        heapify(heap, i, 0, key)
+
+
+key = lambda x, y: -x[y]
