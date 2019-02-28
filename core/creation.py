@@ -1,5 +1,6 @@
 import types
 from functools import reduce
+from typing import Callable, Dict, List, Optional, Tuple, Union, Any
 
 import numpy as np
 
@@ -25,7 +26,8 @@ def tomdarray(arr):
     if isinstance(arr, md.mdarray):
         return arr
     elif isinstance(arr, np.ndarray):
-        arr_out = md.mdarray(data=np.ravel(arr), shape=arr.shape, dtype=arr.dtype, order=arr.order)
+        arr_out = md.mdarray(data=np.ravel(
+            arr), shape=arr.shape, dtype=arr.dtype, order=arr.order)
         return arr_out
     else:
         if isinstance(arr, list) or isinstance(arr, tuple):
@@ -41,7 +43,8 @@ def tomdarray(arr):
 
 def tondarray(arr):
     if isinstance(arr, md.mdarray):
-        nd = np.asarray(arr.data, dtype=arr.dtype, order=arr.order).reshape(arr.shape[::-1])
+        nd = np.asarray(arr.data, dtype=arr.dtype,
+                        order=arr.order).reshape(arr.shape[::-1])
     else:
         nd = np.asarray(arr)
     return nd
@@ -57,7 +60,10 @@ M-d arrays filled with pre-defined values:
 '''
 
 
-def zeros(shape=None, size=None, dtype=None, order=None):
+def zeros(shape: Optional[List[int]] = None,
+          size: Optional[int] = None,
+          dtype: Optional[Any] = None,
+          order: Optional[str] = None):
     arr_out = md.mdarray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [0] * arr_out.size
     return arr_out
@@ -211,7 +217,6 @@ def meshgrid_internal(*arrs, dense):
     for i in range(mdim):
         slc = [1] * mdim
         slc[i] = sizes[i]
-        print(slc)
 
         arr_i = tomdarray(arrs[i]).reshape(slc)
 
@@ -345,9 +350,7 @@ def generate_broadcast_shape(*arrs):
             elif axis_i != axis_j:
                 raise IncompatibleDimensions
             j += 1
-
         new_shape[i] = axis_i
-
     return new_shape, repts
 
 

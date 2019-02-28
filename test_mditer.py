@@ -5,8 +5,8 @@ import numpy as np
 import core
 import mdarray as md
 from core import inf, nan
-from mditer2 import (MDIter, broadcast_nary, broadcast_toshape_iter,
-                    concatenate_iter)
+from mditer2 import (MultiArrayIter, broadcast_nary, broadcast_toshape_iter,
+                     concatenate_iter)
 
 
 class test_mditer_repeat(unittest.TestCase):
@@ -16,7 +16,7 @@ class test_mditer_repeat(unittest.TestCase):
         repeats1 = [1, 2, 1, 3, 1,
                     1, 3, 1, 2, 1]
 
-        mditer1 = MDIter(arr1)
+        mditer1 = MultiArrayIter(arr1)
 
         mditer1.repeats = repeats1
 
@@ -43,11 +43,11 @@ class test_mditer_repeat(unittest.TestCase):
         repeats4 = [1, 2, 3]
         repeats5 = [10, 10, 2]
 
-        mditer1 = MDIter(arr1)
-        mditer2 = MDIter(arr2)
-        mditer3 = MDIter(arr3)
-        mditer4 = MDIter(arr4)
-        mditer5 = MDIter(arr5)
+        mditer1 = MultiArrayIter(arr1)
+        mditer2 = MultiArrayIter(arr2)
+        mditer3 = MultiArrayIter(arr3)
+        mditer4 = MultiArrayIter(arr4)
+        mditer5 = MultiArrayIter(arr5)
 
         mditer1.repeats = repeats1
         mditer2.repeats = repeats2

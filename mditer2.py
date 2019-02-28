@@ -1,14 +1,18 @@
 from __future__ import annotations
-from core import *
-import mdarray as md
+
+import timeit
 import typing
 from functools import reduce
-import timeit
-from core.helper import pair_wise
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
 import numpy as np
 
+import mdarray as md
+from core import *
+from core.helper import pair_wise
 
-class MDIter(object):
+
+class MultiArrayIter(object):
     def __init__(self, arr: md.mdarray):
         self._arr = arr
         self._shape = arr.shape
@@ -107,7 +111,7 @@ class MDIter(object):
         self._pos += step
         return self._index
 
-    def at(self, pos: typing.Union[list, int]) -> MDIter:
+    def at(self, pos: Union[list, int]) -> MultiArrayIter:
         if isinstance(pos, list):
             self._pos = unravel([pos], self.arr.shape)[0]
         else:
@@ -122,7 +126,7 @@ class MDIter(object):
         self._pos -= 1
         return self
 
-    def __next__(self) -> MDIter:
+    def __next__(self) -> MultiArrayIter:
         if self._pos < self._arr.size:
             self.advance(1)
             return self
@@ -138,18 +142,25 @@ class MDIter(object):
         s = f"unraveled index: {self._index}"
         return s
 
-    def grab(self, buff: list, axis: int,
-             func: typing.Callable[[list], list] = None,
+    def reshape(self, new_shape):
+        return reshape(self, new_shape)
+
+    def grab(self,
+             buff: list,
+             axis: int,
+             func: Callable[[list], list] = None,
              count: int = 1) -> list:
         if not func:
             func = lambda x: x
         if axis < 0:
             axis += self.arr.mdim
+
         _count = 0
         for i in range(self._size):
             buff[i] = self.arr.data[self._index]
             self.__next__()
-            if self._was_advanced[axis]:
+
+            if self._was_advanced[axis] or axis == 0:
                 _count += 1
                 if _count == count:
                     fbuff = func(buff)
@@ -173,7 +184,7 @@ class MDIter(object):
 
 
 def broadcast_iter(arrs):
-    mditers = [MDIter(i) for i in arrs]
+    mditers = [MultiArrayIter(i) for i in arrs]
     new_shape, repts = generate_broadcast_shape(*arrs)
     for n, i in enumerate(repts):
         mditers[n].repeats = i
@@ -194,38 +205,49 @@ def broadcast_nary(arrs, func):
     return arr_out
 
 
-def broadcast_toshape_iter(arr, shape):
-    mditer = MDIter(arr)
+def broadcast_toshape_iter(arr: md.mdarray,
+                           shape: List[int]) -> MultiArrayIter:
+    mditer = MultiArrayIter(arr)
     arr_shape = md.mdarray(shape=shape, order=arr.order, dtype=arr.dtype)
     new_shape, repts = generate_broadcast_shape(arr, arr_shape)
     mditer.repeats = repts[0]
     return mditer
 
 
-def concatenate_iter(*arrs, caxis):
-    arrs = tuple(arrs)
-    ndim = len(arrs)
-    arr1 = arrs[0]
-    mdim = arr1.mdim
-    if caxis < 0:
-        caxis += mdim
-    new_shape = list(arr1.shape)
+def _confirm_concat_shape(arrs: Tuple[md.mdarray, ...],
+                          caxis: int,
+                          mdim: int,
+                          ndim: int,
+                          new_shape: List[int]) -> List[int]:
     new_shape[caxis] = 0
     for i in range(ndim):
         arr_i = arrs[i]
         if mdim != arr_i.mdim:
             raise IncompatibleDimensions(
-                "The dimensions of array one do not equal the dimensions of one of the other arrays!")
+                f"The dimensions of array 1 != the dimensions of array {i}!")
         for j in range(mdim):
             if j != caxis:
                 if new_shape[j] != arr_i.shape[j]:
                     raise IncompatibleDimensions(
                         "All axes but caxis must be equivalent to concatenate the arrays.")
         new_shape[caxis] += arr_i.shape[caxis]
+    return new_shape
 
+
+def concatenate_iter(*arrs: md.mdarray,
+                     caxis: int = -1) -> md.mdarray:
+    arrs = tuple(arrs)
+    ndim = len(arrs)
+    arr1 = arrs[0]
+    mdim = arr1.mdim
+
+    if caxis < 0:
+        caxis += mdim
+    new_shape = _confirm_concat_shape(arrs, caxis, mdim, ndim, list(arr1.shape))
     arr_out = zeros(shape=new_shape, order=arr1.order, dtype=arr1.dtype)
+
     if caxis != mdim - 1:
-        iters = [MDIter(i) for i in arrs]
+        iters = [MultiArrayIter(i) for i in arrs]
         k = 0
         while k < arr_out.size:
             for i in range(ndim):
@@ -246,8 +268,10 @@ def concatenate_iter(*arrs, caxis):
     return arr_out
 
 
-def print_iter(arr: md.mdarray, sep: typing.Optional[str] = ", ",
-               formatter: typing.Optional[typing.Callable[[str], str]] = None):
+def print_iter(arr: md.mdarray,
+               sep: typing.Optional[str] = ", ",
+               formatter: Optional[Callable[[str], str]] = None
+               ) -> str:
     if not formatter:
         formatter = lambda x: f"{x}"
     if not sep:
@@ -256,7 +280,7 @@ def print_iter(arr: md.mdarray, sep: typing.Optional[str] = ", ",
     mdim = arr.mdim
     shape = arr.shape
     size = arr.size
-    mditer = MDIter(arr)
+    mditer = MultiArrayIter(arr)
 
     s = ""
     strings = [""] * (mdim - 1)
@@ -264,6 +288,7 @@ def print_iter(arr: md.mdarray, sep: typing.Optional[str] = ", ",
         s += formatter(arr.data[mditer.index])
         s += sep if mditer.axis_counter[0] < shape[0] - 1 else ''
         next(mditer)
+
         ix = 0
         for j in range(1, mdim):
             if mditer.was_advanced[j]:
@@ -274,26 +299,29 @@ def print_iter(arr: md.mdarray, sep: typing.Optional[str] = ", ",
                     strings[j - 1] += f"[{strings[j - 2]}]"
                     strings[j - 2] = ""
                 ix += 1
+
         if ix > 0 and i != size - 1:
             strings[ix - 1] += sep
             strings[ix - 1] += "\n" * ix
             strings[ix - 1] += " " * ix if ix < mdim - 1 else ""
-            if i > 0:
-                strings[ix - 1] += " "
+            strings[ix - 1] += " " if ix > 0 else ""
+
     s = f"[{strings[-1]}]"
     return s
 
 
 def doiter(arr):
     data = arr.data
-    mditer = MDIter(arr)
+    mditer = MultiArrayIter(arr)
     for i in range(arr.size):
         arr_val = data[mditer.index]
         next(mditer)
 
 
-def unravel_dense_iter(dense_ixs: list, arr_in: md.mdarray,
-                       arr_out: typing.Optional[md.mdarray] = None, setter=False):
+def unravel_dense_iter(dense_ixs: list,
+                       arr_in: md.mdarray,
+                       arr_out: Optional[md.mdarray] = None,
+                       setter: bool = False) -> md.mdarray:
     ndim = len(dense_ixs)
     dense_iters = broadcast_iter(dense_ixs)
     if not arr_out:
@@ -308,12 +336,89 @@ def unravel_dense_iter(dense_ixs: list, arr_in: md.mdarray,
             arr_in.data[ix_i] = arr_out.data[n]
         else:
             arr_out.data[n] = arr_in.data[ix_i]
+    return arr_out
+
+
+def swap_item_axis(mditer: MultiArrayIter,
+                   axis: int,
+                   ix1: Union[int, List[int]],
+                   ix2: Union[int, List[int]]) -> None:
+    if ix1 == ix2:
+        return
+    strides = mditer.arr.strides
+    stride: int = strides[axis]
+    data = mditer.arr.data
+
+    pos = mditer.pos
+    if isinstance(ix1, list):
+        ix1 = int(inner_product(ix1, strides))
+    else:
+        ix1 *= stride
+    if isinstance(ix2, list):
+        ix2 = int(inner_product(ix2, strides))
+    else:
+        ix2 *= stride
+
+    ix2 -= ix1
+    mditer.at(ix1)
+    while True:
+        ix = mditer.index
+        swap_item(data, ix, ix + ix2)
+        next(mditer)
+        if mditer.was_advanced[axis]:
+            break
+    mditer.at(pos)
+
+
+def partition(seq, key, axis, left, right):
+    pix = left
+    pivot = key(seq, axis, right)
+
+    for i in range(left, right):
+        seq_i = key(seq, axis, i)
+        eq = (seq_i <= pivot)
+        if eq and (pix != i):
+            swap_item_axis(seq, axis, pix, i)
+            pix += 1
+    if pix != right:
+        swap_item_axis(seq, axis, pix, right)
+    return pix
+
+
+def quicksort(seq, key, axis, left, right):
+    if left < right:
+        pix = partition(seq, key, axis, left, right)
+        quicksort(seq, key, axis, left, pix - 1)
+        quicksort(seq, key, axis, pix + 1, right)
+
+
+def meshgrid_iter(*arrs, ):
+    arrs = tuple(arrs)
+    sizes = list(map(len, arrs))
+    mdim = len(arrs)
+
+    arr_out = [0] * mdim
+    for i in range(mdim):
+        slc = [1] * mdim
+        slc[i] = sizes[i]
+        arr_out[i] = MultiArrayIter(md.mdarray(shape=slc))
 
     return arr_out
 
 
-# shape = [5, 3, 2]
-# arr = irange(shape)
+def broadcast_iter2(iters):
+    new_shape, repts = generate_broadcast_shape(*iters)
+    for i in range(len(iters)):
+        iters[i].repeats = repts[i]
+    return iters
+
+
+shape = [5, 5]
+arr = irange(shape).T()
+# arr = scramble(arr, 0).T()
+print(arr)
+
+
 # np_arr = tondarray(arr).reshape(shape)
 # # arr.order = "F"
 
@@ -322,9 +427,13 @@ def unravel_dense_iter(dense_ixs: list, arr_in: md.mdarray,
 
 # arr_out = unravel_dense_iter(grid, arr)
 # print(arr_out)
-# mditer = MDIter(arr)
-# buff = [0]*5
-# for i in range(1, 6):
-#     buff = mditer.grab(buff, 1, None, 1)
-#     print(buff)
-#     mditer.at(5*i)
+mditer = MultiArrayIter(arr)
+
+def key(seq, axis, ix):
+    ix *= seq.arr.strides[axis]
+    return seq.arr.data[ix]
+
+grid = meshgrid_iter(range(2), range(3), range(4))
+bcast = broadcast_iter2(grid)
+for i in zip(*bcast):
+    print(i)

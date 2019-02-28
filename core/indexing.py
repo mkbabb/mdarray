@@ -8,7 +8,7 @@ from core.helper import get_strides
 from core.reduction import inner_product
 from core.types import inf, nan
 
-__all__ = ["ravel_internal", "ravel", "unravel",
+__all__ = ["ravel_internal", "ravel", "unravel", "ravel_flat",
            "unravel_dense", "slice_array", "expand_indicies",
            "indicies"]
 
@@ -35,6 +35,26 @@ def ravel_internal(ix, mdim_ix_i, mdim, strides):
         ix -= stride_k
         mdim_ix_i[mdim - (j + 1)] = stride_k
     return mdim_ix_i
+
+
+def ravel_flat(ix, mdim, strides):
+    mdim_ix = 0
+    for j in range(mdim):
+        stride = strides[mdim - (j + 1)]
+        k = 1
+        while True:
+            stride_k = stride * k
+            if stride_k > ix:
+                k -= 1
+                stride_k = stride * k
+                break
+            elif stride_k == ix:
+                break
+            else:
+                k += 1
+        ix -= stride_k
+        mdim_ix += stride_k
+    return mdim_ix
 
 
 def ravel(ixs, shape):
