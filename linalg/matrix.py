@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 
 import core
-import mdarray as md
+import MultiArray as ma
 
 
 __all__ = ["diagonal", "identity"]

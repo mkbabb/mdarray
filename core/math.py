@@ -1,7 +1,7 @@
 import math
 import operator
 
-import mdarray as md
+import MultiArray as ma
 from core.creation import broadcast_bnry, tomdarray
 from core.exceptions import IncompatibleDimensions
 

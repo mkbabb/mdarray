@@ -1,7 +1,7 @@
 import random
 from functools import partial, reduce
 
-import mdarray as md
+import MultiArray as ma
 from core.helper import swap_item
 from core.manipulation import roll_axis
 from core.reduction import reduce_array
@@ -132,7 +132,7 @@ def mdswap_item(arr, axis, ix1, ix2):
     if ix1 == ix2 or not arr:
         return
     else:
-        if isinstance(arr, md.mdarray):
+        if isinstance(arr, ma.MultiArray):
             if axis != nan:
                 mdim = arr.mdim
                 tix1 = [...] * mdim

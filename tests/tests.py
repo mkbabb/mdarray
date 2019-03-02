@@ -2,7 +2,7 @@ from functools import reduce
 
 from core import *
 from linalg import *
-from mdarray import *
+from MultiArray import *
 import numpy as np
 import random
 import operator
@@ -156,8 +156,8 @@ Broadcasting tests:
 # Y = irange(size1).reshape(shape1)
 
 
-# np_X = md.tondarray(X)
-# np_Y = md.tondarray(Y)
+# np_X = ma.tondarray(X)
+# np_Y = ma.tondarray(Y)
 
 
 # def func(x, y): return x*y
@@ -191,8 +191,8 @@ Broadcasting tests:
 # arr1 = irange(100).reshape([2, 25, 2])
 # arr2 = ones([1, 25, 1])*1.0
 
-# arr1 = md.tondarray(arr1)
-# arr2 = md.tondarray(arr2)
+# arr1 = ma.tondarray(arr1)
+# arr2 = ma.tondarray(arr2)
 # print(arr1*arr2)
 
 # print(arr1*arr2)
@@ -208,9 +208,9 @@ Reduction tests:
 # shape = [5, 3, 2]
 # size = reduce(lambda x, y: x*y, shape)
 # arr = irange(size).reshape(shape)
-# np_arr = md.tondarray(arr)
+# np_arr = ma.tondarray(arr)
 
-# arr = md.tomdarray([[1,2,3], [4,5,6], [7,8,9]])
+# arr = ma.tomdarray([[1,2,3], [4,5,6], [7,8,9]])
 
 
 # func = lambda x: irange(9).reshape([3, 3])
@@ -220,7 +220,7 @@ Reduction tests:
 # diag = diagonal([0, 1, 2, 3])
 # print(diag)
 
-# arr = md.tondarray(arr)
+# arr = ma.tondarray(arr)
 # print(np.diag(arr))
 
 # arr = irange(24).reshape([4, 3, 2])

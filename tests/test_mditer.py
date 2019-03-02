@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 import core
-import mdarray as md
+import MultiArray as ma
 from core import inf, nan
 from mditer2 import (MultiArrayIter, broadcast_nary, broadcast_toshape_iter,
                      concatenate_iter)

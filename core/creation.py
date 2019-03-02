@@ -1,12 +1,12 @@
 import types
 from functools import reduce
-from typing import Callable, Dict, List, Optional, Tuple, Union, Any
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-import mdarray as md
 from core.exceptions import IncompatibleDimensions
 from core.helper import flatten_list, make_mdim_shape, roll_array, swap_item
+from MultiArray import MultiArray
 
 __all__ = ["tomdarray", "tondarray",
            "zeros", "ones", "full",
@@ -23,26 +23,26 @@ toarray routines:
 
 
 def tomdarray(arr):
-    if isinstance(arr, md.mdarray):
+    if isinstance(arr, MultiArray):
         return arr
     elif isinstance(arr, np.ndarray):
-        arr_out = md.mdarray(data=np.ravel(
+        arr_out = MultiArray(data=np.ravel(
             arr), shape=arr.shape, dtype=arr.dtype, order=arr.order)
         return arr_out
     else:
         if isinstance(arr, list) or isinstance(arr, tuple):
             arr, mdim, shape = flatten_list(arr, order=-1)
-            arr_out = md.mdarray(shape=shape, data=arr)
+            arr_out = MultiArray(shape=shape, data=arr)
         elif isinstance(arr, int) or isinstance(arr, float) or isinstance(arr, str):
-            arr_out = md.mdarray(size=1, data=[arr])
+            arr_out = MultiArray(size=1, data=[arr])
         else:
             arr = list(arr)
-            arr_out = md.mdarray(size=len(arr), data=arr)
+            arr_out = MultiArray(size=len(arr), data=arr)
         return arr_out
 
 
 def tondarray(arr):
-    if isinstance(arr, md.mdarray):
+    if isinstance(arr, MultiArray):
         nd = np.asarray(arr.data, dtype=arr.dtype,
                         order=arr.order).reshape(arr.shape[::-1])
     else:
@@ -64,19 +64,19 @@ def zeros(shape: Optional[List[int]] = None,
           size: Optional[int] = None,
           dtype: Optional[Any] = None,
           order: Optional[str] = None):
-    arr_out = md.mdarray(shape=shape, size=size, dtype=dtype, order=order)
+    arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [0] * arr_out.size
     return arr_out
 
 
 def ones(shape=None, size=None, dtype=None, order=None):
-    arr_out = md.mdarray(shape=shape, size=size, dtype=dtype, order=order)
+    arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [1] * arr_out.size
     return arr_out
 
 
 def full(fill=0, shape=None, size=None, dtype=None, order=None):
-    arr_out = md.mdarray(shape=shape, size=size, dtype=dtype, order=order)
+    arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [fill] * arr_out.size
     return arr_out
 
@@ -98,7 +98,7 @@ def irange(size):
     else:
         shape = [size]
     data = [i for i in range(size)]
-    arr = md.mdarray(shape=shape, data=data)
+    arr = MultiArray(shape=shape, data=data)
     return arr
 
 
@@ -210,7 +210,7 @@ def repeat(arr, raxes, repts):
 
 def meshgrid_internal(*arrs, dense):
     arrs = tuple(arrs)
-    sizes = list(map(len, arrs))
+    sizes = list((len, arrs))
     mdim = len(arrs)
 
     arr_out = []
@@ -325,7 +325,7 @@ def generate_broadcast_shape(*arrs):
 
     shapes = [i.shape for i in arrs]
     mdims = [i.mdim for i in arrs]
-    mdim = max(mdims)
+    mdim = (mdims)
 
     for i in range(ndim):
         if mdims[i] < mdim:
@@ -372,7 +372,7 @@ def broadcast_arrays(*arrs):
 
 
 def broadcast_toshape(arr, shape):
-    arr_shape = md.mdarray(shape=shape, order=arr.order, dtype=arr.dtype)
+    arr_shape = MultiArray(shape=shape, order=arr.order, dtype=arr.dtype)
     new_shape, repts = generate_broadcast_shape(arr, arr_shape)
     raxes = [i for i in range(arr_shape.mdim)]
     arr = repeat(arr, raxes, repts[0])

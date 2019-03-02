@@ -2,7 +2,7 @@ from functools import reduce
 
 import numpy as np
 
-import mdarray as md
+import MultiArray as ma
 from core.creation import full, zeros
 from core.exceptions import IncompatibleDimensions
 from core.helper import (get_strides, roll_array,

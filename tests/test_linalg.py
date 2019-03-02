@@ -4,7 +4,6 @@ import numpy as np
 
 import core
 import linalg
-import mdarray as md
 
 
 class test_special_matricies(unittest.TestCase):

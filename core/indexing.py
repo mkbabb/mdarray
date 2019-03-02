@@ -1,6 +1,6 @@
 from functools import reduce
 
-import mdarray as md
+import MultiArray as ma
 from core.creation import (broadcast_arrays, broadcast_toshape, dense_meshgrid,
                            irange, tomdarray, zeros)
 from core.exceptions import IncompatibleDimensions
@@ -58,7 +58,7 @@ def ravel_flat(ix, mdim, strides):
 
 
 def ravel(ixs, shape):
-    if isinstance(shape, md.mdarray):
+    if isinstance(shape, ma.MultiArray):
         strides = shape.strides
         size = shape.size
         mdim = shape.mdim
@@ -87,7 +87,7 @@ def ravel(ixs, shape):
 
 
 def unravel(mdim_ixs, shape):
-    if isinstance(shape, md.mdarray):
+    if isinstance(shape, ma.MultiArray):
         strides = shape.strides
     else:
         strides = get_strides(shape)
@@ -149,7 +149,7 @@ def expand_indicies(slc, arr):
 
     for i in range(ndim):
         arr_i = slc[i]
-        if not isinstance(arr_i, md.mdarray):
+        if not isinstance(arr_i, ma.MultiArray):
             if arr_i == inf or arr_i == Ellipsis:
                 arr_i = irange(arr.shape[i])
             else:

@@ -76,13 +76,13 @@ Uses expand dims and slice array, which is far more costly than simply using rep
 # 	ixs = [
 # 		[i for i in range(shape[0])],
 # 		]
-# 	md = mdarray(shape)
-# 	a_inqry = mdarray_inquery(md)
+# 	ma = mdarray(shape)
+# 	a_inqry = mdarray_inquery(ma)
 #
 # 	grid = expand_slice_array(ixs, a_inqry)
 # 	shape += [counter]
-# 	md = tomdarray(grid).reshape(shape).T(0, counter)
-# 	return md
+# 	ma = tomdarray(grid).reshape(shape).T(0, counter)
+# 	return ma
 
 
 '''
@@ -106,8 +106,8 @@ Note: this function does NOT work properly.
 #     slc = [nan, inf]
 #
 #     slc = gslice(slc, a_inqry)
-#     md = tomdarray(iter_axis(a, slc, 12, rpeat)).reshape(new_shape)
-#     return md
+#     ma = tomdarray(iter_axis(a, slc, 12, rpeat)).reshape(new_shape)
+#     return ma
 
 
 '''

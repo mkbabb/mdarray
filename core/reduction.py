@@ -3,7 +3,7 @@ from inspect import signature
 
 import numpy as np
 
-import mdarray as md
+import MultiArray as ma
 from core.creation import make_mdim, tomdarray, zeros
 from core.helper import pair_wise
 from core.manipulation import roll_axis, swap_axis
@@ -154,7 +154,7 @@ def get_ret_shaped(buff, arr, new_shape, axis, keepdims):
 
 
 def _insert_into_flattened(buff, arr_out, ixs, j, keepdims):
-    if isinstance(buff, md.mdarray):
+    if isinstance(buff, ma.MultiArray):
         buff = buff.data
 
     if isinstance(buff, list):

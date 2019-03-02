@@ -43,24 +43,27 @@ def flatten_shape(shape, order=-1):
         return shape
     new_mdim = mdim - order
     new_shape = [0] * (mdim - order)
-    
+
     for i in range(new_mdim):
         new_shape[i] = shape[i]
     red = 1
-    
+
     for i in range(new_mdim - 1, mdim):
         red *= shape[i]
     new_shape[-1] = red
     return new_shape
 
 
-def make_mdim_shape(shape, ndim):
+def make_mdim_shape(shape, ndim, pad=1):
     mdim = len(shape)
     diff = mdim - ndim
     if mdim < ndim:
-        shape += [1] * (ndim - mdim)
+        shape += [pad] * (ndim - mdim)
     elif mdim > ndim:
-        shape = flatten_shape(shape, diff)
+        if isinstance(pad, (int, float)):
+            shape = flatten_shape(shape, diff)
+        else:
+            shape = shape[:ndim]
     return shape
 
 
@@ -115,6 +118,7 @@ def flatten_list(arr, order=1):
     global shape, mdim
     shape = [len(arr)]
     mdim = 0
+
     def recurse(arr):
         global shape, mdim
         ndim = len(arr)

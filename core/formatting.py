@@ -6,14 +6,14 @@ from core.types import inf, nan
 
 __all__ = ["print_array", "pad_array_fmt", "trim_string"]
 
-MAX_CHAR_LINE = 50
+MAX_CHARS_LINE = 50
 SAVED_CHAR = 3
 
 
 def trim_string(s, sep):
     sep_len = len(sep)
 
-    if len(s) >= MAX_CHAR_LINE:
+    if len(s) >= MAX_CHARS_LINE:
         s_re = list(re.finditer(sep, s))
         N = len(s_re)
 
