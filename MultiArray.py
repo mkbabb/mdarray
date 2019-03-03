@@ -362,8 +362,6 @@ class MultiArrayIter(object):
     def repeats(self, other: list) -> None:
         self._repeat = True
         other = core.make_mdim_shape(other, self._mdim)
-        self._shape = core.pair_wise(other, self._shape, operator.mul)
-        self._size = reduce(lambda x, y: x * y, self._shape)
         self._repeats = other
 
     @property
@@ -441,9 +439,7 @@ class MultiArrayIter(object):
         return self._index
 
     def at(self, pos: Union[list, int]) -> MultiArrayIter:
-        if self._pos == pos:
-            return self
-        elif isinstance(pos, list):
+        if isinstance(pos, list):
             self._pos = core.unravel([pos], self.shape)[0]
         else:
             self._pos = pos
@@ -459,19 +455,20 @@ class MultiArrayIter(object):
                                 self._mdim, self._strides)
             for i in range(1, self._mdim):
                 self.was_advanced_before(i)
+
             self._index = sum(self._axis_counter)
             self._pos -= 1
         return self
 
     def __next__(self) -> MultiArrayIter:
-        if self._pos < self._size:
+        if self._index < self._size:
             self.advance(1)
             return self
         else:
             raise StopIteration
 
     def __iter__(self):
-        for i in range(self._size):
+        while self._index < self._size:
             yield self
             self.__next__()
 

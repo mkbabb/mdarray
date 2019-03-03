@@ -4,9 +4,9 @@ from inspect import signature
 import numpy as np
 
 import MultiArray as ma
-from core.creation import make_mdim, tomdarray, zeros
+from core.creation import tomdarray, zeros
 from core.helper import pair_wise
-from core.manipulation import roll_axis, swap_axis
+from core.manipulation import make_mdim, roll_axis, swap_axis
 from core.types import inf, nan
 
 __all__ = ["reductor", "inner_product",

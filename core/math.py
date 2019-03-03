@@ -2,7 +2,7 @@ import math
 import operator
 
 import MultiArray as ma
-from core.creation import broadcast_bnry, tomdarray
+from core.creation import broadcast_nary, tomdarray
 from core.exceptions import IncompatibleDimensions
 
 
@@ -15,7 +15,7 @@ def apply_unary_function(arr1, func):
 def apply_binary_function(arr1, arr2, func):
     arr1 = tomdarray(arr1)
     arr2 = tomdarray(arr2)
-    return broadcast_bnry(arr1, arr2, func=func)
+    return broadcast_nary(arr1, arr2, func=func)
 
 
 def sqrt(x):

@@ -11,8 +11,8 @@ from MultiArray import MultiArray
 __all__ = ["tomdarray", "tondarray",
            "zeros", "ones", "full",
            "irange", "linear_range", "log_range",
-           "sort_raxes", "make_mdim", "repeat", "meshgrid", "dense_meshgrid",
-           "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays",
+           "repeat", "meshgrid", "dense_meshgrid",
+           "generate_broadcast_shape", "broadcast_nary", "broadcast",
            "broadcast_toshape", ]
 
 
@@ -22,7 +22,8 @@ toarray routines:
 '''
 
 
-def tomdarray(arr):
+def tomdarray(arr: Union[MultiArray, np.ndarray, list, tuple, ...]
+              ) -> MultiArray:
     if isinstance(arr, MultiArray):
         return arr
     elif isinstance(arr, np.ndarray):
@@ -41,7 +42,8 @@ def tomdarray(arr):
         return arr_out
 
 
-def tondarray(arr):
+def tondarray(arr: Union[MultiArray, np.ndarray, list, tuple, ...]
+              ) -> np.ndarray:
     if isinstance(arr, MultiArray):
         nd = np.asarray(arr.data, dtype=arr.dtype,
                         order=arr.order).reshape(arr.shape[::-1])
@@ -63,19 +65,26 @@ M-d arrays filled with pre-defined values:
 def zeros(shape: Optional[List[int]] = None,
           size: Optional[int] = None,
           dtype: Optional[Any] = None,
-          order: Optional[str] = None):
+          order: Optional[str] = None) -> MultiArray:
     arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [0] * arr_out.size
     return arr_out
 
 
-def ones(shape=None, size=None, dtype=None, order=None):
+def ones(shape: Optional[List[int]] = None,
+         size: Optional[int] = None,
+         dtype: Optional[Any] = None,
+         order: Optional[str] = None) -> MultiArray:
     arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [1] * arr_out.size
     return arr_out
 
 
-def full(fill=0, shape=None, size=None, dtype=None, order=None):
+def full(fill: Any = 0,
+         shape: Optional[List[int]] = None,
+         size: Optional[int] = None,
+         dtype: Optional[Any] = None,
+         order: Optional[str] = None) -> MultiArray:
     arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [fill] * arr_out.size
     return arr_out
@@ -91,7 +100,7 @@ Array ranges:
 '''
 
 
-def irange(size):
+def irange(size: Union[int, list]) -> MultiArray:
     if isinstance(size, list):
         shape = size
         size = reduce(lambda x, y: x * y, size)
@@ -102,7 +111,9 @@ def irange(size):
     return arr
 
 
-def linear_range(start, stop, size=None):
+def linear_range(start: Union[int, float],
+                 stop: Union[int, float],
+                 size=Optional[int]) -> MultiArray:
     if not size:
         size = stop - start
     arr_out = zeros(shape=[size])
@@ -121,7 +132,10 @@ def linear_range(start, stop, size=None):
     return arr_out
 
 
-def log_range(start, stop, size, base=10):
+def log_range(start: Union[int, float],
+              stop: Union[int, float],
+              base: Union[int, float],
+              size=Optional[int]) -> MultiArray:
     return base**linear_range(start, stop, size)
 
 
@@ -138,12 +152,9 @@ Tiling and grid routines:
 # but manipulates the data in a different way.
 
 
-def make_mdim(arr, ndim):
-    shape = make_mdim_shape(arr.shape, ndim)
-    return reshape(arr, shape)
-
-
-def sort_raxes(raxes, repts, mdim):
+def _sort_axes(raxes: List[int],
+               repts: List[int],
+               mdim: int) -> List[int]:
     ndim = len(raxes)
     if mdim > ndim:
         pad = [1] * (mdim - ndim)
@@ -162,14 +173,11 @@ def sort_raxes(raxes, repts, mdim):
     recurse(0)
 
 
-def repeat(arr, raxes, repts):
-    global j
-
+def repeat(arr: MultiArray,
+           raxes: List[int],
+           repts: List[int]) -> MultiArray:
     mdim = arr.mdim
-    shape = arr.shape
-    strides = arr.strides
-
-    sort_raxes(raxes, repts, mdim)
+    _sort_axes(raxes, repts, mdim)
     new_shape = list(arr.shape)
 
     for i in range(mdim):
@@ -177,64 +185,38 @@ def repeat(arr, raxes, repts):
         raxis = raxes[i]
         new_shape[raxis] *= rept
 
+    arr.iterator.repeats = repts
     arr_out = zeros(shape=new_shape, order=arr.order, dtype=arr.dtype)
-    axis_counter = [0] * mdim
 
-    def recurse(ix):
-        global j
-        axis = shape[ix]
+    for n, i in enumerate(arr.iterator):
+        arr_out.data[n] = arr.data[i.index]
 
-        if ix == 0:
-            for i in range(axis):
-                for k in range(repts[0]):
-                    axis_counter[0] = i * strides[0]
-                    ix_i = sum(axis_counter)
-
-                    arr_val = arr.data[ix_i]
-
-                    arr_out.data[j] = arr_val
-                    j += 1
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i * strides[ix]
-
-                for k in range(1, mdim):
-                    rept = repts[k]
-                    if ix == k:
-                        for l in range(rept):
-                            recurse(ix - 1)
-    j = 0
-    recurse(mdim - 1)
     return arr_out
 
 
-def meshgrid_internal(*arrs, dense):
-    arrs = tuple(arrs)
-    sizes = list((len, arrs))
+def meshgrid_internal(arrs: List[MultiArray],
+                      _iter: bool = True) -> List[MultiArray]:
+    sizes = list(map(len, arrs))
     mdim = len(arrs)
 
-    arr_out = []
+    arrs_out = [0] * mdim
     for i in range(mdim):
         slc = [1] * mdim
         slc[i] = sizes[i]
-
-        arr_i = tomdarray(arrs[i]).reshape(slc)
-
-        if not dense:
-            for j in range(mdim):
-                if j != i:
-                    arr_i = repeat(arr_i, [j], [sizes[j]])
-        arr_out.append(arr_i)
-
-    return arr_out
+        if _iter:
+            arrs_out[i] = MultiArray(shape=slc)
+        else:
+            arrs_out[i] = tomdarray(arrs[i]).reshape(slc)
+    return arrs_out
 
 
-def dense_meshgrid(*arrs):
-    return meshgrid_internal(*arrs, dense=True)
+def dense_meshgrid(*arrs: MultiArray) -> List[MultiArray]:
+    return meshgrid_internal(arrs, False)
 
 
-def meshgrid(*arrs):
-    return meshgrid_internal(*arrs, dense=False)
+def meshgrid(*arrs: MultiArray) -> List[MultiArray]:
+    arrs = meshgrid_internal(arrs, False)
+    return broadcast(*arrs)
 
 
 '''
@@ -247,85 +229,14 @@ Broadcasting routines:
 '''
 
 
-def broadcast_bnry_internal(*arrs, new_shape, repts, func):
-    global j
-    arrs = tuple(arrs)
-    ndim = len(arrs)
-
-    mdim = arrs[0].mdim
-    arr_out = zeros(shape=new_shape, order=arrs[0].order, dtype=arrs[0].dtype)
-    axis_counters = [[0] * mdim for i in range(ndim)]
-
-    def recurse(warr, ix, flag):
-        global j
-        arr = arrs[warr]
-        shape = arr.shape
-        strides = arr.strides
-        axis = shape[ix]
-        repts_j = repts[warr]
-
-        axis_counter = axis_counters[warr]
-        remaining_axes = mdim - ix
-
-        if remaining_axes == mdim:
-            for i in range(axis):
-                for k in range(repts_j[0]):
-                    axis_counter[0] = i * strides[0]
-                    ix_i = sum(axis_counter)
-
-                    if flag:
-                        arr_out.data[j] = func(
-                            arr_out.data[j], arr.data[ix_i])
-                    else:
-                        arr_out.data[j] = arr.data[ix_i]
-
-                    j += 1
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i * strides[ix]
-
-                for k in range(1, mdim):
-                    rept = repts_j[k]
-                    if ix == k:
-                        for l in range(rept):
-                            recurse(warr, ix - 1, flag)
-
-    for i in range(ndim):
-        j = 0
-        flag = True if i != 0 else False
-        recurse(i, mdim - 1, flag)
-
-    '''
-	If an n-ary (n > 2) function is wished to be broadcast_bfunction to n arrays simultaneously,
-	the most cost efficient way of doing so is via coroutines.
-
-	Since C/C++ does not yet properly support this functionality,
-	I leave it as an optional implmentation for possible later use.
-
-	To modify the current broadcast_bfunction routine to support this,
-	simply add a "yield from" statement to every recursive call above, and a "yield" statment to the "ix_i" variable.
-	Then, comment out the block of code above, and comment in the block of code below.
-	'''
-
-    # casts = [recurse(i, mdim-1) for i in range(ndim)]
-    # fargs = [0]*ndim
-    # for i in range(arr_out.size):
-    #     for j in range(ndim):
-    #         ix_j = next(casts[j])
-    #         arrs_j = arrs[j].data[ix_j]
-    #         fargs[j] = arrs_j
-    #     arr_out.data[i] = func(*fargs)
-
-    return arr_out
-
-
-def generate_broadcast_shape(*arrs):
+def generate_broadcast_shape(*arrs: MultiArray
+                             ) -> Tuple(List[int], List[int]):
     arrs = tuple(arrs)
     ndim = len(arrs)
 
     shapes = [i.shape for i in arrs]
     mdims = [i.mdim for i in arrs]
-    mdim = (mdims)
+    mdim = max(mdims)
 
     for i in range(ndim):
         if mdims[i] < mdim:
@@ -340,7 +251,6 @@ def generate_broadcast_shape(*arrs):
         j = 1
         while j < ndim:
             axis_j = shapes[j][i]
-
             if axis_i == 1 and axis_j > 1:
                 axis_i = axis_j
                 repts[0][i] = axis_i
@@ -354,26 +264,44 @@ def generate_broadcast_shape(*arrs):
     return new_shape, repts
 
 
-def broadcast_bnry(*arrs, func):
+def broadcast_iter(*arrs: MultiArray) -> None:
     new_shape, repts = generate_broadcast_shape(*arrs)
-    arr_out = broadcast_bnry_internal(
-        *arrs, new_shape=new_shape, repts=repts, func=func)
+    for i in range(len(arrs)):
+        arrs[i].iterator.repeats = repts[i]
+    return new_shape
+
+
+def broadcast_nary(*arrs: MultiArray,
+                   func: Callable[Any]) -> MultiArray:
+    new_shape = broadcast_iter(arrs)
+    arr_out = zeros(new_shape)
+    ndim = len(arrs)
+    fargs = [0] * ndim
+
+    for n, i in enumerate(zip(*arrs)):
+        for m, j in enumerate(i):
+            fargs[m] = arrs[m].data[j.index]
+        arr_out.data[n] = func(fargs)
     return arr_out
 
 
-def broadcast_arrays(*arrs):
-    arrs = list(arrs)
-    ndim = len(arrs)
-    new_shape, repts = generate_broadcast_shape(*arrs)
-    raxes = [i for i in range(len(new_shape))]
-    for i in range(ndim):
-        arrs[i] = repeat(arrs[i], raxes, repts[i])
-    return arrs
-
-
-def broadcast_toshape(arr, shape):
+def broadcast_toshape(arr: MultiArray,
+                      shape: List[int]) -> MultiArray:
     arr_shape = MultiArray(shape=shape, order=arr.order, dtype=arr.dtype)
-    new_shape, repts = generate_broadcast_shape(arr, arr_shape)
-    raxes = [i for i in range(arr_shape.mdim)]
-    arr = repeat(arr, raxes, repts[0])
-    return arr
+    new_shape = broadcast_iter(arr, arr_shape)
+    arr_out = zeros(new_shape)
+
+    for n, i in enumerate(arr.iterator):
+        arr_out.data[n] = arr.data[i.index]
+    return arr_out
+
+
+def broadcast(*arrs: MultiArray) -> List[MultiArray]:
+    ndim = len(arrs)
+    new_shape = broadcast_iter(*arrs)
+    arrs_out = [zeros(new_shape) for i in range(ndim)]
+
+    for n, i in enumerate(arrs):
+        for m, j in enumerate(i.iterator):
+            arrs_out[n].data[m] = arrs[n].data[j.index]
+    return arrs_out

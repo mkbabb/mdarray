@@ -1,19 +1,19 @@
 from functools import reduce
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-import MultiArray as ma
 from core.creation import full, zeros
 from core.exceptions import IncompatibleDimensions
-from core.helper import (get_strides, roll_array,
-                         swap_item)
+from core.helper import get_strides, roll_array, swap_item, make_mdim_shape
 from core.types import inf, nan
+from MultiArray import MultiArray
 
 __all__ = ["make_nested_list",
-           "reshape", "transpose", "swap_axis", "roll_axis",
+           "reshape", "make_mdim", "transpose", "swap_axis", "roll_axis",
            "flatten", "astype",
            "concatenate", "hstack", "vstack", "dstack",
-           "tile", "mdarray_iter"]
+           "tile"]
 
 
 '''
@@ -27,11 +27,17 @@ def reshape(arr, new_shape):
     new_size = reduce(lambda x, y: x * y, new_shape)
 
     if new_size != arr.size:
-        raise IncompatibleDimensions("The desired shape is incompatible with the current array's shape.")
+        raise IncompatibleDimensions(
+            "The desired shape is incompatible with the current array's shape.")
     else:
         arr._shape = new_shape
         arr._mdim = mdim
         arr._strides = get_strides(new_shape)
+
+
+def make_mdim(arr, mdim):
+    new_shape = make_mdim_shape(arr.shape, mdim)
+    reshape(arr, new_shape)
 
 
 def transpose(arr, axis1=0, axis2=1):
@@ -84,29 +90,29 @@ def flatten(arr, order=-1):
     reshape(arr, new_shape)
 
 
-def make_nested_list(arr):
+def make_nested_list(arr: MultiArray) -> list:
     mdim = arr.mdim
-    shape = arr.shape
-    strides = arr.strides
+    size = arr.size
     data = arr.data
-    axis_counter = [0] * mdim
+    mditer = arr.iterator
 
-    def recurse(ix):
-        axis = shape[ix]
-        tmp = [0] * axis
+    arr = []
+    nests = [[] for i in range(mdim - 1)]
+    for i in range(size):
+        arr.append(data[mditer.index])
+        next(mditer)
 
-        if ix == 0:
-            for i in range(axis):
-                axis_counter[0] = i * strides[0]
-                ix_i = sum(axis_counter)
-                arr_val = data[ix_i]
-                tmp[i] = arr_val
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i * strides[ix]
-                tmp[i] = recurse(ix - 1)
-        return tmp
-    return recurse(mdim - 1)
+        for j in range(1, mdim):
+            if mditer.was_advanced[j]:
+                if j == 1:
+                    nests[0].append(arr)
+                    arr = []
+                else:
+                    nests[j - 1].append(nests[j - 2])
+                    nests[j - 2] = []
+    arr = nests[-1]
+    mditer.at(0)
+    return arr
 
 
 def astype(arr, dtype):
@@ -151,61 +157,59 @@ Concatenation and splitting routines:
 '''
 
 
-def concatenate(*arrs, caxis):
-    global j, k
-
-    arr1 = arrs[0]
-
-    ndim = len(arrs)
-    mdim = arr1.mdim
-
-    if caxis < 0:
-        caxis += mdim
-
-    new_shape = list(arr1.shape)
+def _confirm_concat_shape(arrs: Tuple[MultiArray, ...],
+                          caxis: int,
+                          mdim: int,
+                          ndim: int,
+                          new_shape: List[int]) -> List[int]:
     new_shape[caxis] = 0
-
     for i in range(ndim):
         arr_i = arrs[i]
-
         if mdim != arr_i.mdim:
             raise IncompatibleDimensions(
-                "The dimensions of array one do not equal the dimensions of array two!")
-
+                f"The dimensions of array 1 != the dimensions of array {i}!")
         for j in range(mdim):
             if j != caxis:
                 if new_shape[j] != arr_i.shape[j]:
                     raise IncompatibleDimensions(
                         "All axes but caxis must be equivalent to concatenate the arrays.")
         new_shape[caxis] += arr_i.shape[caxis]
+    return new_shape
 
+
+def concatenate(*arrs: MultiArray,
+                caxis: int = -1) -> MultiArray:
+    arrs = tuple(arrs)
+    ndim = len(arrs)
+    arr1 = arrs[0]
+    mdim = arr1.mdim
+
+    if caxis < 0:
+        caxis += mdim
+
+    new_shape = _confirm_concat_shape(arrs, caxis, mdim, ndim, list(arr1.shape))
     arr_out = zeros(shape=new_shape, order=arr1.order, dtype=arr1.dtype)
-    axis_counter = [0] * mdim
-    strides = arr_out.strides
 
-    def recurse(warr, ix):
-        global j, k
-        arr = arrs[warr]
-        shape = arr.shape
-        axis = shape[ix]
-
-        if ix == 0:
-            for i in range(axis):
-                axis_counter[0] = i * strides[0]
-                ix_i = sum(axis_counter) + k * strides[caxis]
-                arr_val = arr.data[j]
-                arr_out.data[ix_i] = arr_val
-                j += 1
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i * strides[ix]
-                recurse(warr, ix - 1)
-    j = k = 0
+    if caxis != mdim - 1:
+        k = 0
+        while k < arr_out.size:
+            for i in range(ndim):
+                for j in arrs[i].iterator:
+                    if j.was_advanced[caxis + 1]:
+                        j._was_advanced[caxis + 1] = False
+                        break
+                    else:
+                        arr_out.data[k] = arrs[i].data[j.index]
+                        k += 1
+    else:
+        k = 0
+        while k < arr_out.size:
+            for i in range(ndim):
+                for j in arrs[i].data:
+                    arr_out.data[k] = j
+                    k += 1
     for i in range(ndim):
-        recurse(i, mdim - 1)
-        j = 0
-        k += arrs[i].shape[caxis]
-
+        arrs[i].iterator.at(0)
     return arr_out
 
 
@@ -243,33 +247,3 @@ def tile(arr, tiles):
 '''
 End concatenation and splitting routines.
 '''
-
-
-'''
-Recursive iteration template for which nearly all mdarray manipulations are based off of.
-'''
-
-
-def mdarray_iter(arr):
-    global j
-    mdim = arr.mdim
-    shape = arr.shape
-    strides = arr.strides
-    data = arr.data
-    axis_counter = [0] * mdim
-
-    def recurse(ix):
-        global j
-        axis = shape[ix]
-        if ix == 0:
-            for i in range(axis):
-                axis_counter[0] = i * strides[0]
-                ix_i = sum(axis_counter)
-                arr_val = data[ix_i]
-
-        else:
-            for i in range(axis):
-                axis_counter[ix] = i * strides[ix]
-                recurse(ix - 1)
-    j = 0
-    recurse(mdim - 1)

@@ -1,12 +1,14 @@
 from functools import reduce
-
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 __all__ = ["update_dict", "get_strides", "make_mdim_shape",
            "swap_item", "roll_array",
            "pair_wise", "remove_extraneous_dims", "flatten_list"]
 
 
-def update_dict(d1, d2, recursive=True):
+def update_dict(d1: dict,
+                d2: dict,
+                recursive: bool = True) -> dict:
     if isinstance(d1, dict) and isinstance(d2, dict):
         for i, j in d1.items():
             if isinstance(j, dict):
@@ -22,7 +24,7 @@ def update_dict(d1, d2, recursive=True):
     return d2
 
 
-def get_strides(shape):
+def get_strides(shape: List[int]) -> List[int]:
     N = len(shape)
     init = 1
     strides = [0] * N
@@ -31,11 +33,11 @@ def get_strides(shape):
     for i in range(N - 1):
         init *= shape[i]
         strides[i + 1] = init
-
     return strides
 
 
-def flatten_shape(shape, order=-1):
+def flatten_shape(shape: List[int],
+                  order: int = -1) -> List[int]:
     mdim = len(shape)
     if order < 0:
         order += mdim
@@ -54,7 +56,9 @@ def flatten_shape(shape, order=-1):
     return new_shape
 
 
-def make_mdim_shape(shape, ndim, pad=1):
+def make_mdim_shape(shape: List[int],
+                    ndim: int,
+                    pad: Any = 1) -> List[Any]:
     mdim = len(shape)
     diff = mdim - ndim
     if mdim < ndim:
@@ -67,21 +71,25 @@ def make_mdim_shape(shape, ndim, pad=1):
     return shape
 
 
-def swap_item(arr, ix1, ix2):
-    t = arr[ix1]
-    arr[ix1] = arr[ix2]
-    arr[ix2] = t
+def swap_item(seq: list,
+              ix1: int,
+              ix2: int) -> None:
+    t = seq[ix1]
+    seq[ix1] = seq[ix2]
+    seq[ix2] = t
 
 
-def roll_array(arr, axis, iterations=1):
-    ndim = len(arr)
+def roll_array(seq: list,
+               axis: int,
+               iterations: int = 1) -> None:
+    ndim = len(seq)
     if axis == 0:
         return
     elif axis < 0:
         axis += ndim
 
-    def recurse(ix):
-        swap_item(arr, axis, ix)
+    def recurse(ix: int) -> None:
+        swap_item(seq, axis, ix)
         ix += 1
         if ix == axis:
             return
@@ -92,52 +100,56 @@ def roll_array(arr, axis, iterations=1):
         recurse(0)
 
 
-def pair_wise(arr1, arr2, func):
-    buff = [0] * len(arr1)
-    for n, i in enumerate(arr1):
-        t = func(i, arr2[n])
+def pair_wise(seq1: list,
+              seq2: list,
+              func: Callable[[Any, Any], Any]) -> list:
+    buff = [0] * len(seq1)
+    for n, i in enumerate(seq1):
+        t = func(i, seq2[n])
         buff[n] = t
     return buff
 
 
-def remove_extraneous_dims(arr):
-    def recurse(arr):
-        if len(arr) == 1:
+def remove_extraneous_dims(seq: list) -> list:
+    def recurse(seq: list) -> list:
+        if len(seq) == 1:
             try:
-                arr = recurse(arr[0])
-                return arr
+                seq = recurse(seq[0])
+                return seq
             except IndexError:
-                return arr
+                return seq
         else:
-            return arr
+            return seq
+    return recurse(seq)
 
-    return recurse(arr)
 
-
-def flatten_list(arr, order=1):
+def flatten_list(seq: list,
+                 order: int = 1) -> list:
     global shape, mdim
-    shape = [len(arr)]
+    shape = [len(seq)]
     mdim = 0
 
-    def recurse(arr):
+    def recurse(seq: list) -> list:
         global shape, mdim
-        ndim = len(arr)
+        ndim = len(seq)
         buff = []
         mdim = 0
         for i in range(ndim):
-            arr_i = arr[i]
-            if isinstance(arr_i, list):
-                buff_r = recurse(arr_i)
-                M = len(arr_i)
+            seq_i = seq[i]
+            if isinstance(seq_i, list):
+                buff_r = recurse(seq_i)
+                M = len(seq_i)
                 if len(shape) <= mdim + 1:
                     shape.insert(-1, M)
                 mdim += 1
                 buff += [buff_r] if mdim <= order else buff_r
             elif mdim != 0:
-                buff += [arr_i]
+                buff += [seq_i]
+
         if mdim == 0:
-            return arr
+            return seq
         else:
             return buff
-    flt = recurse(arr)
-    return flt, mdim, shape
+
+    flat = recurse(seq)
+    return flat, mdim, shape

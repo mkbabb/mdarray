@@ -1,12 +1,13 @@
 from functools import reduce
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import MultiArray as ma
-from core.creation import (broadcast_arrays, broadcast_toshape, dense_meshgrid,
+from core.creation import (broadcast, broadcast_toshape, dense_meshgrid,
                            irange, tomdarray, zeros)
 from core.exceptions import IncompatibleDimensions
 from core.helper import get_strides
 from core.reduction import inner_product
 from core.types import inf, nan
+from MultiArray import MultiArray
 
 __all__ = ["ravel_internal", "ravel", "unravel", "ravel_flat",
            "unravel_dense", "slice_array", "expand_indicies",
@@ -18,7 +19,10 @@ Raveling and unraveling indicies:
 '''
 
 
-def ravel_internal(ix, mdim_ix_i, mdim, strides):
+def ravel_internal(ix: int,
+                   mdim_ixs: List[int],
+                   mdim: int,
+                   strides: List[int]) -> List[int]:
     for j in range(mdim):
         stride = strides[mdim - (j + 1)]
         k = 1
@@ -33,11 +37,13 @@ def ravel_internal(ix, mdim_ix_i, mdim, strides):
             else:
                 k += 1
         ix -= stride_k
-        mdim_ix_i[mdim - (j + 1)] = stride_k
-    return mdim_ix_i
+        mdim_ixs[mdim - (j + 1)] = stride_k
+    return mdim_ixs
 
 
-def ravel_flat(ix, mdim, strides):
+def ravel_flat(ix: int,
+               mdim: int,
+               strides: List[int]) -> int:
     mdim_ix = 0
     for j in range(mdim):
         stride = strides[mdim - (j + 1)]
@@ -57,8 +63,10 @@ def ravel_flat(ix, mdim, strides):
     return mdim_ix
 
 
-def ravel(ixs, shape):
-    if isinstance(shape, ma.MultiArray):
+def ravel(ixs: List[int],
+          shape: Union[List[int], MultiArray]
+          ) -> List[List[int]]:
+    if isinstance(shape, MultiArray):
         strides = shape.strides
         size = shape.size
         mdim = shape.mdim
@@ -73,21 +81,21 @@ def ravel(ixs, shape):
 
     for i in range(ndim):
         ix = ixs[i]
-        mdim_ix_i = [0] * mdim
+        mdim_ixs = [0] * mdim
         if ix > size:
             raise IncompatibleDimensions(
                 "The raveled index is too large to unravel using the provided shape!")
         elif ix == 0:
-            mdim_ixs[i] = mdim_ix_i
+            mdim_ixs[i] = mdim_ixs
         else:
             ix += size if ix < 0 else 0
-            mdim_ixs[i] = ravel_internal(ix, mdim_ix_i, mdim, strides)
-
+            mdim_ixs[i] = ravel_internal(ix, mdim_ixs, mdim, strides)
     return mdim_ixs
 
 
-def unravel(mdim_ixs, shape):
-    if isinstance(shape, ma.MultiArray):
+def unravel(mdim_ixs: List[List[int]],
+            shape: Union[List[int], MultiArray]) -> List[int]:
+    if isinstance(shape, MultiArray):
         strides = shape.strides
     else:
         strides = get_strides(shape)
@@ -149,7 +157,7 @@ def expand_indicies(slc, arr):
 
     for i in range(ndim):
         arr_i = slc[i]
-        if not isinstance(arr_i, ma.MultiArray):
+        if not isinstance(arr_i, MultiArray):
             if arr_i == inf or arr_i == Ellipsis:
                 arr_i = irange(arr.shape[i])
             else:
@@ -168,9 +176,9 @@ def slice_array(slc, arr_in, arr_out, set=True):
 
     if oned:
         slc = dense_meshgrid(*slc)
-        slc = broadcast_arrays(*slc)
+        slc = broadcast(*slc)
     else:
-        slc = broadcast_arrays(*slc)
+        slc = broadcast(*slc)
         new_shape = slc[0].shape
 
     if not arr_out:
