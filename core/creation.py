@@ -11,8 +11,8 @@ from MultiArray import MultiArray
 __all__ = ["tomdarray", "tondarray",
            "zeros", "ones", "full",
            "irange", "linear_range", "log_range",
-           "repeat", "meshgrid", "dense_meshgrid",
-           "generate_broadcast_shape", "broadcast_nary", "broadcast",
+           "repeat", "ix_meshgrid", "meshgrid", "dense_meshgrid",
+           "generate_broadcast_shape", "broadcast_nary", "broadcast", "broadcast_iter",
            "broadcast_toshape", ]
 
 
@@ -22,7 +22,7 @@ toarray routines:
 '''
 
 
-def tomdarray(arr: Union[MultiArray, np.ndarray, list, tuple, ...]
+def tomdarray(arr: Union[MultiArray, np.ndarray, list, tuple, Any]
               ) -> MultiArray:
     if isinstance(arr, MultiArray):
         return arr
@@ -42,7 +42,7 @@ def tomdarray(arr: Union[MultiArray, np.ndarray, list, tuple, ...]
         return arr_out
 
 
-def tondarray(arr: Union[MultiArray, np.ndarray, list, tuple, ...]
+def tondarray(arr: Union[MultiArray, np.ndarray, list, tuple, Any]
               ) -> np.ndarray:
     if isinstance(arr, MultiArray):
         nd = np.asarray(arr.data, dtype=arr.dtype,
@@ -210,6 +210,10 @@ def meshgrid_internal(arrs: List[MultiArray],
     return arrs_out
 
 
+def ix_meshgrid(*arrs: MultiArray) -> List[MultiArray]:
+    return meshgrid_internal(arrs, True)
+
+
 def dense_meshgrid(*arrs: MultiArray) -> List[MultiArray]:
     return meshgrid_internal(arrs, False)
 
@@ -230,7 +234,7 @@ Broadcasting routines:
 
 
 def generate_broadcast_shape(*arrs: MultiArray
-                             ) -> Tuple(List[int], List[int]):
+                             ) -> (List[int], List[int]):
     arrs = tuple(arrs)
     ndim = len(arrs)
 
@@ -272,7 +276,7 @@ def broadcast_iter(*arrs: MultiArray) -> None:
 
 
 def broadcast_nary(*arrs: MultiArray,
-                   func: Callable[Any]) -> MultiArray:
+                   func: Callable[[Any], List[Any]]) -> MultiArray:
     new_shape = broadcast_iter(arrs)
     arr_out = zeros(new_shape)
     ndim = len(arrs)

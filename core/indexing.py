@@ -1,7 +1,7 @@
 from functools import reduce
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from core.creation import (broadcast, broadcast_toshape, dense_meshgrid,
+from core.creation import (broadcast_iter, broadcast_toshape, ix_meshgrid,
                            irange, tomdarray, zeros)
 from core.exceptions import IncompatibleDimensions
 from core.helper import get_strides
@@ -116,34 +116,19 @@ M-d array slicing:
 '''
 
 
-def unravel_dense(*dense_ixs, arr_in, arr_out, set):
-    global j
-    dense_ixs = tuple(dense_ixs)
-    ndim = len(dense_ixs)
-    mdim = dense_ixs[0].mdim
-    shape = dense_ixs[0].shape
+def unravel_dense(dense_ixs: List[MultiArray],
+                  arr_in: MultiArray,
+                  arr_out: Optional[MultiArray] = None,
+                  setter: bool = False) -> MultiArray:
     strides = arr_in.strides
-
-    def recurse(ix):
-        global j
-        axis = shape[ix]
-
-        if ix == 0:
-            for i in range(axis):
-                ix_i = 0
-                for k in range(ndim):
-                    ix_k = dense_ixs[k].data[j] * strides[k]
-                    ix_i += ix_k
-                if set:
-                    arr_in.data[ix_i] = arr_out.data[j]
-                else:
-                    arr_out.data[j] = arr_in.data[ix_i]
-                j += 1
+    for n, i in enumerate(zip(*dense_ixs)):
+        ix_i = 0
+        for m, j in enumerate(i):
+            ix_i += j.arr.data[j.index] * strides[m]
+        if setter:
+            arr_in.data[ix_i] = arr_out.data[n]
         else:
-            for i in range(axis):
-                recurse(ix - 1)
-    j = 0
-    recurse(mdim - 1)
+            arr_out.data[n] = arr_in.data[ix_i]
 
 
 def expand_indicies(slc, arr):
@@ -170,15 +155,16 @@ def expand_indicies(slc, arr):
     return slc, new_shape, oned
 
 
-def slice_array(slc, arr_in, arr_out, set=True):
+def slice_array(slc, arr_in, arr_out, setter=True):
     slc, new_shape, oned = expand_indicies(slc, arr_in)
+    print(oned)
     order = arr_in.order
 
     if oned:
-        slc = dense_meshgrid(*slc)
-        slc = broadcast(*slc)
+        slc = ix_meshgrid(*slc)
+        slc = broadcast_iter(*slc)
     else:
-        slc = broadcast(*slc)
+        slc = broadcast_iter(*slc)
         new_shape = slc[0].shape
 
     if not arr_out:
@@ -188,8 +174,7 @@ def slice_array(slc, arr_in, arr_out, set=True):
 
     if arr_in.shape != arr_out.shape:
         arr_out = broadcast_toshape(arr_out, new_shape)
-
-    unravel_dense(*slc, arr_in=arr_in, arr_out=arr_out, set=set)
+    # unravel_dense(slc, arr_in, arr_out, setter)
     return arr_out
 
 

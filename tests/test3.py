@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import operator
 import random
+import timeit
 import typing
 from functools import reduce
-from MDIter import MDIter
-import timeit
+import random
 
 import numpy as np
 
-import MultiArray as ma
 from core import *
 
 
@@ -64,109 +63,134 @@ def reduce_iter(arr: ma.MultiArray, faxis: int,
     return arr_out
 
 
-def repeat_iter(arr: ma.MultiArray, raxes: list, repts: list) -> ma.MultiArray:
-    ndim = len(raxes)
-    strides = arr.strides
-    shape = arr.shape
-    mditer = MDIter(arr)
+def lcs(s1, s2):
+    N, M = len(s1), len(s2)
+    arr = [[None for i in range(M + 1)] for j in range(N + 1)]
 
-    def recurse(mditer, ix, start, end):
-        if ix == 0:
-            for i in range(repts[ix]):
-                mditer.at(start)
-                for k in range(strides[ix]):
-                    print(mditer.index)
-                    next(mditer)
-                mditer.at(end)
+    def recurse(n, m):
+        if arr[n][m] != None:
+            return arr[n][m]
+        elif n == 0 or m == 0:
+            seq = ""
+        elif s1[n - 1] == s2[m - 1]:
+            seq = recurse(n - 1, m - 1)
+            seq += s1[n - 1]
+        elif s1[n - 1] != s2[m - 1]:
+            tmp1 = recurse(n - 1, m)
+            tmp2 = recurse(n, m - 1)
+            seq = max(tmp1, tmp2, key=len)
         else:
-            for i in range(repts[ix]):
-                for k in range(shape[ix]):
-                    recurse(mditer, ix - 1, start + k, start + i)
-                    pass
+            seq = ""
 
-    repts = [1, 2]
-    start = 0
-    for i in mditer:
-        if i.was_advanced[-1]:
-            end = i.pos
-            recurse(mditer, arr.mdim - 1, start, end)
-            mditer.at(end)
-            start = end
-        print('----')
+        arr[n][m] = seq
+        return seq
 
-        # for raxis, rept in zip(raxes, repts):
-        #     if i.was_advanced[raxis]:
-        #         end = mditer.pos
-        #         for k in range(rept):
-        #             if raxis > 0:
-        #                 mditer.at(start)
-        #             for l in range(strides[raxis]):
-        #                 print(mditer.index)
-        #                 next(mditer)
-        #             mditer.at(end)
-        #         start = end
+    seq = recurse(N, M)
+    return seq
 
 
-def swap_iter(mditer: MDIter, axis: int, ix1: list, ix2: list) -> None:
-    size: int = mditer.arr.strides[axis]
-    data = mditer.arr.data
-    buff = [0] * size
+def lccs(s1, s2):
+    N, M = len(s1), len(s2)
+    arr = [[None for i in range(M + 1)] for j in range(N + 1)]
 
-    mditer.at(ix1)
-    ixs1 = mditer.grapple(buff, axis)
-    mditer.at(ix2)
+    def recurse(n, m, seq):
+        if arr[n][m] != None:
+            return seq
+        elif n == 0 or m == 0:
+            return seq
+        elif s1[n - 1] == s2[m - 1]:
+            seq = recurse(n - 1, m - 1, s1[n - 1] + seq)
+        elif s1[n - 1] != s2[m - 1]:
+            tmp1 = recurse(n - 1, m, "")
+            tmp2 = recurse(n, m - 1, "")
+            seq = max(seq, tmp1, tmp2, key=len)
+            arr[n][m] = seq
+        return seq
 
-    for i in range(size):
-        next(mditer)
-        ixs2 = mditer.index
-        swap_item(data, ixs1[i], ixs2)
-
-
-# arr = irange([5, 5])
-# print(arr)
-# narr = tondarray(arr)
-# mditer = MDIter(arr)
-# for i in mditer:
-#     print(i.index)
-
-
-# repeat_iter(arr, [0], [2])
+    seq = recurse(N, M, "")
+    return seq
 
 
-# swap_iter(mditer, 1, [0, 1], [0, 2])
+def sort_lccs(seq):
+    N = len(seq)
+    seq = [[i, False] for i in seq]
+    seqs = []
 
-# mditer.at([0, 1])
-# for i in mditer:
-#     print(i.index, i.pos)
-# mditer.at(2)
-# for i in mditer:
-#     print(i.index, i.pos)
-# print(arr)
+    for i in range(N):
+        seqs_i = [seq[i][0]]
+        seq_i = seq[i][0]
+        for j in range(i + 1, N):
+            seq_ij = seq[j][0]
+            if (not seq[i][1] and not seq[j][1] and
+                    (len(seq_i) / len(seq_ij) >= 0.5)):
+                sub_seq_i = lccs(seq_i, seq_ij)
+                thresh = (len(sub_seq_i) / len(seq_i) >= 0.5
+                          and len(sub_seq_i) / len(seq_ij) >= 0.5)
+                if thresh:
+                    if len(seqs_i) == 1:
+                        seq[j][1] = True
+                        seqs_i.append(seq_ij)
+                    else:
+                        group = True
+                        for k in seqs_i:
+                            sub_seq_k = lccs(seq_ij, k)
+                            thresh = (len(sub_seq_k) / len(seq_ij) >= 0.5
+                                      and len(sub_seq_k) / len(k) >= 0.5)
+                            if not thresh:
+                                group = False
+                                break
+                        if group:
+                            seqs_i.append(seq_ij)
+                            seq[j][1] = True
+        if len(seqs_i) > 1:
+            seq[i][1] = True
+            seqs_i = sorted(seqs_i)
+            seqs.append(seqs_i)
+    seqs = flatten_list(seqs, -1)[0] + sorted([i[0] for i in seq if not i[1]])
+    return seqs
 
-# mditer.at([0, 2])
-# print(mditer.axis_counter)
 
-# buff = [0] * arr.shape[0]
+random.seed(1)
+words = ["log", "frog", "dog", "hog", "fick", "slick", "tick", "rays", "hays", "mays"
+         "fray", "lay", "gay", "hag", "bag", "tag", "rag", "lag", "zealot", "ameliorate",
+         "buck", "cluck", "duck", "chuck", "muck", "tuck", "obsequeious", "licentious", "pretentious",
+         "cog", "cam", "deviantjam", "ham", "biscuit", "triscuit", "play", "gorge", "lorge", "hello", "yellow",
+         "cookie", "bookie", "book", "have", "to", "be", "cookin", "by", "the", "book", "my", "word", "what", "does",
+         "that", "mean", "my", "men", "hen", "den", "quest", "jest", "zest", "for", "lime"]
 
-# buff = mditer.grapple(buff, 1)
-# print(buff)
+# words = ["ham", "cam", "jam", "biscuit", "triscuit", "bug", "rug", "hug"]
+words = ["dog", "log", "hen", "ham", "jam"]
+# random.shuffle(words)
+
+MAX_WORDS = 5
+MAX_WORD_LEN = 5
 
 
-# print(np.repeat(narr, 2, 1))
+def get_some_words(words):
+    _words = []
+    N = len(words)
+
+    for i in range(MAX_WORDS // 2):
+        word_i = words[i]
+        word_Ni = words[N - (i + 1)]
+        if len(word_i) <= MAX_WORD_LEN:
+            _words.insert(0, word_i)
+        if len(word_Ni) <= MAX_WORD_LEN:
+            _words.append(word_Ni)
+
+    if N > MAX_WORDS:
+        _words.insert(MAX_WORDS // 2, "...")
+
+    return ", ".join(_words)
 
 
-# t = reduce_iter(arr, 0, sum, True)
-# print(t.shape)
-# print(t)
+# s = get_some_words(words)
+# print(s)
 
 
-shape = [5, 9, 100]
-count = 100
-
-t1 = timeit.timeit(stmt='print_array(arr1)',
-                   setup=f'from core import print_array, irange; arr1 = irange({shape})', number=count)
-t2 = timeit.timeit(stmt='print_iter(arr1)',
-                   setup=f'from mditer2 import print_iter; from core import irange; arr1 = irange({shape})', number=count)
-print(t1 / count)
-print(t2 / count)
-print(t2/t1)
+# s1 = "ham"
+# s2 = "cam"
+# seq = lccs(s2, s1)
+# print(seq)
+sorted_words = sort_lccs(words)
+print(sorted_words)

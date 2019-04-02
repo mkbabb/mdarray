@@ -70,7 +70,7 @@ def print_array(arr: MultiArray,
 
 
 def pad_array_fmt(arr: MultiArray
-                  ) -> Callable[[int, float, ...], str]:
+                  ) -> Callable[[int, float, Any], str]:
     max_len = len(str(max(arr.data, key=lambda x: len(str(x)))))
 
     fmmter = lambda x: '{0}{1}{2}'.format(' ' * int(math.ceil((max_len - len(str(x))) / 2)), x,

@@ -165,10 +165,14 @@ class MultiArray(object):
     '''
 
     def __repr__(self) -> str:
-        return core.print_array(self, ', ', self.formatter)
+        s = "multiarray("
+        s += core.print_array(self, ", ", self.formatter)
+        s += ")"
+        return s
 
     def __str__(self) -> str:
-        return self.__repr__()
+        s = core.print_array(self, ", ", self.formatter)
+        return s
 
     def __setitem__(self, slc, arr2) -> MultiArray:
         core.slice_array(slc, self, arr2, True)

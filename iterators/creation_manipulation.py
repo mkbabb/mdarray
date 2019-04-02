@@ -13,25 +13,7 @@ from core import (IncompatibleDimensions, generate_broadcast_shape,
                   tondarray, zeros)
 from MultiArray import MultiArray, MultiArrayIter
 
-# def unravel_dense_iter(dense_ixs: list,
-#                        arr_in: MultiArray,
-#                        arr_out: Optional[MultiArray] = None,
-#                        setter: bool = False) -> MultiArray:
-#     ndim = len(dense_ixs)
-#     dense_iters = broadcast_iter(dense_ixs)
-#     if not arr_out:
-#         arr_out = zeros(dense_iters[0].shape)
 
-#     strides = arr_in.strides
-#     for n, i in enumerate(zip(*dense_iters)):
-#         ix_i = 0
-#         for m, j in enumerate(i):
-#             ix_i += j.arr.data[j.index] * strides[m]
-#         if setter:
-#             arr_in.data[ix_i] = arr_out.data[n]
-#         else:
-#             arr_out.data[n] = arr_in.data[ix_i]
-#     return arr_out
 
 
 def meshgrid_iter(arrs):
