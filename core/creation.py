@@ -6,7 +6,7 @@ import numpy as np
 
 from core.exceptions import IncompatibleDimensions
 from core.helper import flatten_list, make_mdim_shape, roll_array, swap_item
-from MultiArray import MultiArray
+from multiArray import multiArray
 
 __all__ = ["tomdarray", "tondarray",
            "zeros", "ones", "full",
@@ -22,29 +22,29 @@ toarray routines:
 '''
 
 
-def tomdarray(arr: Union[MultiArray, np.ndarray, list, tuple, Any]
-              ) -> MultiArray:
-    if isinstance(arr, MultiArray):
+def tomdarray(arr: Union[multiArray, np.ndarray, list, tuple, Any]
+              ) -> multiArray:
+    if isinstance(arr, multiArray):
         return arr
     elif isinstance(arr, np.ndarray):
-        arr_out = MultiArray(data=np.ravel(
+        arr_out = multiArray(data=np.ravel(
             arr), shape=arr.shape, dtype=arr.dtype, order=arr.order)
         return arr_out
     else:
         if isinstance(arr, list) or isinstance(arr, tuple):
             arr, mdim, shape = flatten_list(arr, order=-1)
-            arr_out = MultiArray(shape=shape, data=arr)
+            arr_out = multiArray(shape=shape, data=arr)
         elif isinstance(arr, int) or isinstance(arr, float) or isinstance(arr, str):
-            arr_out = MultiArray(size=1, data=[arr])
+            arr_out = multiArray(size=1, data=[arr])
         else:
             arr = list(arr)
-            arr_out = MultiArray(size=len(arr), data=arr)
+            arr_out = multiArray(size=len(arr), data=arr)
         return arr_out
 
 
-def tondarray(arr: Union[MultiArray, np.ndarray, list, tuple, Any]
+def tondarray(arr: Union[multiArray, np.ndarray, list, tuple, Any]
               ) -> np.ndarray:
-    if isinstance(arr, MultiArray):
+    if isinstance(arr, multiArray):
         nd = np.asarray(arr.data, dtype=arr.dtype,
                         order=arr.order).reshape(arr.shape[::-1])
     else:
@@ -65,8 +65,8 @@ M-d arrays filled with pre-defined values:
 def zeros(shape: Optional[List[int]] = None,
           size: Optional[int] = None,
           dtype: Optional[Any] = None,
-          order: Optional[str] = None) -> MultiArray:
-    arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
+          order: Optional[str] = None) -> multiArray:
+    arr_out = multiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [0] * arr_out.size
     return arr_out
 
@@ -74,8 +74,8 @@ def zeros(shape: Optional[List[int]] = None,
 def ones(shape: Optional[List[int]] = None,
          size: Optional[int] = None,
          dtype: Optional[Any] = None,
-         order: Optional[str] = None) -> MultiArray:
-    arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
+         order: Optional[str] = None) -> multiArray:
+    arr_out = multiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [1] * arr_out.size
     return arr_out
 
@@ -84,8 +84,8 @@ def full(fill: Any = 0,
          shape: Optional[List[int]] = None,
          size: Optional[int] = None,
          dtype: Optional[Any] = None,
-         order: Optional[str] = None) -> MultiArray:
-    arr_out = MultiArray(shape=shape, size=size, dtype=dtype, order=order)
+         order: Optional[str] = None) -> multiArray:
+    arr_out = multiArray(shape=shape, size=size, dtype=dtype, order=order)
     arr_out.data = [fill] * arr_out.size
     return arr_out
 
@@ -100,20 +100,20 @@ Array ranges:
 '''
 
 
-def irange(size: Union[int, list]) -> MultiArray:
+def irange(size: Union[int, list]) -> multiArray:
     if isinstance(size, list):
         shape = size
         size = reduce(lambda x, y: x * y, size)
     else:
         shape = [size]
     data = [i for i in range(size)]
-    arr = MultiArray(shape=shape, data=data)
+    arr = multiArray(shape=shape, data=data)
     return arr
 
 
 def linear_range(start: Union[int, float],
                  stop: Union[int, float],
-                 size=Optional[int]) -> MultiArray:
+                 size=Optional[int]) -> multiArray:
     if not size:
         size = stop - start
     arr_out = zeros(shape=[size])
@@ -135,7 +135,7 @@ def linear_range(start: Union[int, float],
 def log_range(start: Union[int, float],
               stop: Union[int, float],
               base: Union[int, float],
-              size=Optional[int]) -> MultiArray:
+              size=Optional[int]) -> multiArray:
     return base**linear_range(start, stop, size)
 
 
@@ -173,9 +173,9 @@ def _sort_axes(raxes: List[int],
     recurse(0)
 
 
-def repeat(arr: MultiArray,
+def repeat(arr: multiArray,
            raxes: List[int],
-           repts: List[int]) -> MultiArray:
+           repts: List[int]) -> multiArray:
     mdim = arr.mdim
     _sort_axes(raxes, repts, mdim)
     new_shape = list(arr.shape)
@@ -194,8 +194,8 @@ def repeat(arr: MultiArray,
     return arr_out
 
 
-def meshgrid_internal(arrs: List[MultiArray],
-                      _iter: bool = True) -> List[MultiArray]:
+def meshgrid_internal(arrs: List[multiArray],
+                      _iter: bool = True) -> List[multiArray]:
     sizes = list(map(len, arrs))
     mdim = len(arrs)
 
@@ -204,21 +204,21 @@ def meshgrid_internal(arrs: List[MultiArray],
         slc = [1] * mdim
         slc[i] = sizes[i]
         if _iter:
-            arrs_out[i] = MultiArray(shape=slc)
+            arrs_out[i] = multiArray(shape=slc)
         else:
             arrs_out[i] = tomdarray(arrs[i]).reshape(slc)
     return arrs_out
 
 
-def ix_meshgrid(*arrs: MultiArray) -> List[MultiArray]:
+def ix_meshgrid(*arrs: multiArray) -> List[multiArray]:
     return meshgrid_internal(arrs, True)
 
 
-def dense_meshgrid(*arrs: MultiArray) -> List[MultiArray]:
+def dense_meshgrid(*arrs: multiArray) -> List[multiArray]:
     return meshgrid_internal(arrs, False)
 
 
-def meshgrid(*arrs: MultiArray) -> List[MultiArray]:
+def meshgrid(*arrs: multiArray) -> List[multiArray]:
     arrs = meshgrid_internal(arrs, False)
     return broadcast(*arrs)
 
@@ -233,7 +233,7 @@ Broadcasting routines:
 '''
 
 
-def generate_broadcast_shape(*arrs: MultiArray
+def generate_broadcast_shape(*arrs: multiArray
                              ) -> (List[int], List[int]):
     arrs = tuple(arrs)
     ndim = len(arrs)
@@ -268,15 +268,15 @@ def generate_broadcast_shape(*arrs: MultiArray
     return new_shape, repts
 
 
-def broadcast_iter(*arrs: MultiArray) -> None:
+def broadcast_iter(*arrs: multiArray) -> None:
     new_shape, repts = generate_broadcast_shape(*arrs)
     for i in range(len(arrs)):
         arrs[i].iterator.repeats = repts[i]
     return new_shape
 
 
-def broadcast_nary(*arrs: MultiArray,
-                   func: Callable[[Any], List[Any]]) -> MultiArray:
+def broadcast_nary(*arrs: multiArray,
+                   func: Callable[[Any], List[Any]]) -> multiArray:
     new_shape = broadcast_iter(arrs)
     arr_out = zeros(new_shape)
     ndim = len(arrs)
@@ -289,9 +289,9 @@ def broadcast_nary(*arrs: MultiArray,
     return arr_out
 
 
-def broadcast_toshape(arr: MultiArray,
-                      shape: List[int]) -> MultiArray:
-    arr_shape = MultiArray(shape=shape, order=arr.order, dtype=arr.dtype)
+def broadcast_toshape(arr: multiArray,
+                      shape: List[int]) -> multiArray:
+    arr_shape = multiArray(shape=shape, order=arr.order, dtype=arr.dtype)
     new_shape = broadcast_iter(arr, arr_shape)
     arr_out = zeros(new_shape)
 
@@ -300,7 +300,7 @@ def broadcast_toshape(arr: MultiArray,
     return arr_out
 
 
-def broadcast(*arrs: MultiArray) -> List[MultiArray]:
+def broadcast(*arrs: multiArray) -> List[multiArray]:
     ndim = len(arrs)
     new_shape = broadcast_iter(*arrs)
     arrs_out = [zeros(new_shape) for i in range(ndim)]

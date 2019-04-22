@@ -2,7 +2,7 @@ from functools import reduce
 
 from core import *
 from linalg import *
-from MultiArray import *
+from multiArray import *
 import numpy as np
 import random
 import operator

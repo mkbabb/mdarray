@@ -28,7 +28,7 @@ def get_ret_shaped2(buff, arr, new_shape, axis, keepdims):
 
 
 def _insert_into_flattened2(buff, arr_out, j):
-    if isinstance(buff, ma.MultiArray):
+    if isinstance(buff, ma.multiArray):
         buff = buff.data
 
     if isinstance(buff, list):
@@ -41,9 +41,9 @@ def _insert_into_flattened2(buff, arr_out, j):
     return j
 
 
-def reduce_iter(arr: ma.MultiArray, faxis: int,
+def reduce_iter(arr: ma.multiArray, faxis: int,
                 func: typing.Callable[[list], list],
-                keepdims: bool = False) -> ma.MultiArray:
+                keepdims: bool = False) -> ma.multiArray:
     mdim = arr.mdim
     roll_axis(arr, faxis)
     mditer = MDIter(arr)
@@ -81,7 +81,6 @@ def lcs(s1, s2):
             seq = max(tmp1, tmp2, key=len)
         else:
             seq = ""
-
         arr[n][m] = seq
         return seq
 
@@ -160,7 +159,8 @@ words = ["log", "frog", "dog", "hog", "fick", "slick", "tick", "rays", "hays", "
 
 # words = ["ham", "cam", "jam", "biscuit", "triscuit", "bug", "rug", "hug"]
 words = ["dog", "log", "hen", "ham", "jam"]
-# random.shuffle(words)
+random.shuffle(words)
+print(words)
 
 MAX_WORDS = 5
 MAX_WORD_LEN = 5

@@ -1,7 +1,7 @@
 from core.creation import tomdarray, zeros
 from core.exceptions import IncompatibleDimensions
 from core.helper import swap_item
-from MultiArray import MultiArray
+from multiArray import multiArray
 
 __all__ = ["repeat", "meshgrid", "dense_meshgrid",
            "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays",
@@ -236,7 +236,7 @@ def broadcast_arrays(*arrs):
 
 
 def broadcast_toshape(arr, shape):
-    arr_shape = MultiArray(shape=shape, order=arr.order, dtype=arr.dtype)
+    arr_shape = multiArray(shape=shape, order=arr.order, dtype=arr.dtype)
     new_shape, repts = generate_broadcast_shape(arr, arr_shape)
     raxes = [i for i in range(arr_shape.mdim)]
     arr = repeat(arr, raxes, repts[0])

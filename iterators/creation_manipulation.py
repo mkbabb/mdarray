@@ -11,7 +11,7 @@ import core.depreciated as depreciated
 from core import (IncompatibleDimensions, generate_broadcast_shape,
                   inner_product, irange, meshgrid, swap_item, tomdarray,
                   tondarray, zeros)
-from MultiArray import MultiArray, MultiArrayIter
+from multiArray import multiArray, multiArrayIter
 
 
 
@@ -24,11 +24,11 @@ def meshgrid_iter(arrs):
     for i in range(mdim):
         slc = [1] * mdim
         slc[i] = sizes[i]
-        arrs[i] = MultiArray(shape=slc)
+        arrs[i] = multiArray(shape=slc)
     return arrs
 
 
-def swap_item_axis(arr: MultiArray,
+def swap_item_axis(arr: multiArray,
                    axis: int,
                    ix1: Union[int, List[int]],
                    ix2: Union[int, List[int]]) -> None:
@@ -82,7 +82,7 @@ def quicksort(seq, key, axis, left, right):
         quicksort(seq, key, axis, pix + 1, right)
 
 
-def grab(arr: MultiArray,
+def grab(arr: multiArray,
          buff: list,
          axis: int,
          func: Callable[[list], list] = None,

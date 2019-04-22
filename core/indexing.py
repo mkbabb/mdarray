@@ -7,7 +7,7 @@ from core.exceptions import IncompatibleDimensions
 from core.helper import get_strides
 from core.reduction import inner_product
 from core.types import inf, nan
-from MultiArray import MultiArray
+from multiArray import multiArray
 
 __all__ = ["ravel_internal", "ravel", "unravel", "ravel_flat",
            "unravel_dense", "slice_array", "expand_indicies",
@@ -64,9 +64,9 @@ def ravel_flat(ix: int,
 
 
 def ravel(ixs: List[int],
-          shape: Union[List[int], MultiArray]
+          shape: Union[List[int], multiArray]
           ) -> List[List[int]]:
-    if isinstance(shape, MultiArray):
+    if isinstance(shape, multiArray):
         strides = shape.strides
         size = shape.size
         mdim = shape.mdim
@@ -94,8 +94,8 @@ def ravel(ixs: List[int],
 
 
 def unravel(mdim_ixs: List[List[int]],
-            shape: Union[List[int], MultiArray]) -> List[int]:
-    if isinstance(shape, MultiArray):
+            shape: Union[List[int], multiArray]) -> List[int]:
+    if isinstance(shape, multiArray):
         strides = shape.strides
     else:
         strides = get_strides(shape)
@@ -116,10 +116,10 @@ M-d array slicing:
 '''
 
 
-def unravel_dense(dense_ixs: List[MultiArray],
-                  arr_in: MultiArray,
-                  arr_out: Optional[MultiArray] = None,
-                  setter: bool = False) -> MultiArray:
+def unravel_dense(dense_ixs: List[multiArray],
+                  arr_in: multiArray,
+                  arr_out: Optional[multiArray] = None,
+                  setter: bool = False) -> multiArray:
     strides = arr_in.strides
     for n, i in enumerate(zip(*dense_ixs)):
         ix_i = 0
@@ -142,7 +142,7 @@ def expand_indicies(slc, arr):
 
     for i in range(ndim):
         arr_i = slc[i]
-        if not isinstance(arr_i, MultiArray):
+        if not isinstance(arr_i, multiArray):
             if arr_i == inf or arr_i == Ellipsis:
                 arr_i = irange(arr.shape[i])
             else:
@@ -157,7 +157,6 @@ def expand_indicies(slc, arr):
 
 def slice_array(slc, arr_in, arr_out, setter=True):
     slc, new_shape, oned = expand_indicies(slc, arr_in)
-    print(oned)
     order = arr_in.order
 
     if oned:
@@ -174,7 +173,7 @@ def slice_array(slc, arr_in, arr_out, setter=True):
 
     if arr_in.shape != arr_out.shape:
         arr_out = broadcast_toshape(arr_out, new_shape)
-    # unravel_dense(slc, arr_in, arr_out, setter)
+    unravel_dense(slc, arr_in, arr_out, setter)
     return arr_out
 
 

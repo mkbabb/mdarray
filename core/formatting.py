@@ -4,7 +4,7 @@ from functools import reduce
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from core.types import inf, nan
-from MultiArray import MultiArray
+from multiArray import multiArray
 
 __all__ = ["print_array", "pad_array_fmt", "trim_string"]
 
@@ -28,7 +28,7 @@ def trim_string(s: str, sep: str) -> str:
     return s
 
 
-def print_array(arr: MultiArray,
+def print_array(arr: multiArray,
                 sep: Optional[str] = ", ",
                 formatter: Optional[Callable[[str], str]] = None
                 ) -> str:
@@ -41,6 +41,9 @@ def print_array(arr: MultiArray,
     size = arr.size
     data = arr.data
     mditer = arr.iterator
+
+    if mdim == 1:
+        return str(arr.data)
 
     s = ""
     strings = [""] * (mdim - 1)
@@ -69,7 +72,7 @@ def print_array(arr: MultiArray,
     return s
 
 
-def pad_array_fmt(arr: MultiArray
+def pad_array_fmt(arr: multiArray
                   ) -> Callable[[int, float, Any], str]:
     max_len = len(str(max(arr.data, key=lambda x: len(str(x)))))
 

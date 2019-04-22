@@ -1,13 +1,12 @@
 from functools import reduce
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union, Any
 
 import numpy as np
 
 from core.creation import full, zeros
 from core.exceptions import IncompatibleDimensions
-from core.helper import get_strides, roll_array, swap_item, make_mdim_shape
-from core.types import inf, nan
-from MultiArray import MultiArray
+from core.helper import get_strides, roll_array, swap_item, flatten_shape
+from multiArray import multiArray
 
 __all__ = ["make_nested_list",
            "reshape", "make_mdim", "transpose", "swap_axis", "roll_axis",
@@ -15,6 +14,12 @@ __all__ = ["make_nested_list",
            "concatenate", "hstack", "vstack", "dstack",
            "tile"]
 
+
+LIST_T = 1 << 0
+TUPLE_T = 1 << 1
+DICT_T = 1 << 2
+MULTIARRAY_T = 1 << 3
+MULTIARRAYITER_T = 1 << 4
 
 '''
 Reshaping routines:
@@ -35,9 +40,70 @@ def reshape(arr, new_shape):
         arr._strides = get_strides(new_shape)
 
 
-def make_mdim(arr, mdim):
-    new_shape = make_mdim_shape(arr.shape, mdim)
-    reshape(arr, new_shape)
+def make_mdim(arr: Optional[multiArray, multiArrayIter, List[int]],
+              ndim: int,
+              pad: Any = 1) -> None:
+    if isinstance(arr, list):
+        T = LIST_T
+    elif isinstance(arr, tuple):
+        T = TUPLE_T
+    elif isinstance(arr, multiArray):
+        T = MULTIARRAY_T
+    elif isinstance(arr, multiArrayIter):
+        T = MULTIARRAYITER_T
+    else:
+        raise ValueError(
+            "Array value must be list, tuple, multiArray or multiArrayIter")
+
+    if T & MULTIARRAY_T | T & MULTIARRAYITER_T:
+        mdim = arr.mdim
+        shape = arr.shape
+        if mdim == ndim:
+            return
+
+        diff = ndim - mdim
+        strides = arr.strides
+
+        assert isinstance(pad, (float, int)), ValueError(
+            "Pad value must be of integral type.")
+        arr.mdim = ndim
+        if diff > 0:
+            stride = strides[-1] * shape[-1]
+            strides += [stride] * diff
+            shape += [pad] * diff
+            if T & MULTIARRAYITER_T:
+                arr._stride_shape += [stride] * diff
+                arr._axis_counter += [pad] * diff
+                arr._was_advanced += [False] * diff
+                arr._rept_counter += [0] * diff
+                arr._repeats += [1] * diff
+        elif diff < 0:
+            shape = flatten_shape(shape, diff)
+            strides = get_strides(shape)
+            if T & MULTIARRAYITER_T:
+                arr._stride_shape = arr._stride_shape[:ndim]
+                arr._axis_counter = arr._axis_counter[:ndim]
+                arr._was_advanced = arr._was_advanced[:ndim]
+                arr._rept_counter = arr._rept_counter[: ndim]
+                arr._repeats = arr._repeats[:ndim]
+
+    elif T & LIST_T | T & TUPLE_T:
+        shape = arr
+        mdim = len(shape)
+        if mdim == ndim:
+            return
+
+        diff = ndim - mdim
+
+        if (T & TUPLE_T):
+            shape = list(shape)
+        if diff < 0:
+            shape += [pad] * diff
+        elif diff > 0:
+            if type(pad) in (float, int):
+                shape = flatten_shape(shape, diff)
+            else:
+                shape = shape[:ndim]
 
 
 def transpose(arr, axis1=0, axis2=1):
@@ -90,7 +156,7 @@ def flatten(arr, order=-1):
     reshape(arr, new_shape)
 
 
-def make_nested_list(arr: MultiArray) -> list:
+def make_nested_list(arr: multiArray) -> list:
     mdim = arr.mdim
     size = arr.size
     data = arr.data
@@ -157,7 +223,7 @@ Concatenation and splitting routines:
 '''
 
 
-def _confirm_concat_shape(arrs: Tuple[MultiArray, ...],
+def _confirm_concat_shape(arrs: Tuple[multiArray, ...],
                           caxis: int,
                           mdim: int,
                           ndim: int,
@@ -177,8 +243,8 @@ def _confirm_concat_shape(arrs: Tuple[MultiArray, ...],
     return new_shape
 
 
-def concatenate(*arrs: MultiArray,
-                caxis: int = -1) -> MultiArray:
+def concatenate(*arrs: multiArray,
+                caxis: int = -1) -> multiArray:
     arrs = tuple(arrs)
     ndim = len(arrs)
     arr1 = arrs[0]

@@ -39,20 +39,20 @@ def get_strides(shape: List[int]) -> List[int]:
 def flatten_shape(shape: List[int],
                   order: int = -1) -> List[int]:
     mdim = len(shape)
-    if order < 0:
-        order += mdim
-    elif order == 0:
+    if order == 0:
         return shape
+    else:
+        order = normalize_index(mdim, order)
     new_mdim = mdim - order
-    new_shape = [0] * (mdim - order)
 
+    new_shape = [0] * (mdim - order)
     for i in range(new_mdim):
         new_shape[i] = shape[i]
-    red = 1
+    prod = 1
 
     for i in range(new_mdim - 1, mdim):
-        red *= shape[i]
-    new_shape[-1] = red
+        prod *= shape[i]
+    new_shape[-1] = prod
     return new_shape
 
 
@@ -145,7 +145,6 @@ def flatten_list(seq: list,
                 buff += [buff_r] if mdim <= order else buff_r
             elif mdim != 0:
                 buff += [seq_i]
-
         if mdim == 0:
             return seq
         else:

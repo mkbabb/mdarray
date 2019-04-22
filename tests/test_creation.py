@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 import core
-import MultiArray as ma
+import multiArray as ma
 from core import inf, nan
 
 

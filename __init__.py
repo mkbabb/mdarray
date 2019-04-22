@@ -1,1 +1,1 @@
-from MultiArray import *
+from multiArray import *
