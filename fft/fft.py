@@ -247,7 +247,8 @@ def butterfly(arr_in, arr_out, twiddles, radix, ifac, pdiv, baxis, twix):
             for k in range(2):
                 if k == 1:
                     pix %= pdiv
-                    tmp_in = radix(tmp_in, twiddles, pix, pix * (ifac - 1), pdiv)
+                    tmp_in = radix(tmp_in, twiddles, pix,
+                                   pix * (ifac - 1), pdiv)
 
                 for i in range(axis):
                     axis_counters[k][0] = i * strides[k][0]

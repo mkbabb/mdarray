@@ -6,7 +6,7 @@ import numpy as np
 from core.creation import full, zeros
 from core.exceptions import IncompatibleDimensions
 from core.helper import get_strides, roll_array, swap_item, flatten_shape
-from multiArray import multiArray
+from multiArray import multiArray, multiArrayIter
 
 __all__ = ["make_nested_list",
            "reshape", "make_mdim", "transpose", "swap_axis", "roll_axis",
@@ -40,7 +40,7 @@ def reshape(arr, new_shape):
         arr._strides = get_strides(new_shape)
 
 
-def make_mdim(arr: Optional[multiArray, multiArrayIter, List[int]],
+def make_mdim(arr,
               ndim: int,
               pad: Any = 1) -> None:
     if isinstance(arr, list):
@@ -49,8 +49,8 @@ def make_mdim(arr: Optional[multiArray, multiArrayIter, List[int]],
         T = TUPLE_T
     elif isinstance(arr, multiArray):
         T = MULTIARRAY_T
-    elif isinstance(arr, multiArrayIter):
-        T = MULTIARRAYITER_T
+    # elif isinstance(arr, multiArrayIter):
+    #     T = MULTIARRAYITER_T
     else:
         raise ValueError(
             "Array value must be list, tuple, multiArray or multiArrayIter")

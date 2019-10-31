@@ -1,0 +1,9 @@
+{
+    "python.linting.mypyEnabled": true,
+    "python.linting.pycodestyleEnabled": false,
+    "python.linting.pylintEnabled": false,
+    "python.linting.enabled": true,
+    "git.ignoreLimitWarning": true,
+    "python.formatting.provider": "autopep8",
+    "python.pythonPath": "/Users/mkbabb/anaconda3/bin/python"
+}

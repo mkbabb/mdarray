@@ -69,7 +69,7 @@ parameters:
         The required shape of the output.
 
     side: int
-        An integer value that is  either: 0, representing the padding of the left side,
+        An integer value that is either: 0, representing the padding of the left side,
         or 1, representing the padding of the right side.
 
     pad_i: int

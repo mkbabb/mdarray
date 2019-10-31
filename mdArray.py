@@ -236,25 +236,28 @@ def print_array2(maiter,
     return s
 
 
-
-
 vi = {0: 1, 1: 2, 4: 3, 5: 4, 10: 5, 11: 6, 14: 7, 15: 8}
 
 values = [1, 2, 3, 4, 5, 6, 7, 8]
 ixs = [0, 1, 4, 5, 10, 11, 14, 15]
-shape = [4, 4]
+shape = [2, 2, 2]
 mdim = len(shape)
 strides = core.get_strides(shape)
 size = core.reductor.mul().reduce(shape)
 
 maiter = multiArrayIter(shape, strides, mdim, size)
 
-def fmtter(data, index):
-    v = data.get(index)
-    if v:
-        return str(v)
-    else:
-        return "0"
+for i in maiter:
+    print(i)
 
-s = print_array2(maiter, vi, ", ", fmtter)
-print(s)
+
+# def fmtter(data, index):
+#     v = data.get(index)
+#     if v:
+#         return str(v)
+#     else:
+#         return "0"
+
+
+# s = print_array2(maiter, vi, ", ", fmtter)
+# print(s)
