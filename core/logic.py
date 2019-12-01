@@ -1,7 +1,7 @@
 import random
 from functools import partial, reduce
 
-import multiArray as ma
+
 from core.helper import swap_item
 from core.manipulation import roll_axis
 from core.reduction import reduce_array
@@ -51,21 +51,21 @@ def _cont_any(pred, lst):
 
 def cont_any(arr, axis=0, pred=None):
     if not pred:
-        pred = lambda x: x
+        def pred(x): return x
     func = partial(_cont_any, pred)
     return reduce_array(arr, axis, func)
 
 
 def mdany(arr, axis=0, pred=None):
     if not pred:
-        pred = lambda x: x
+        def pred(x): return x
     func = partial(_any, pred)
     return reduce_array(arr, axis, func)
 
 
 def mdall(arr, axis=0, pred=None):
     if not pred:
-        pred = lambda x: x
+        def pred(x): return x
     func = partial(_all, pred)
     return reduce_array(arr, axis, func)
 
@@ -132,7 +132,7 @@ def mdswap_item(arr, axis, ix1, ix2):
     if ix1 == ix2 or not arr:
         return
     else:
-        if isinstance(arr, ma.multiArray):
+        if isinstance(arr, ):
             if axis != nan:
                 mdim = arr.mdim
                 tix1 = [...] * mdim
@@ -202,4 +202,4 @@ def heapsort(heap, key):
         heapify(heap, i, 0, key)
 
 
-key = lambda x, y: -x[y]
+def key(x, y): return -x[y]

@@ -1,7 +1,7 @@
 {
-    "python.linting.mypyEnabled": true,
+    "python.linting.mypyEnabled": false,
     "python.linting.pycodestyleEnabled": false,
-    "python.linting.pylintEnabled": false,
+    "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
     "git.ignoreLimitWarning": true,
     "python.formatting.provider": "autopep8",

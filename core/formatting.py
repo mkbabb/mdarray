@@ -4,7 +4,7 @@ from functools import reduce
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from core.types import inf, nan
-from multiArray import multiArray
+from MultiArray import MultiArray
 
 __all__ = ["print_array", "pad_array_fmt", "trim_string"]
 
@@ -28,54 +28,44 @@ def trim_string(s: str, sep: str) -> str:
     return s
 
 
-def print_array(arr: multiArray,
+def print_array(arr: MultiArray,
                 sep: Optional[str] = ", ",
                 formatter: Optional[Callable[[str], str]] = None
                 ) -> str:
     if not formatter:
-        formatter = lambda x: f"{x}"
+        def formatter(x, y): return f"{x[y]}"
     if not sep:
         sep = ", "
 
-    mdim = arr.mdim
-    size = arr.size
-    data = arr.data
-    mditer = arr.iterator
+    s = "[" * (arr.mdim)
 
-    if mdim == 1:
-        return str(arr.data)
+    for i in range(arr.size):
+        s += formatter(arr.data, arr.index)
 
-    s = ""
-    strings = [""] * (mdim - 1)
-    for i in range(size):
-        s += formatter(data[mditer.index])
-        next(mditer)
-        s += sep if not mditer.was_advanced[1] else ''
+        next(arr)
 
         ix = 0
-        for j in range(1, mdim):
-            if mditer.was_advanced[j]:
-                if j == 1:
-                    strings[0] += f"[{s}]"
-                    s = ""
-                else:
-                    strings[j - 1] += f"[{strings[j - 2]}]"
-                    strings[j - 2] = ""
+        for j in range(arr.mdim):
+            if (arr.was_advanced[j]):
                 ix += 1
-        if ix > 0 and i != size - 1:
-            new_line = "\n" * ix
-            hanging_indent = " " * (mdim - ix)
-            strings[ix - 1] += (sep.strip() + new_line + hanging_indent)
 
-    s = f"[{strings[-1]}]"
-    mditer.at(0)
+        if (i < arr.size - 1):
+            if (ix > 0):
+                s += "]" * ix
+                s += "\n" * ix
+                s += " " * (arr.mdim - ix)
+                s += "[" * ix
+            else:
+                s += ", "
+        else:
+            s += "]" * arr.mdim
     return s
 
 
-def pad_array_fmt(arr: multiArray
+def pad_array_fmt(arr: MultiArray
                   ) -> Callable[[int, float, Any], str]:
     max_len = len(str(max(arr.data, key=lambda x: len(str(x)))))
 
-    fmmter = lambda x: '{0}{1}{2}'.format(' ' * int(math.ceil((max_len - len(str(x))) / 2)), x,
-                                          ' ' * int(math.floor((max_len - len(str(x))) / 2)))
+    def fmmter(x): return '{0}{1}{2}'.format(' ' * int(math.ceil((max_len - len(str(x))) / 2)), x,
+                                             ' ' * int(math.floor((max_len - len(str(x))) / 2)))
     return fmmter
