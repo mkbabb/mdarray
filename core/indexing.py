@@ -10,7 +10,7 @@ from core.reduction import inner_product
 from core.types import inf, nan
 from MultiArray import MultiArray
 
-__all__ = ["ravel_internal", "ravel", "unravel", "ravel_flat",
+__all__ = ["ravel", "unravel",
            "unravel_dense", "slice_array", "expand_indicies",
            "indicies"]
 
@@ -20,96 +20,42 @@ Raveling and unraveling indicies:
 '''
 
 
-def ravel_internal(ix: int,
-                   mdim_ixs: List[int],
-                   mdim: int,
-                   strides: List[int]) -> List[int]:
-    for j in range(mdim):
-        stride = strides[mdim - (j + 1)]
-        k = 1
-        while True:
-            stride_k = stride * k
-            if stride_k > ix:
-                k -= 1
-                stride_k = stride * k
-                break
-            elif stride_k == ix:
-                break
-            else:
-                k += 1
-        ix -= stride_k
-        mdim_ixs[mdim - (j + 1)] = stride_k
-    return mdim_ixs
+def ravel(ix: int,
+          shape: int,
+          strides: Optional[List[int]] = None,
+          mdim_ixs: Optional[List[int]] = None) -> List[int]:
+    mdim = len(shape)
 
-
-def ravel_flat(ix: int,
-               mdim: int,
-               strides: List[int]) -> int:
-    mdim_ix = 0
-    for j in range(mdim):
-        stride = strides[mdim - (j + 1)]
-        k = 1
-        while True:
-            stride_k = stride * k
-            if stride_k > ix:
-                k -= 1
-                stride_k = stride * k
-                break
-            elif stride_k == ix:
-                break
-            else:
-                k += 1
-        ix -= stride_k
-        mdim_ix += stride_k
-    return mdim_ix
-
-
-def ravel(ixs: List[int],
-          shape: Union[List[int], MultiArray]
-          ) -> List[List[int]]:
-    if isinstance(shape, MultiArray):
-        strides = shape.strides
-        size = shape.size
-        mdim = shape.mdim
-    else:
+    if (not strides):
         strides = get_strides(shape)
-        size = reduce(lambda x, y: x * y, shape)
-        mdim = len(shape)
-
-    ixs = tuple(ixs)
-    ndim = len(ixs)
-    mdim_ixs = [[0] * mdim] * ndim
-
-    for i in range(ndim):
-        ix = ixs[i]
+    if (not mdim_ixs):
         mdim_ixs = [0] * mdim
-        if ix > size:
-            raise IncompatibleDimensions(
-                "The raveled index is too large to unravel using the provided shape!")
-        elif ix == 0:
-            mdim_ixs[i] = mdim_ixs
-        else:
-            ix += size if ix < 0 else 0
-            mdim_ixs[i] = ravel_internal(ix, mdim_ixs, mdim, strides)
+
+    for i in range(mdim):
+        stride = strides[mdim - (i + 1)]
+        j = 1
+        while True:
+            stride_j = stride * j
+            if stride_j > ix:
+                j -= 1
+                stride_j = stride * j
+                break
+            elif stride_j == ix:
+                break
+            else:
+                j += 1
+        ix -= stride_j
+        mdim_ixs[mdim - (i + 1)] = stride_j
+
     return mdim_ixs
 
 
-def unravel(mdim_ixs: List[List[int]],
-            shape: Union[List[int], MultiArray]) -> List[int]:
-    if isinstance(shape, MultiArray):
-        strides = shape.strides
-    else:
+def unravel(mdim_ix: List[int],
+            shape: List[int],
+            strides: Optional[List[int]] = None) -> int:
+    if (not strides):
         strides = get_strides(shape)
-
-    mdim_ixs = tuple(mdim_ixs)
-    ndim = len(mdim_ixs)
-    ixs = [0] * ndim
-
-    for i in range(ndim):
-        mdim_ix_i = mdim_ixs[i]
-        ixs[i] = inner_product(strides, mdim_ix_i)
-
-    return ixs
+    return inner_product(strides, mdim_ix)
 
 
 '''

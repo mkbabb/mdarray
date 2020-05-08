@@ -26,10 +26,12 @@ def tomdarray(arr: Union[MultiArray, np.ndarray, list, tuple, Any]
               ) -> MultiArray:
     if isinstance(arr, MultiArray):
         return arr
+
     elif isinstance(arr, np.ndarray):
         arr_out = MultiArray(data=np.ravel(
             arr), shape=arr.shape, order=arr.order)
         return arr_out
+
     else:
         if isinstance(arr, list) or isinstance(arr, tuple):
             arr, mdim, shape = flatten_list(arr, order=-1)
@@ -237,7 +239,29 @@ Broadcasting routines:
 
 
 def generate_broadcast_shape(*arrs: MultiArray
-                             ) -> (List[int], List[int]):
+                             ) -> (List[int], List[List[int]]):
+    '''
+    From a collection of disparately sized, but broadcastable,
+    arrays, forms a common broadcast shape and set of repeats
+    necessary for each array to be broadcasted to the aforesaid shape.
+
+    Broadcasting heuristics can be described as follows:
+
+    First, each input array is dimensionally padded to the maximal 
+    input dimension.
+
+    We then iterate through each dimension sequentially and take the maximal
+    value therefrom.
+
+    Whilst in this dimension, if any of the other input arrays have a
+    axis size == 1 or == maximal_axis, they are compatible with 
+    broadcasting (think of a demension size of 1 as essentially superfluous).
+    The set of repeats necessary to achieve this are then created from this maximal
+    axis and the new broadcast shape is created.
+
+    If the axis size != 1 or != maximal_axis, the input arrays are not
+    broadcastable, so we throw.
+    '''
     arrs = tuple(arrs)
     ndim = len(arrs)
 
@@ -273,6 +297,12 @@ def generate_broadcast_shape(*arrs: MultiArray
         new_shape[i] = axis_i
 
     return new_shape, repts
+
+
+new_shape, repts = generate_broadcast_shape(MultiArray(
+    shape=[5, 1, 7]), MultiArray(shape=[5, 1, 1]), MultiArray(shape=[1, 1, 7]))
+
+print(new_shape, repts)
 
 
 def broadcast_iter(*arrs: MultiArray) -> None:

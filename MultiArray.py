@@ -5,7 +5,7 @@ import operator
 import random
 import sys
 from functools import reduce
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import *
 
 import numpy as np
 
@@ -106,7 +106,7 @@ class MultiArray(object):
                 self._rept_counter[0] += 1
             else:
                 self._rept_counter[0] = 0
-                self._axis_counter[0] += 1
+                self._axis_counter[0] += self.strides[0]
 
             for j in range(1, self.mdim):
                 if self._axis_counter[j - 1] >= self._stride_shape[j - 1]:
@@ -130,9 +130,11 @@ class MultiArray(object):
 
         return self._index
 
-    def at(self, pos: Union[list, int]) -> MultiArray:
-        if isinstance(pos, list):
-            self._pos = core.unravel([pos], self.shape)[0]
+    def at(self,
+           pos: Union[list, int]) -> MultiArray:
+        if (isinstance(pos, list) and
+                len(pos) == self.mdim):
+            self._pos = core.unravel(pos, self.shape, self.strides)
         else:
             self._pos = pos
 
@@ -143,13 +145,13 @@ class MultiArray(object):
             self._index = 0
             self._pos = 0
         else:
-            core.ravel_internal(self._pos, self._axis_counter,
-                                self._mdim, self._strides)
+            core.ravel(self._pos, self._shape,
+                       self._strides, self._axis_counter)
+
             for i in range(1, self._mdim):
                 self.was_advanced_before(i)
 
             self._index = sum(self._axis_counter)
-            self._pos -= 1
 
         return self
 
@@ -161,8 +163,9 @@ class MultiArray(object):
             raise StopIteration
 
     def __iter__(self):
-        yield self._data[self._index]
-        self.__next__()
+        while (self.index < self.size):
+            yield self._data[self._index]
+            self.__next__()
 
     def zero_axes_before(self, axis: int) -> bool:
         for i in range(axis):
@@ -179,11 +182,15 @@ class MultiArray(object):
         self._was_advanced[axis] = True
         return True
 
+    # End iteration routines.
+
     def reshape(self, new_shape: List[int]) -> MultiArray:
         core.reshape(self, new_shape)
         return self
 
-    def T(self, axis1: int = 0, axis2: int = 1) -> MultiArray:
+    def T(self,
+          axis1: int = 0,
+          axis2: int = 1) -> MultiArray:
         core.transpose(self, axis1, axis2)
         return self
 
@@ -198,12 +205,6 @@ class MultiArray(object):
     Operator overloads
     '''
 
-    # def __repr__(self) -> str:
-    #     s = "MultiArray("
-    #     s += core.print_array(self)
-    #     s += ")"
-    #     return s
-
-    # def __str__(self) -> str:
-    #     s = core.print_array(self)
-    #     return s
+    def __str__(self) -> str:
+        s = core.print_array(self)
+        return s

@@ -113,30 +113,23 @@ def flatten(arr: MultiArray,
 
 
 def make_nested_list(arr: MultiArray) -> list:
-    mdim = arr.mdim
-    size = arr.size
-    data = arr.data
-    mditer = arr.iterator
+    tmp = []
+    nests = [[] for i in range(arr.mdim - 1)]
 
-    arr = []
-    nests = [[] for i in range(mdim - 1)]
+    for i in range(arr.size):
+        tmp.append(arr.data[arr.index])
+        next(arr)
 
-    for i in range(size):
-        arr.append(data[mditer.index])
-        next(mditer)
-
-        for j in range(1, mdim):
-            if mditer.was_advanced[j]:
+        for j in range(1, arr.mdim):
+            if arr.was_advanced[j]:
                 if j == 1:
-                    nests[0].append(arr)
-                    arr = []
+                    nests[0].append(tmp)
+                    tmp = []
                 else:
                     nests[j - 1].append(nests[j - 2])
                     nests[j - 2] = []
-    arr = nests[-1]
-    mditer.at(0)
-
-    return arr
+    arr.at(0)
+    return nests[-1]
 
 
 '''
@@ -159,15 +152,15 @@ def _confirm_concat_shape(arrs: Tuple[MultiArray, ...],
     for i in range(ndim):
         arr_i = arrs[i]
         if mdim != arr_i.mdim:
-            raise IncompatibleDimensions(
+            raise ValueError(
                 f"The dimensions of array 1 != the dimensions of array {i}!")
 
         for j in range(mdim):
             if j != caxis:
                 if new_shape[j] != arr_i.shape[j]:
-                    raise IncompatibleDimensions(
+                    raise ValueError(
                         "All axes but caxis must be equivalent to concatenate the arrays.")
-        
+
         new_shape[caxis] += arr_i.shape[caxis]
 
     return new_shape
@@ -176,36 +169,26 @@ def _confirm_concat_shape(arrs: Tuple[MultiArray, ...],
 def concatenate(*arrs: MultiArray,
                 caxis: int = -1) -> MultiArray:
     arrs = tuple(arrs)
-    ndim = len(arrs)
-    arr1 = arrs[0]
-    mdim = arr1.mdim
+    new_shape = _confirm_concat_shape(
+        arrs, caxis, arrs[0].mdim, len(arrs), list(arrs[0].shape))
 
-    if caxis < 0:
-        caxis += mdim
+    arr_out = zeros(shape=new_shape)
 
-    new_shape = _confirm_concat_shape(arrs, caxis, mdim, ndim, list(arr1.shape))
-    arr_out = zeros(shape=new_shape, order=arr1.order, dtype=arr1.dtype)
+    caxis = -1 if caxis >= arr_out.mdim - 1 else caxis
 
-    if caxis != mdim - 1:
-        k = 0
-        while k < arr_out.size:
-            for i in range(ndim):
-                for j in arrs[i].iterator:
-                    if j.was_advanced[caxis + 1]:
-                        j._was_advanced[caxis + 1] = False
-                        break
-                    else:
-                        arr_out.data[k] = arrs[i].data[j.index]
-                        k += 1
-    else:
-        k = 0
-        while k < arr_out.size:
-            for i in range(ndim):
-                for j in arrs[i].data:
-                    arr_out.data[k] = j
-                    k += 1
-    for i in range(ndim):
+    j = 0
+    while (j < arr_out.size):
+        for arr in arrs:
+            while (not arr.was_advanced[caxis + 1]
+                   and arr.index < arr.size):
+                arr_out.data[j] = arr.data[arr.index]
+                j += 1
+                next(arr)
+            arr.was_advanced[caxis + 1] = False
+
+    for i in range(len(arrs)):
         arrs[i].iterator.at(0)
+
     return arr_out
 
 
