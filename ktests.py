@@ -7,7 +7,7 @@ random.seed(4)
 ALPHABET = "abcdefghigklmnopqrstuvwxyz"
 
 for i in range(100):
-    string = "".join(random.choices([i for i in ALPHABET], k=500000))
+    string = "".join(random.choices([i for i in ALPHABET], k=5))
     N = len(string)
     a = random.randint(0, N)
     b = random.randint(0, N)

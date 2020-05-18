@@ -20,7 +20,7 @@ class MultiArray(object):
                  mdim: Optional[int] = None,
                  size: Optional[int] = None,
                  order: Optional[str] = None):
-        if not shape and not size:
+        if not shape and not size and not data:
             raise TypeError
         elif shape and not size:
             self._shape = shape

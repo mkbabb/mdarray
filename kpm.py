@@ -160,9 +160,9 @@ def find_all(string, pat):
 #     for i in range(len(poss)):
 #         assert(poss[i] == boss[i])
 
-    # if (poss[0] != p):
-    #     for pos in poss:
-    #         print(string[pos: pos + len(pat)])
+#     if (poss[0] != p):
+#         for pos in poss:
+#             print(string[pos: pos + len(pat)])
 
 # string = "storethatisapplethatisapplesapple"
 
