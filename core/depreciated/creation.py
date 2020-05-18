@@ -1,7 +1,7 @@
 from core.creation import tomdarray, zeros
 from core.exceptions import IncompatibleDimensions
-from core.helper import swap_item
-from multiArray import multiArray
+from core.helper import swap
+
 
 __all__ = ["repeat", "meshgrid", "dense_meshgrid",
            "generate_broadcast_shape", "broadcast_bnry", "broadcast_arrays",
@@ -20,8 +20,8 @@ def sort_raxes(raxes, repts, mdim):
             raxis = raxes[i]
             rept = repts[i]
             if raxis != i and rept != 1:
-                swap_item(raxes, i, raxis)
-                swap_item(repts, i, raxis)
+                swap(raxes, i, raxis)
+                swap(repts, i, raxis)
                 if raxis > i:
                     recurse(i + 1)
     recurse(0)

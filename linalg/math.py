@@ -77,7 +77,7 @@ def gaussian_elim(arr, rref=True):
         if pix != i:
             pix *= col_stride
             for j in range(i, col):
-                core.swap_item(data, pix + j, i * col_stride + j)
+                core.swap(data, pix + j, i * col_stride + j)
 
         if pivot != 0:
             prix = i * col_stride

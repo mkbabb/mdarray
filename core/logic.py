@@ -2,7 +2,7 @@ import random
 from functools import partial, reduce
 
 
-from core.helper import swap_item
+from core.helper import swap
 from core.manipulation import roll_axis
 from core.reduction import reduce_array
 from core.types import inf, nan
@@ -141,7 +141,7 @@ def mdswap_item(arr, axis, ix1, ix2):
                 tix2[axis] = ix2
                 ix1 = tix1
                 ix2 = tix2
-        swap_item(arr, ix1, ix2)
+        swap(arr, ix1, ix2)
 
 
 def partition(seq, ixs, key, axis, left, right):
@@ -189,7 +189,7 @@ def heapify(heap, N, ix, key):
         _min = rchild
 
     if _min != ix:
-        swap_item(heap, ix, _min)
+        swap(heap, ix, _min)
         heapify(heap, N, _min, key)
 
 
@@ -198,7 +198,7 @@ def heapsort(heap, key):
     for i in range(N, -1, -1):
         heapify(heap, N, i, key)
     for i in range(N - 1, 0, -1):
-        swap_item(heap, i, 0)
+        swap(heap, i, 0)
         heapify(heap, i, 0, key)
 
 

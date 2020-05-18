@@ -12,6 +12,7 @@ import numpy as np
 import core
 
 
+
 class MultiArray(object):
     def __init__(self,
                  data: Optional[Union[List[Any], MultiArray]] = None,
@@ -37,7 +38,8 @@ class MultiArray(object):
         if strides:
             self._strides = strides
         else:
-            self._strides = core.get_strides(self._shape)
+
+            self._strides = core.helper.get_strides(self._shape)
 
         if not order:
             self._order = "C"
@@ -49,9 +51,9 @@ class MultiArray(object):
         else:
             self._data = data
 
-        self._stride_shape = core.pair_wise(self._shape,
-                                            self._strides,
-                                            operator.mul)
+        self._stride_shape = core.helper.pair_wise(self._shape,
+                                                   self._strides,
+                                                   operator.mul)
 
         self._axis_counter = [0] * self._mdim
         self._was_advanced = [False] * self._mdim
@@ -134,7 +136,7 @@ class MultiArray(object):
            pos: Union[list, int]) -> MultiArray:
         if (isinstance(pos, list) and
                 len(pos) == self.mdim):
-            self._pos = core.unravel(pos, self.shape, self.strides)
+            self._pos = core.indexing.unravel(pos, self.shape, self.strides)
         else:
             self._pos = pos
 
@@ -145,8 +147,8 @@ class MultiArray(object):
             self._index = 0
             self._pos = 0
         else:
-            core.ravel(self._pos, self._shape,
-                       self._strides, self._axis_counter)
+            core.indexing.ravel(self._pos, self._shape,
+                                self._strides, self._axis_counter)
 
             for i in range(1, self._mdim):
                 self.was_advanced_before(i)
@@ -185,26 +187,26 @@ class MultiArray(object):
     # End iteration routines.
 
     def reshape(self, new_shape: List[int]) -> MultiArray:
-        core.reshape(self, new_shape)
+        core.manipulation.reshape(self, new_shape)
         return self
 
     def T(self,
           axis1: int = 0,
           axis2: int = 1) -> MultiArray:
-        core.transpose(self, axis1, axis2)
+        core.manipulation.transpose(self, axis1, axis2)
         return self
 
     def flatten(self, order: int = -1) -> MultiArray:
-        core.flatten(self, order)
+        core.manipulation.flatten(self, order)
         return self
 
     def to_list(self) -> List[Any]:
-        return core.make_nested_list(self)
+        return core.manipulation.make_nested_list(self)
 
     '''
     Operator overloads
     '''
 
     def __str__(self) -> str:
-        s = core.print_array(self)
+        s = core.formatting.print_array(self)
         return s

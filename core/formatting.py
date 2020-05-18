@@ -1,9 +1,9 @@
 import math
 import re
 from functools import reduce
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import *
 
-from core.types import inf, nan
+
 from MultiArray import MultiArray
 
 __all__ = ["print_array", "pad_array_fmt", "trim_string"]
@@ -70,37 +70,3 @@ def pad_array_fmt(arr: MultiArray
     def fmter(x): return '{0}{1}{2}'.format(' ' * int(math.ceil((max_len - len(str(x))) / 2)), x,
                                             ' ' * int(math.floor((max_len - len(str(x))) / 2)))
     return fmter
-
-
-# def make_nested_list(arr: MultiArray) -> list:
-#     tmp = "[" * arr.mdim
-#     nests = [""] * (arr.mdim - 1)
-
-#     for i in range(arr.size):
-#         tmp += str(arr.data[arr.index])
-#         next(arr)
-
-#         ix = 0
-#         for j in range(1, arr.mdim):
-#             if arr.was_advanced[j]:
-#                 if j == 1:
-#                     nests[0] += tmp
-#                     tmp = ""
-#                 else:
-#                     nests[j - 1] += nests[j - 2]
-#                     nests[j - 2] = ""
-#                 ix += 1
-
-#         if (i < arr.size - 1):
-#             if (ix > 0):
-#                 tmp += "]" * ix
-#                 tmp += "\n" * ix
-#                 tmp += " " * (arr.mdim - ix)
-#                 tmp += "[" * ix
-#             else:
-#                 tmp += ", "
-#         else:
-#             nests[-1] += "]" * arr.mdim
-
-#     arr.at(0)
-#     return nests[-1]

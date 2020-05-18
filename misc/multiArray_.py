@@ -305,7 +305,7 @@ class multiArray(object):
             if other == "F":
                 if self.mdim == 1:
                     self.reshape(self._shape + [1])
-                core.swap_item(self._shape, 0, 1)
+                core.swap(self._shape, 0, 1)
                 self.reshape(self._shape)
             elif self._order == "C" or self.order == "NP":
                 self.reshape(self._shape[::-1])

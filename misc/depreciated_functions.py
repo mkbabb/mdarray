@@ -476,7 +476,7 @@ Depreciated padding routine:
 #             arrs[j] = arr_ij
 
 #         arrs[pdim] = arr_i
-#         swap_item(arrs, middle, pdim)
+#         swap(arrs, middle, pdim)
 
 #         arr_i = concatenate(*arrs, caxis=i)
 #         shape_i[i] = new_shape[i]

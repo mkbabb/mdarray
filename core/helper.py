@@ -1,8 +1,8 @@
 from functools import reduce
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import *
 
 __all__ = ["update_dict", "get_strides", "make_mdim_shape",
-           "swap_item", "roll_array",
+           "swap", "roll_array",
            "pair_wise", "remove_extraneous_dims", "flatten_list"]
 
 
@@ -53,7 +53,7 @@ def flatten_shape(shape: List[int],
     for i in range(new_mdim - 1, mdim):
         prod *= shape[i]
     new_shape[-1] = prod
-    
+
     return new_shape
 
 
@@ -62,7 +62,7 @@ def make_mdim_shape(shape: List[int],
                     pad: Any = 1) -> List[Any]:
     mdim = len(shape)
     diff = mdim - ndim
-    
+
     if mdim < ndim:
         shape += [pad] * (ndim - mdim)
     elif mdim > ndim:
@@ -73,7 +73,7 @@ def make_mdim_shape(shape: List[int],
     return shape
 
 
-def swap_item(seq: list,
+def swap(seq: list,
               ix1: int,
               ix2: int) -> None:
     t = seq[ix1]
@@ -91,7 +91,7 @@ def roll_array(seq: list,
         axis += ndim
 
     def recurse(ix: int) -> None:
-        swap_item(seq, axis, ix)
+        swap(seq, axis, ix)
         ix += 1
         if ix == axis:
             return
@@ -136,7 +136,7 @@ def flatten_list(seq: list,
         ndim = len(seq)
         buff = []
         mdim = 0
-        
+
         for i in range(ndim):
             seq_i = seq[i]
             if isinstance(seq_i, list):
@@ -148,7 +148,7 @@ def flatten_list(seq: list,
                 buff += [buff_r] if mdim <= order else buff_r
             elif mdim != 0:
                 buff += [seq_i]
-        
+
         if mdim == 0:
             return seq
         else:

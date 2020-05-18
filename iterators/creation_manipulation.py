@@ -9,7 +9,7 @@ import numpy as np
 
 import core.depreciated as depreciated
 from core import (IncompatibleDimensions, generate_broadcast_shape,
-                  inner_product, irange, meshgrid, swap_item, tomdarray,
+                  inner_product, irange, meshgrid, swap, tomdarray,
                   tondarray, zeros)
 from multiArray import multiArray, multiArrayIter
 
@@ -28,7 +28,7 @@ def meshgrid_iter(arrs):
     return arrs
 
 
-def swap_item_axis(arr: multiArray,
+def swap_axis(arr: multiArray,
                    axis: int,
                    ix1: Union[int, List[int]],
                    ix2: Union[int, List[int]]) -> None:
@@ -53,7 +53,7 @@ def swap_item_axis(arr: multiArray,
     mditer.at(ix1)
     while True:
         ix = mditer.index
-        swap_item(data, ix, ix + ix2)
+        swap(data, ix, ix + ix2)
         next(mditer)
         if mditer.was_advanced[axis]:
             break
@@ -68,10 +68,10 @@ def partition(seq, key, axis, left, right):
         seq_i = key(seq, axis, i)
         eq = (seq_i <= pivot)
         if eq and (pix != i):
-            swap_item_axis(seq, axis, pix, i)
+            swap_axis(seq, axis, pix, i)
             pix += 1
     if pix != right:
-        swap_item_axis(seq, axis, pix, right)
+        swap_axis(seq, axis, pix, right)
     return pix
 
 

@@ -1,14 +1,16 @@
 import operator
 from functools import reduce
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import *
 
 import numpy as np
 
-from core.creation import full, zeros
-from core.exceptions import IncompatibleDimensions
-from core.helper import (flatten_shape, get_strides, pair_wise, roll_array,
-                         swap_item)
+
+import core.creation
+import core.exceptions
+import core.helper
+
 from MultiArray import MultiArray
+
 
 __all__ = ["make_nested_list",
            "reshape", "make_mdim", "transpose", "swap_axis", "roll_axis",
@@ -29,16 +31,16 @@ def reshape(arr: MultiArray,
     new_size = reduce(lambda x, y: x * y, new_shape)
 
     if new_size != arr.size:
-        raise IncompatibleDimensions(
+        raise core.exceptions.IncompatibleDimensions(
             "The desired shape is incompatible with the current array's shape.")
     else:
         arr._shape = new_shape
         arr._mdim = mdim
-        arr._strides = get_strides(new_shape)
+        arr._strides = core.helper. get_strides(new_shape)
 
-    arr._stride_shape = pair_wise(arr._shape,
-                                  arr._strides,
-                                  operator.mul)
+    arr._stride_shape = core.helper.pair_wise(arr._shape,
+                                              arr._strides,
+                                              operator.mul)
 
     arr._axis_counter = [0] * arr._mdim
     arr._was_advanced = [False] * arr._mdim
@@ -69,8 +71,8 @@ def transpose(arr: MultiArray,
         paxis = maxis - (mdim - 1)
         reshape(arr, arr.shape + [1] * paxis)
 
-    swap_item(arr.strides, axis1, axis2)
-    swap_item(arr.shape, axis1, axis2)
+    swap(arr.strides, axis1, axis2)
+    swap(arr.shape, axis1, axis2)
 
 
 def swap_axis(arr: MultiArray,
@@ -172,7 +174,7 @@ def concatenate(*arrs: MultiArray,
     new_shape = _confirm_concat_shape(
         arrs, caxis, arrs[0].mdim, len(arrs), list(arrs[0].shape))
 
-    arr_out = zeros(shape=new_shape)
+    arr_out = core.creation.zeros(shape=new_shape)
 
     caxis = -1 if caxis >= arr_out.mdim - 1 else caxis
 
@@ -187,7 +189,7 @@ def concatenate(*arrs: MultiArray,
             arr.was_advanced[caxis + 1] = False
 
     for i in range(len(arrs)):
-        arrs[i].iterator.at(0)
+        arrs[i].at(0)
 
     return arr_out
 

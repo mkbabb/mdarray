@@ -1,12 +1,14 @@
 import types
 from functools import reduce
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import *
 
 import numpy as np
 
-from core.exceptions import IncompatibleDimensions
-from core.helper import flatten_list, make_mdim_shape, roll_array, swap_item
+
+import core.exceptions
+import core.helper
 from MultiArray import MultiArray
+
 
 __all__ = ["tomdarray", "tondarray",
            "zeros", "ones", "full",
@@ -34,7 +36,7 @@ def tomdarray(arr: Union[MultiArray, np.ndarray, list, tuple, Any]
 
     else:
         if isinstance(arr, list) or isinstance(arr, tuple):
-            arr, mdim, shape = flatten_list(arr, order=-1)
+            arr, mdim, shape = core.helper.flatten_list(arr, order=-1)
             arr_out = MultiArray(shape=shape, data=arr)
         elif isinstance(arr, int) or isinstance(arr, float) or isinstance(arr, str):
             arr_out = MultiArray(size=1, data=[arr])
@@ -169,8 +171,8 @@ def _sort_axes(raxes: List[int],
             rept = repts[i]
 
             if raxis != i and rept != 1:
-                swap_item(raxes, i, raxis)
-                swap_item(repts, i, raxis)
+                swap(raxes, i, raxis)
+                swap(repts, i, raxis)
                 if raxis > i:
                     recurse(i + 1)
     recurse(0)
@@ -297,12 +299,6 @@ def generate_broadcast_shape(*arrs: MultiArray
         new_shape[i] = axis_i
 
     return new_shape, repts
-
-
-new_shape, repts = generate_broadcast_shape(MultiArray(
-    shape=[5, 1, 7]), MultiArray(shape=[5, 1, 1]), MultiArray(shape=[1, 1, 7]))
-
-print(new_shape, repts)
 
 
 def broadcast_iter(*arrs: MultiArray) -> None:
