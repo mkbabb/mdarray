@@ -1,4 +1,10 @@
 .vscode/
+
 __pycache__/
+
 .idea/
+
 .mypy_cache/
+.DS_Store
+
+.env
