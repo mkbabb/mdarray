@@ -1,2 +1,0 @@
-class IncompatibleDimensions(Exception):
-    pass
