@@ -2,7 +2,7 @@
 
 A pure-Python N-dimensional array library with mixed-radix FFT.
 
-Zero runtime dependencies. Strided memory layout, broadcasting, Cooley-Tukey FFT, and basic linear algebra, written entirely in Python. The library began in January 2019 as a ground-up exploration of how N-dimensional array computation actually works—stride arithmetic, broadcast iteration, the matrix factorization of the DFT—and has been periodically retooled since.
+Zero runtime dependencies. Strided memory layout, broadcasting, mixed-radix FFT (Temperton staged engine + Bluestein for primes), and basic linear algebra, written entirely in Python. The library began in January 2019 as a ground-up exploration of how N-dimensional array computation actually works—stride arithmetic, broadcast iteration, the matrix factorization of the DFT—and has been periodically retooled since.
 
 The project descends from `fftplusplus` (May 2018), a C++ port of Swarztrauber's FFTPACK with CPython bindings and several pure-Python FFT iterations. That work produced six evolutionary prototypes that eventually became mdarray's core. The FFT module carries forward the same mixed-radix decomposition, now generalized to N dimensions via stride-based fiber extraction.
 
@@ -76,9 +76,9 @@ src/mdarray/
 
 ## Concepts
 
-### Memory layout
+### Memory layout — the strided hypercube
 
-`mdarray` stores data in a flat Python list with shape and stride metadata. Strides are cumulative products of the shape, row-major. The flat index for position `(i_0, i_1, ..., i_{n-1})` is `sum(i_k * strides[k])`. Reshape and transpose modify only the metadata.
+`mdarray` stores data in a flat Python list with shape and stride metadata — the **strided hypercube**. Strides are cumulative products of the shape, row-major. The flat index for position `(i_0, i_1, ..., i_{n-1})` is `sum(i_k * strides[k])`. Reshape and transpose modify only the metadata. The same stride system powers iteration, broadcasting, and FFT fiber extraction. See [docs/concepts/memory_layout.md](docs/concepts/memory_layout.md).
 
 ### Broadcasting
 
@@ -110,13 +110,15 @@ uv run pytest --cov
 - **Feb 2019** — `new_repeats` branch: iterator redesign replacing slice-based repeat with counter-based `advance()` odometer. Concurrent with `fourier-animate` (Fourier series epicycle visualization, separate project).
 - **May 2020** — Retooling: cleanup passes, removal of deprecated iterator variants.
 - **Sep 2022** — Cleanup: removal of old branches, minor fixes.
-- **Mar 2026** — Full modernization: UV migration, Python 3.12+, module consolidation (eliminating all circular dependencies), comprehensive test suite, codelet generator.
+- **Mar 2026** — Full modernization: UV migration, Python 3.12+, module consolidation (eliminating all circular dependencies), comprehensive test suite, codelet generator. Restore Temperton staged FFT engine with precomputed twiddle table and DIT butterflies, add Bluestein's chirp-z algorithm for prime lengths, document hypercube dimensional gliding.
 
 ## References
 
 - Temperton, C. "Self-Sorting Mixed-Radix Fast Fourier Transforms." *J. Comput. Phys.* **52**, 1–23 (1983).
 - Cooley, J.W. and Tukey, J.W. "An Algorithm for the Machine Calculation of Complex Fourier Series." *Math. Comp.* **19**(90), 297–301 (1965).
+- Bluestein, L.I. "A Linear Filtering Approach to the Computation of the Discrete Fourier Transform." *IEEE Trans. Audio Electroacoust.* **18**(4), 451–455 (1970).
 - Van Loan, C.F. *Computational Frameworks for the Fast Fourier Transform.* SIAM, 1992.
+- Frigo, M. and Johnson, S.G. "The Design and Implementation of FFTW3." *Proc. IEEE* **93**(2), 216–231 (2005).
 - Golub, G.H. and Van Loan, C.F. *Matrix Computations.* 4th ed., Johns Hopkins, 2013.
 - Trefethen, L.N. and Bau, D. *Numerical Linear Algebra.* SIAM, 1997.
 

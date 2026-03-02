@@ -19,12 +19,17 @@ src/mdarray/
         math.py          # Trig functions (imports array)
         padding.py       # Pad functions (imports array)
     fft/
-        python/          # Mixed-radix Cooley-Tukey FFT
-        codegen/         # Codelet generator for butterfly routines
+        python/
+            fft.py       # Temperton staged FFT, Bluestein, N-D gliding
+            butterflies.py  # Hand-optimized radix 2-7 butterflies
+            twiddle.py   # Twiddle factor precomputation
+            factorize.py # Prime factorization
+        codegen/
+            genfft.py    # Symbolic codelet generator
     linalg/
         math.py          # Gaussian elim, LU, QR, det, inverse, solve
         matrix.py        # diagonal, identity
-tests/                   # pytest, 98 tests
+tests/                   # pytest, 107 tests
 ```
 
 ## Import architecture
@@ -69,7 +74,7 @@ The `advance()` method is a mixed-radix counter with carry propagation. Three pa
 
 ## FFT
 
-Mixed-radix Cooley-Tukey operating on flat Python lists. Decomposes N into prime factors, applies column FFTs of size N2, twiddle multiplication, then row FFTs of size N1. Primes use O(N^2) direct DFT. N-D transforms iterate `cfft` over each axis, extracting fibers via strides.
+Temperton's (1983) staged mixed-radix framework operating on flat Python lists. Decomposes N into prime factors, applies DIT butterflies at increasing stride with precomputed twiddle table, input digit-reversed for natural-order output. Hand-optimized radix 2, 3, 4, 5, 7 butterflies; generic `radixg` for other prime factors within composites. Prime-length N uses Bluestein's chirp-z algorithm (O(N log N) via power-of-2 convolution). N-D transforms use hypercube dimensional gliding: extract fibers along each axis via stride arithmetic, apply 1-D FFT, write back. No reshaping or transposing.
 
 ## Broadcasting
 
@@ -83,4 +88,4 @@ Mixed-radix Cooley-Tukey operating on flat Python lists. Decomposes N into prime
 
 ## Branch
 
-Active branch: `new_repeats`. The `master` branch contains pre-iterator-redesign code from February 2019.
+Active branch: `master`.
