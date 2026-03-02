@@ -1,0 +1,51 @@
+from __future__ import annotations
+
+from typing import Any
+
+from ..array import concatenate, full, mdarray
+
+__all__ = ["pad_array", "pad_constant", "pad_median", "pad_reflect", "pad_wrap"]
+
+
+def pad_array(arr: mdarray, pad_width: Any, pad_func: Any) -> mdarray:
+    mdim = arr.mdim
+    arr_i = arr
+
+    for i in range(-1, -mdim - 1, -1):
+        pad_i = pad_width[i]
+        shape_i = list(arr_i.shape)
+
+        pad_left: list[mdarray] = []
+        pad_right: list[mdarray] = []
+
+        for j in range(2):
+            pad_ij = pad_i[j]
+            for k in range(pad_ij):
+                shape_i[i] = k + 1
+                arr_ijk = pad_func(arr=arr_i, axis=i, shape=shape_i, side=j, pad=k)
+                if j == 0:
+                    pad_left.append(arr_ijk)
+                else:
+                    pad_right.append(arr_ijk)
+
+        pad_left.append(arr_i)
+        arrs = pad_left + pad_right
+        arr_i = concatenate(*arrs, caxis=i)
+
+    return arr_i
+
+
+def pad_median(arr: mdarray, axis: int, shape: list[int], side: int, pad: int) -> mdarray:
+    return full(shape=shape, fill_value=0)
+
+
+def pad_constant(arr: mdarray, axis: int, shape: list[int], side: int, pad: int) -> mdarray:
+    return full(shape=shape, fill_value=99)
+
+
+def pad_reflect(arr: mdarray, axis: int, shape: list[int], side: int, pad: int) -> mdarray:
+    return full(shape=shape, fill_value=0)
+
+
+def pad_wrap(arr: mdarray, axis: int, shape: list[int], side: int, pad: int) -> mdarray:
+    return full(shape=shape, fill_value=0)
