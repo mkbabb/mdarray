@@ -1,0 +1,34 @@
+[project]
+name = "mdarray"
+version = "0.1.0"
+description = "Pure-Python N-dimensional array library with mixed-radix FFT"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Mike Babb", email = "mike7400@gmail.com" }]
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mdarray"]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "pytest-cov>=6.0", "pytest-benchmark>=5.0", "ruff>=0.9", "mypy>=1.8", "maturin>=1.5"]
+test = ["numpy>=2.0", "scipy>=1.14"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
