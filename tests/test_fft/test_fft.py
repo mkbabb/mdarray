@@ -93,10 +93,22 @@ class TestFFTCorrectness:
 
     @pytest.mark.parametrize("N", [11, 13, 17, 19, 23, 29, 31])
     def test_primes(self, N):
-        """Exercises radixg fallback for prime lengths."""
+        """Exercises Bluestein's algorithm for small prime lengths."""
         from mdarray import cfft
         from mdarray.array import mdarray
         data = [complex(i, i % 3) for i in range(N)]
+        arr = mdarray(shape=[N], data=list(data))
+        result = cfft(arr)
+        expected = np.fft.fft(data)
+        np_allclose(result, expected, atol=1e-8, rtol=1e-8)
+
+    @pytest.mark.parametrize("N", [127, 251, 509, 1009])
+    def test_large_primes(self, N):
+        """Exercises Bluestein's algorithm for large prime lengths."""
+        from mdarray import cfft
+        from mdarray.array import mdarray
+        data = [complex(math.sin(2 * math.pi * i / N), math.cos(2 * math.pi * i / N))
+                for i in range(N)]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
         expected = np.fft.fft(data)
@@ -166,6 +178,22 @@ class TestRoundtrip:
 
         for i in range(N):
             assert abs(complex(result.data[i]) - data[i]) < 1e-10, (
+                f"Roundtrip failed at index {i}: got {result.data[i]}, expected {data[i]}"
+            )
+
+    @pytest.mark.parametrize("N", [5, 7, 11, 13, 127])
+    def test_roundtrip_prime(self, N):
+        """ifft(fft(x)) == x for prime lengths (Bluestein path)."""
+        from mdarray import cfft, ifft
+        from mdarray.array import mdarray
+
+        data = [complex(i * 0.1, -(i * 0.3)) for i in range(N)]
+        arr = mdarray(shape=[N], data=list(data))
+
+        result = ifft(cfft(arr))
+
+        for i in range(N):
+            assert abs(complex(result.data[i]) - data[i]) < 1e-8, (
                 f"Roundtrip failed at index {i}: got {result.data[i]}, expected {data[i]}"
             )
 
