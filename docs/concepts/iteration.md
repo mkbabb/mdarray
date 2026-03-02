@@ -41,3 +41,12 @@ This is a deliberate design choice. The iterator advances the odometer state; th
 The `_was_advanced` flags are the key to multidimensional output structure. When formatting a 3-D array, axis 1 advancing means "start a new row," axis 2 advancing means "start a new page." `make_nested_list()` uses the same flags to build nested Python lists from flat iteration. `concatenate()` uses them to interleave arrays along the concatenation axis.
 
 The flags are set during carry propagation in `advance()` and cleared on the next call when no carry occurs. They provide a lightweight event system that converts the flat iteration stream into structured multidimensional output.
+
+## Connection to dimensional gliding
+
+The `advance()` odometer and the N-D FFT's fiber extraction are two faces of the same coin. Both navigate the strided hypercube via stride arithmetic:
+
+- **advance()** traverses all elements in a fixed order, incrementing axis counters with carry propagation. It is a sequential scan of the full hypercube.
+- **Dimensional gliding** (used by `fftn`) fixes one axis, enumerates all fibers along that axis by iterating over orthogonal coordinates, and steps along the fiber at that axis's stride. It is a structured traversal that decomposes the hypercube into independent 1-D slices.
+
+Both algorithms rely on the same stride formula `offset = sum(i_k * stride_k)` and the same cumulative-product strides from `get_strides()`. The hypercube is the universal data structure; stride arithmetic is the universal traversal primitive.

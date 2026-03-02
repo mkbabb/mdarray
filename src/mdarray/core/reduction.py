@@ -1,3 +1,10 @@
+"""Fold and scan operations on plain Python lists.
+
+Provides a configurable ``reductor`` class for left-folds (``reduce``) and
+prefix-scans (``accumulate``) with strided traversal and element exclusion.
+No dependency on ``mdarray``.
+"""
+
 from __future__ import annotations
 
 import operator
@@ -10,6 +17,13 @@ __all__ = ["inner_product", "reductor"]
 
 
 class reductor:
+    """Configurable fold/scan engine.
+
+    Wraps a binary (or n-ary) operator with start index, identity element,
+    stride, and exclusion list.  Supports both reducing a list to a single
+    value (``reduce``) and building a running-total list (``accumulate``).
+    """
+
     def __init__(
         self,
         op: Any = None,
@@ -31,6 +45,7 @@ class reductor:
             self.nargs = len(signature(self.op).parameters)
 
     def reduce(self, arr: list) -> Any:
+        """Left-fold *arr* with the configured operator, returning a scalar."""
         size = len(arr)
         t = (size // self.stride) % self.nargs
 
@@ -60,6 +75,7 @@ class reductor:
         return out
 
     def accumulate(self, arr: list) -> list:
+        """Prefix-scan *arr* in-place with the configured operator."""
         size = len(arr)
         t = (size // self.stride) % self.nargs
 
@@ -120,5 +136,10 @@ class reductor:
 
 
 def inner_product(arr1: list, arr2: list) -> Any:
+    """Compute the inner product (dot product) of two flat lists.
+
+    Equivalent to ``sum(a*b for a,b in zip(arr1, arr2))``.  Used by
+    ``unravel`` to convert multi-indices to flat offsets.
+    """
     arr_out = pair_wise(arr1, arr2, operator.mul)
     return reductor.add().reduce(arr_out)

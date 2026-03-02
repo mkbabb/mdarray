@@ -1,3 +1,10 @@
+"""Low-level utilities for strided hypercube arithmetic.
+
+These functions operate on plain Python lists and have no dependency on
+``mdarray``.  They form the foundation layer: stride computation, axis
+rotation, element-wise pairing, and nested-list flattening.
+"""
+
 from __future__ import annotations
 
 import contextlib
@@ -31,6 +38,14 @@ def update_dict(d1: dict, d2: dict, recursive: bool = True) -> dict:
 
 
 def get_strides(shape: list[int]) -> list[int]:
+    """Compute row-major (C-order) strides from a shape vector.
+
+    The stride for axis *i* is the product of all preceding dimensions:
+    ``strides[0] = 1``, ``strides[i] = shape[0] * shape[1] * ... * shape[i-1]``.
+
+    This cumulative product maps multi-indices to flat offsets and is the
+    foundation of the strided hypercube abstraction.
+    """
     N = len(shape)
     init = 1
     strides = [0] * N
@@ -74,12 +89,17 @@ def make_mdim_shape(
 
 
 def swap(seq: list, ix1: int, ix2: int) -> None:
+    """Swap elements at positions *ix1* and *ix2* in *seq* in-place."""
     t = seq[ix1]
     seq[ix1] = seq[ix2]
     seq[ix2] = t
 
 
 def roll_array(seq: list, axis: int, iterations: int = 1) -> None:
+    """Rotate element at *axis* to position 0 by repeated swaps.
+
+    Used to reorder shape and stride vectors when changing axis layout.
+    """
     ndim = len(seq)
     if axis == 0:
         return
@@ -99,6 +119,7 @@ def roll_array(seq: list, axis: int, iterations: int = 1) -> None:
 
 
 def pair_wise(seq1: list, seq2: list, func: Callable[[Any, Any], Any]) -> list:
+    """Apply *func* element-wise to two lists, returning a new list."""
     buff = [0] * len(seq1)
     for n, i in enumerate(seq1):
         t = func(i, seq2[n])
@@ -121,6 +142,11 @@ def remove_extraneous_dims(seq: list) -> list:
 
 
 def flatten_list(seq: list, order: int = 1) -> tuple[list, int, list[int]]:
+    """Recursively flatten a nested Python list into (flat_list, depth, shape).
+
+    Traverses the nesting structure to infer the N-D shape, then collapses
+    all levels beyond *order* into a flat sequence.
+    """
     shape = [len(seq)]
     mdim = 0
 

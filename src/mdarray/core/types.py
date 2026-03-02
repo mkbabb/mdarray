@@ -1,3 +1,10 @@
+"""Sentinel types for infinity and NaN.
+
+Provides ``inf`` and ``nan`` module-level singletons that support
+comparison operators and arithmetic without depending on NumPy or
+``math.inf``/``math.nan``.
+"""
+
 from __future__ import annotations
 
 __all__ = ["inf", "nan"]

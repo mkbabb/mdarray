@@ -11,6 +11,8 @@ The output shape takes the maximum along each axis. An array with a size-1 dimen
 
 These are the standard NumPy broadcasting rules, formalized in the array API specification.
 
+`generate_broadcast_shape(*arrs)` implements this: it pads shorter shape vectors with trailing 1s, then walks each axis checking compatibility. It returns the output shape and a per-array `repeats` list where `repeats[i][j]` is the number of extra copies (0 = no repeat) for array i along axis j.
+
 ## Iterator-based broadcasting
 
 Most array libraries implement broadcasting by allocating expanded temporary copies. mdarray takes a different approach: broadcasting is built into the iterator via repeat counters.

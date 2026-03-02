@@ -1,3 +1,9 @@
+"""Element-wise math functions wrapping the standard library ``math`` module.
+
+Thin wrappers that provide a consistent interface for trigonometric,
+hyperbolic, and root functions.
+"""
+
 from __future__ import annotations
 
 import math

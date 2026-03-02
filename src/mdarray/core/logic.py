@@ -1,3 +1,9 @@
+"""Sorting, searching, and logical operations on mdarray.
+
+Provides quicksort with Lomuto partitioning, argmax/argmin, where
+(boolean indexing), and universal any/all predicates.
+"""
+
 from __future__ import annotations
 
 import random
@@ -103,6 +109,11 @@ def scramble(arr: mdarray, axis: int = 0) -> mdarray:
 
 
 def partition(seq: list, ixs: list, key: Any, axis: int, left: int, right: int) -> int:
+    """Lomuto partition: rearrange *seq* so elements <= pivot precede those > pivot.
+
+    Returns the final pivot index.  Both *seq* and *ixs* (index tracker)
+    are permuted in tandem.
+    """
     pix = left
     pivot = key(seq, right)
 
@@ -122,6 +133,10 @@ def partition(seq: list, ixs: list, key: Any, axis: int, left: int, right: int) 
 
 
 def quicksort(seq: list, ixs: list, key: Any, axis: int, left: int, right: int) -> None:
+    """Recursive quicksort using Lomuto partitioning.
+
+    Sorts *seq* in-place and permutes *ixs* in tandem for index tracking.
+    """
     if left < right:
         pix = partition(seq, ixs, key, axis, left, right)
         quicksort(seq, ixs, key, axis, left, pix - 1)

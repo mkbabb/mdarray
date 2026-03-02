@@ -60,8 +60,8 @@ src/mdarray/
         padding.py       # Array padding
     fft/
         python/
-            fft.py       # Mixed-radix Cooley-Tukey FFT
-            butterflies.py
+            fft.py       # Temperton staged FFT, Bluestein, N-D gliding
+            butterflies.py  # Hand-optimized radix 2-7 butterflies
             twiddle.py   # Twiddle factor precomputation
             factorize.py # Prime factorization
         codegen/
@@ -86,7 +86,9 @@ NumPy-compatible rules: trailing dimensions must be equal or 1. Broadcasting is 
 
 ### FFT
 
-Mixed-radix Cooley-Tukey derived from Temperton's (1983) self-sorting matrix factorization. Decomposes an N-point DFT into stages based on the prime factorization of N. Composite lengths recurse through factors; primes fall back to O(N^2) direct computation. N-dimensional transforms apply 1-D FFTs along each axis in sequence, using strides to extract fibers. Provides `cfft`, `ifft`, `fftn`, `ifftn`, and `rfft`.
+The N-dimensional FFT uses **hypercube dimensional gliding**: the flat buffer is treated as an N-dimensional hypercube, and 1-D FFTs are applied along each axis by extracting fibers via stride arithmetic--no reshaping, no transposing, no intermediate buffers. The stride system that powers `advance()` is the same system that enables fiber extraction.
+
+The 1-D engine is Temperton's (1983) staged mixed-radix framework with hand-optimized radix-2, 3, 4, 5, and 7 butterflies. Composite lengths decompose via `factorize(N)` into small prime stages. Prime lengths use Bluestein's chirp-z algorithm for O(N log N) performance. A codelet generator (`fft/codegen/genfft.py`) produces optimized butterflies for arbitrary radices. Provides `cfft`, `ifft`, `fftn`, `ifftn`, and `rfft`. See [docs/concepts/fft.md](docs/concepts/fft.md).
 
 ### Linear algebra
 
@@ -99,7 +101,7 @@ uv run pytest
 uv run pytest --cov
 ```
 
-98 tests covering core array operations, broadcasting, reductions, FFT correctness (Parseval's theorem, linearity, roundtrip, analytical transforms, N-D agreement with NumPy), and linear algebra.
+107 tests covering core array operations, broadcasting, reductions, FFT correctness (Parseval's theorem, linearity, roundtrip, analytical transforms, Bluestein for large primes, N-D agreement with NumPy), and linear algebra.
 
 ## Timeline
 

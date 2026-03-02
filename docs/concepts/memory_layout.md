@@ -1,8 +1,10 @@
 # Memory Layout
 
-## Strided arrays
+## The strided hypercube
 
-`mdarray` stores all elements in a flat Python list. Shape and stride metadata map N-dimensional indices to flat offsets—the standard apparatus for dense array computation since Iverson's APL (1962), later refined by the NumPy project (van der Walt et al., 2011).
+`mdarray` stores all elements in a flat Python list. Shape and stride metadata map N-dimensional indices to flat offsets--the standard apparatus for dense array computation since Iverson's APL (1962), later refined by the NumPy project (van der Walt et al., 2011).
+
+We call this the **strided hypercube**: a flat contiguous buffer paired with a shape vector and a stride vector. This is the universal data structure of the library--iteration (`advance()`), broadcasting (repeat counters), FFT fiber extraction (dimensional gliding), and element access all operate on the same flat buffer via stride arithmetic.
 
 For a shape `[s_0, s_1, ..., s_{n-1}]`, strides are cumulative products:
 
@@ -29,7 +31,9 @@ Shape and strides are metadata, separate from the data buffer. Operations that o
 
 In all three cases the underlying list stays put. The operation cost is O(ndim), not O(size).
 
-mdarray doesn't currently implement view semantics (shared data with different strides), so these operations mutate the original array rather than returning a lightweight alias. The stride arithmetic is the same either way—views are a memory-management concern, not a computational one.
+mdarray doesn't currently implement view semantics (shared data with different strides), so these operations mutate the original array rather than returning a lightweight alias. The stride arithmetic is the same either way--views are a memory-management concern, not a computational one.
+
+After transpose, the array is no longer contiguous in memory (the first axis no longer has stride 1). This is a fundamental property of the strided hypercube: the stride vector records the physical layout, and operations that change the logical axis ordering change strides without moving data.
 
 ## Example
 

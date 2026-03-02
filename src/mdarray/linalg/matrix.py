@@ -1,3 +1,5 @@
+"""Diagonal and identity matrix construction."""
+
 from __future__ import annotations
 
 from ..array import mdarray, ones, zeros

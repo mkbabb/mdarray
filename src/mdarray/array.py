@@ -18,6 +18,24 @@ from .core.types import inf
 
 
 class mdarray:
+    """N-dimensional strided array backed by a flat Python list.
+
+    The strided hypercube: a flat contiguous buffer paired with a shape vector and
+    a stride vector maps multi-indices to flat offsets via
+    ``offset(i_0, ..., i_{d-1}) = sum(i_k * stride_k)``.  This is the universal
+    data structure of the library -- iteration, broadcasting, FFT fiber extraction,
+    and element access all operate on the same flat buffer via stride arithmetic.
+
+    Parameters
+    ----------
+    data : list | mdarray | None
+        Initial data.  Copied into a flat list.
+    shape : list[int] | None
+        Dimensions of the array.
+    strides : list[int] | None
+        Custom strides.  Computed from *shape* if not provided.
+    """
+
     __slots__ = (
         "_axis_counter",
         "_data",
@@ -134,6 +152,21 @@ class mdarray:
     # --- Iteration ---
 
     def advance(self, step: int = 1) -> int:
+        """Advance the mixed-radix odometer by *step* positions.
+
+        The iteration state is three parallel arrays:
+
+        - ``_axis_counter[i]`` -- current offset along axis i (in stride units).
+        - ``_rept_counter[i]`` -- broadcast replay counter for axis i.
+        - ``_was_advanced[i]`` -- carry flag for detecting row/page boundaries.
+
+        Incrementing axis 0 may cause a carry into axis 1 (and so on),
+        exactly like incrementing the least-significant digit of a
+        mixed-radix number.  This is the same dimensional traversal
+        primitive that powers the N-D FFT's fiber extraction.
+
+        Returns the new flat index into the data buffer.
+        """
         i = 0
         while i < step:
             if self._rept_counter[0] < self._repeats[0]:
@@ -336,6 +369,7 @@ class mdarray:
 
 
 def tomdarray(arr: Any) -> mdarray:
+    """Coerce *arr* to an mdarray, wrapping scalars, lists, and tuples."""
     if isinstance(arr, mdarray):
         return arr
     if isinstance(arr, (list, tuple)):
@@ -353,6 +387,7 @@ def zeros(
     dtype: Any = None,
     order: str | None = None,
 ) -> mdarray:
+    """Create an array filled with zeros."""
     arr_out = mdarray(shape=shape, size=size, order=order)
     arr_out._data = [0] * arr_out.size
     return arr_out
@@ -364,6 +399,7 @@ def ones(
     dtype: Any = None,
     order: str | None = None,
 ) -> mdarray:
+    """Create an array filled with ones."""
     arr_out = mdarray(shape=shape, size=size, order=order)
     arr_out._data = [1] * arr_out.size
     return arr_out
@@ -377,6 +413,7 @@ def full(
     dtype: Any = None,
     order: str | None = None,
 ) -> mdarray:
+    """Create an array filled with *fill_value* (or *fill*)."""
     val = fill_value if fill_value is not None else fill
     arr_out = mdarray(shape=shape, size=size, order=order)
     arr_out._data = [val] * arr_out.size
@@ -384,6 +421,7 @@ def full(
 
 
 def irange(size: int | list[int]) -> mdarray:
+    """Create an array of consecutive integers ``[0, 1, ..., size-1]``."""
     if isinstance(size, list):
         shape = size
         size = reduce(lambda x, y: x * y, size)
@@ -514,6 +552,19 @@ def meshgrid(*arrs: Any) -> list[mdarray]:
 def generate_broadcast_shape(
     *arrs: mdarray,
 ) -> tuple[list[int], list[list[int]]]:
+    """Compute broadcast-compatible output shape and per-array repeat counts.
+
+    Follows NumPy broadcasting rules: dimensions are compared from the
+    trailing end, and a size-1 axis stretches to match the other arrays.
+
+    Returns
+    -------
+    new_shape : list[int]
+        The broadcast output shape.
+    repts : list[list[int]]
+        Per-array repeat counts.  ``repts[i][j]`` is the number of extra
+        copies (0 = no repeat) for array *i* along axis *j*.
+    """
     arrs_t = tuple(arrs)
     ndim = len(arrs_t)
 
@@ -563,6 +614,13 @@ def broadcast_nary(
     *arrs: mdarray,
     func: Callable[[list[Any]], Any],
 ) -> mdarray:
+    """Apply *func* element-wise across broadcast-aligned arrays.
+
+    Each array's iterator is configured with its repeat counts, then all
+    iterators are zipped together.  At each position, *func* receives a
+    list of the current element from each array and produces one output
+    element.
+    """
     new_shape = broadcast_iter(*arrs)
     arr_out = zeros(new_shape)
     ndim = len(arrs)
@@ -602,6 +660,7 @@ def broadcast(*arrs: mdarray) -> list[mdarray]:
 
 
 def reshape(arr: mdarray, new_shape: list[int]) -> None:
+    """Reshape *arr* in-place to *new_shape* (must preserve total size)."""
     new_shape = list(new_shape)
     mdim = len(new_shape)
     new_size = reduce(lambda x, y: x * y, new_shape)
@@ -634,6 +693,7 @@ def make_mdim(arr: mdarray, ndim: int) -> None:
 
 
 def transpose(arr: mdarray, axis1: int = 0, axis2: int = 1) -> None:
+    """Transpose *arr* in-place by swapping strides and shape for two axes."""
     mdim = arr.mdim
 
     if axis1 < 0:
@@ -663,6 +723,7 @@ def roll_axis(arr: mdarray, axis: int, iterations: int = 1) -> None:
 
 
 def flatten(arr: mdarray, order: int = -1) -> None:
+    """Flatten trailing dimensions of *arr* in-place, collapsing from axis *order*."""
     mdim = arr.mdim
 
     if order < 0:
@@ -738,6 +799,7 @@ def _confirm_concat_shape(
 
 
 def concatenate(*arrs: mdarray, caxis: int = -1) -> mdarray:
+    """Concatenate arrays along *caxis*, matching all other dimensions."""
     arrs_t = tuple(arrs)
     new_shape = _confirm_concat_shape(
         arrs_t, caxis, arrs_t[0].mdim, len(arrs_t), list(arrs_t[0].shape)
@@ -806,6 +868,11 @@ def ravel(
     strides: list[int] | None = None,
     mdim_ixs: list[int] | None = None,
 ) -> list[int]:
+    """Decompose flat index *ix* into per-axis offsets (in stride units).
+
+    This is the inverse of ``unravel``: given a scalar position, it
+    produces the axis counter values that ``advance()`` would hold.
+    """
     mdim = len(shape)
 
     if not strides:
@@ -827,6 +894,7 @@ def unravel(
     shape: list[int],
     strides: list[int] | None = None,
 ) -> int:
+    """Compute flat index from multi-dimensional index via inner product with strides."""
     if not strides:
         strides = get_strides(shape)
     return inner_product(strides, mdim_ix)
@@ -879,6 +947,11 @@ def slice_array(
     arr_out: mdarray | None,
     setter: bool = True,
 ) -> mdarray:
+    """Index or assign into *arr_in* using advanced (fancy) indexing.
+
+    Supports integer arrays, slices, and Ellipsis.  When *setter* is True,
+    writes *arr_out* into *arr_in* at the indexed positions.
+    """
     slc, new_shape, oned = expand_indicies(slc, arr_in)
 
     if oned:

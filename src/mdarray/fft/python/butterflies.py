@@ -41,6 +41,11 @@ def radix2(
     twix: int,
     pdiv: int,
 ) -> list[complex]:
+    """Radix-2 butterfly: 0 real multiplications, 4 real additions.
+
+    Computes a 2-point DFT with twiddle premultiplication:
+    z0, z1 = seq[0], omega1*seq[1]; output = [z0+z1, z0-z1].
+    """
     omega1 = twiddles[twix]
 
     z0 = seq[0]
@@ -59,6 +64,11 @@ def radix3(
     twix: int,
     pdiv: int,
 ) -> list[complex]:
+    """Radix-3 butterfly: 4 real multiplications, 12 real additions.
+
+    Uses cos(2pi/3) = -1/2, sin(2pi/3) = sqrt(3)/2 to avoid
+    explicit complex exponentials.
+    """
     omega1 = twiddles[twix]
     omega2 = twiddles[twix + 1]
 
@@ -84,6 +94,11 @@ def radix4(
     twix: int,
     pdiv: int,
 ) -> list[complex]:
+    """Radix-4 butterfly: 0 real multiplications, 16 real additions.
+
+    Exploits the fact that powers of i (the 4th root of unity) are
+    {1, -i, -1, i}, eliminating all real multiplications.
+    """
     omega1 = twiddles[twix]
     omega2 = twiddles[twix + 1]
     omega3 = twiddles[twix + 2]
@@ -113,6 +128,11 @@ def radix5(
     twix: int,
     pdiv: int,
 ) -> list[complex]:
+    """Radix-5 butterfly: 12 real multiplications, 24 real additions.
+
+    Uses precomputed sin/cos constants for the 5th roots of unity
+    to minimize operation count.
+    """
     omega1 = twiddles[twix]
     omega2 = twiddles[twix + 1]
     omega3 = twiddles[twix + 2]
@@ -155,6 +175,12 @@ def radix7(
     twix: int,
     pdiv: int,
 ) -> list[complex]:
+    """Radix-7 butterfly: 36 real multiplications, 48 real additions.
+
+    Uses precomputed sin/cos constants for the 7th roots of unity.
+    The symmetric structure of the DFT matrix reduces the 7-point
+    transform to real linear combinations plus imaginary cross-terms.
+    """
     omega1 = twiddles[twix]
     omega2 = twiddles[twix + 1]
     omega3 = twiddles[twix + 2]
