@@ -9,6 +9,7 @@ import pytest
 def MA():
     """Provide the mdarray class."""
     from mdarray import mdarray
+
     return mdarray
 
 
@@ -16,4 +17,5 @@ def MA():
 def md():
     """Provide the mdarray module."""
     import mdarray
+
     return mdarray

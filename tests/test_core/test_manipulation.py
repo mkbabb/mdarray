@@ -7,6 +7,7 @@ import pytest
 
 def test_reshape():
     from mdarray import irange
+
     arr = irange(24)
     arr.reshape([4, 3, 2])
     assert arr.shape == [4, 3, 2]
@@ -16,6 +17,7 @@ def test_reshape():
 def test_reshape_incompatible():
     from mdarray import irange
     from mdarray.core.exceptions import IncompatibleDimensions
+
     arr = irange(24)
     with pytest.raises(IncompatibleDimensions):
         arr.reshape([5, 5])
@@ -23,6 +25,7 @@ def test_reshape_incompatible():
 
 def test_transpose():
     from mdarray import irange
+
     arr = irange([3, 4])
     arr.T(0, 1)
     assert arr.shape == [4, 3]
@@ -30,6 +33,7 @@ def test_transpose():
 
 def test_make_nested_list():
     from mdarray import irange
+
     arr = irange([3, 2])
     lst = arr.to_list()
     assert len(lst) == 2
@@ -38,6 +42,7 @@ def test_make_nested_list():
 
 def test_concatenate_axis0():
     from mdarray import concatenate, irange
+
     arr1 = irange([3, 2])
     arr2 = irange([3, 2])
     result = concatenate(arr1, arr2, caxis=0)
@@ -47,6 +52,7 @@ def test_concatenate_axis0():
 
 def test_flatten():
     from mdarray import irange
+
     arr = irange([3, 4, 2])
     # flatten(-1) with mdim=3: order = -1 + 3 = 2, new_mdim = 3-2 = 1
     # This collapses the last 2 dims into 1
@@ -61,6 +67,7 @@ def test_flatten():
 
 def test_print_array():
     from mdarray import irange
+
     arr = irange([3, 2])
     s = str(arr)
     assert "[" in s

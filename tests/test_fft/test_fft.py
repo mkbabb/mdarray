@@ -28,15 +28,16 @@ def np_allclose(md_result, np_result, atol=1e-10, rtol=1e-10):
         a, b = complex(a), complex(b)
         if abs(b) > 1e-15:
             assert abs(a - b) <= atol + rtol * abs(b), (
-                f"Mismatch at index {i}: mdarray={a}, numpy={b}, diff={abs(a-b)}"
+                f"Mismatch at index {i}: mdarray={a}, numpy={b}, diff={abs(a - b)}"
             )
         else:
             assert abs(a - b) <= atol, (
-                f"Mismatch at index {i}: mdarray={a}, numpy={b}, diff={abs(a-b)}"
+                f"Mismatch at index {i}: mdarray={a}, numpy={b}, diff={abs(a - b)}"
             )
 
 
 # --- 1. Exact match against NumPy for various lengths ---
+
 
 class TestFFTCorrectness:
     """Category 1: FFT output matches NumPy for all supported lengths."""
@@ -45,6 +46,7 @@ class TestFFTCorrectness:
     def test_power_of_2(self, N):
         from mdarray import cfft
         from mdarray.array import mdarray
+
         data = [complex(i, i * 0.5) for i in range(N)]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
@@ -55,6 +57,7 @@ class TestFFTCorrectness:
     def test_power_of_3(self, N):
         from mdarray import cfft
         from mdarray.array import mdarray
+
         data = [complex(i, -i * 0.3) for i in range(N)]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
@@ -65,6 +68,7 @@ class TestFFTCorrectness:
     def test_power_of_5(self, N):
         from mdarray import cfft
         from mdarray.array import mdarray
+
         data = [complex(i * 0.1, i * 0.2) for i in range(N)]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
@@ -75,6 +79,7 @@ class TestFFTCorrectness:
     def test_power_of_7(self, N):
         from mdarray import cfft
         from mdarray.array import mdarray
+
         data = [complex(i) for i in range(N)]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
@@ -85,6 +90,7 @@ class TestFFTCorrectness:
     def test_highly_composite(self, N):
         from mdarray import cfft
         from mdarray.array import mdarray
+
         data = [complex(math.sin(2 * math.pi * i / N)) for i in range(N)]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
@@ -96,6 +102,7 @@ class TestFFTCorrectness:
         """Exercises Bluestein's algorithm for small prime lengths."""
         from mdarray import cfft
         from mdarray.array import mdarray
+
         data = [complex(i, i % 3) for i in range(N)]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
@@ -107,8 +114,10 @@ class TestFFTCorrectness:
         """Exercises Bluestein's algorithm for large prime lengths."""
         from mdarray import cfft
         from mdarray.array import mdarray
-        data = [complex(math.sin(2 * math.pi * i / N), math.cos(2 * math.pi * i / N))
-                for i in range(N)]
+
+        data = [
+            complex(math.sin(2 * math.pi * i / N), math.cos(2 * math.pi * i / N)) for i in range(N)
+        ]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
         expected = np.fft.fft(data)
@@ -117,12 +126,14 @@ class TestFFTCorrectness:
 
 # --- 3. Parseval's theorem ---
 
+
 class TestParseval:
     @pytest.mark.parametrize("N", [8, 16, 64, 120])
     def test_parseval(self, N):
         """sum(|x|^2) == sum(|X|^2) / N"""
         from mdarray import cfft
         from mdarray.array import mdarray
+
         data = [complex(i * 0.1, (i % 5) * 0.2) for i in range(N)]
         arr = mdarray(shape=[N], data=list(data))
         result = cfft(arr)
@@ -136,6 +147,7 @@ class TestParseval:
 
 
 # --- 4. Linearity ---
+
 
 class TestLinearity:
     @pytest.mark.parametrize("N", [8, 16, 32])
@@ -163,6 +175,7 @@ class TestLinearity:
 
 
 # --- 7. FFT-IFFT roundtrip ---
+
 
 class TestRoundtrip:
     @pytest.mark.parametrize("N", [2, 4, 8, 16, 32, 64, 128])
@@ -213,6 +226,7 @@ class TestRoundtrip:
 
 # --- 10. Known analytical transforms ---
 
+
 class TestAnalytical:
     def test_all_ones(self):
         """fft([1,1,...,1]) == [N, 0, 0, ..., 0]"""
@@ -245,6 +259,7 @@ class TestAnalytical:
 
 # --- 11. Edge cases ---
 
+
 class TestEdgeCases:
     def test_length_1(self):
         """FFT of length 1 is identity."""
@@ -268,6 +283,7 @@ class TestEdgeCases:
 
 
 # --- 8. N-D FFT ---
+
 
 class TestFFTN:
     def test_2d_small(self):
@@ -300,6 +316,7 @@ class TestFFTN:
 
 
 # --- 9. Real FFT ---
+
 
 class TestRFFT:
     def test_rfft_basic(self):

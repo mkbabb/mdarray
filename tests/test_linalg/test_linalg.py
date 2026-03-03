@@ -6,6 +6,7 @@ from __future__ import annotations
 def test_diagonal_from_1d():
     from mdarray import tomdarray
     from mdarray.linalg import diagonal
+
     arr = tomdarray([5, 6, 7])
     result = diagonal(arr)
     assert result.shape == [3, 3]
@@ -21,6 +22,7 @@ def test_diagonal_from_1d():
 def test_diagonal_from_2d():
     from mdarray import tomdarray
     from mdarray.linalg import diagonal
+
     arr = tomdarray([[5, 0, 0], [0, 6, 0], [0, 0, 7]])
     result = diagonal(arr)
     assert result.shape == [3]
@@ -29,6 +31,7 @@ def test_diagonal_from_2d():
 
 def test_identity():
     from mdarray.linalg import identity
+
     eye = identity(3)
     assert eye.shape == [3, 3]
     # Diagonal should be 1
@@ -42,12 +45,14 @@ def test_identity():
 def test_trace():
     from mdarray import tomdarray
     from mdarray.linalg import trace
+
     arr = tomdarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     assert trace(arr) == 15.0
 
 
 def test_determinant_identity():
     from mdarray.linalg import determinant, identity
+
     eye = identity(3)
     assert abs(determinant(eye) - 1.0) < 1e-10
 
@@ -55,6 +60,7 @@ def test_determinant_identity():
 def test_determinant_known():
     from mdarray import tomdarray
     from mdarray.linalg import determinant
+
     # [[1, 2], [3, 4]] -> det = 1*4 - 2*3 = -2
     arr = tomdarray([[1, 2], [3, 4]])
     d = determinant(arr)
@@ -64,6 +70,7 @@ def test_determinant_known():
 def test_gaussian_elim_rref():
     from mdarray import tomdarray
     from mdarray.linalg import gaussian_elim
+
     # Simple 2x2 matrix
     arr = tomdarray([[2, 4], [1, 3]])
     result = gaussian_elim(arr, rref=True)
