@@ -54,7 +54,7 @@ where `(x)` denotes the Kronecker product. This means independent 1-D DFTs along
 5. Write results back to the same positions.
 6. Repeat for each axis.
 
-No reshaping. No transposing. No intermediate buffers. The stride system provides O(1) random access into the hypercube along any axis--dimensional gliding is the traversal primitive. The `advance()` odometer and the fiber extraction loop are two faces of the same coin: both navigate the flat buffer via stride arithmetic on the hypercube.
+The algorithm requires no reshaping, transposing, or intermediate buffers. The stride system provides O(1) random access into the hypercube along any axis--dimensional gliding is the traversal primitive. The `advance()` odometer and the fiber extraction loop are two faces of the same coin: both navigate the flat buffer via stride arithmetic on the hypercube.
 
 ## Mixed-radix factorization
 
